@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.6.0] - 2026-02-27
+
+### Added
+- Port configuration management (Task 6):
+  - `src/config/environment.ts` — loadRememberConfig(), validateRememberConfig(), typed interfaces (WeaviateEnvConfig, OpenAIEnvConfig, FirebaseEnvConfig, ServerEnvConfig)
+  - `src/config/debug.ts` — DebugLevel enum (NONE→TRACE), parseDebugLevel(), createDebugConfig()
+  - Updated `src/config/index.ts` barrel exports
+
+### Changed
+- M2 (Database & Configuration) progress: 50% → 75% (3/4 tasks complete)
+
 ## [0.5.0] - 2026-02-27
 
 ### Added

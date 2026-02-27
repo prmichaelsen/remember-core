@@ -1,20 +1,42 @@
-// src/config/index.ts
+/**
+ * Configuration module barrel exports.
+ *
+ * Provides environment config loading, debug level management,
+ * and scaffolded config schema/loader for future use.
+ */
 
+// Remember-specific environment configuration
 export {
-  AppConfigSchema,
-  DatabaseConfigSchema,
-  ServerConfigSchema,
-  LoggingConfigSchema,
-} from './schema';
+  loadRememberConfig,
+  validateRememberConfig,
+  type RememberConfig,
+  type WeaviateEnvConfig,
+  type OpenAIEnvConfig,
+  type FirebaseEnvConfig,
+  type ServerEnvConfig,
+} from './environment.js';
 
-export type {
-  AppConfig,
-  DatabaseConfig,
-  ServerConfig,
-  LoggingConfig,
-  ServiceConfig,
-  AdapterConfig,
-} from './schema';
+// Debug level management
+export {
+  DebugLevel,
+  parseDebugLevel,
+  createDebugConfig,
+  type DebugConfig,
+} from './debug.js';
 
-export { createTestConfig } from './schema';
-export { loadConfig } from './loader';
+// Scaffolded config schema (generic, zod-based — available when zod is added)
+// export {
+//   AppConfigSchema,
+//   DatabaseConfigSchema,
+//   ServerConfigSchema,
+//   LoggingConfigSchema,
+//   type AppConfig,
+//   type DatabaseConfig,
+//   type ServerConfig,
+//   type LoggingConfig,
+//   type ServiceConfig,
+//   type AdapterConfig,
+//   createTestConfig,
+// } from './schema.js';
+//
+// export { loadConfig } from './loader.js';

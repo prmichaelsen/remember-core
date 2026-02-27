@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.8.0] - 2026-02-27
+
+### Added
+- Port collection utilities and existing services (Task 8) — begins M3:
+  - `src/collections/composite-ids.ts` — generateCompositeId, parseCompositeId, isCompositeId, belongsToUser
+  - `src/collections/tracking-arrays.ts` — immutable space_ids/group_ids operations
+  - `src/collections/dot-notation.ts` — CollectionType enum, getCollectionName, parseCollectionName
+  - `src/collections/index.ts` — barrel exports
+  - `src/services/preferences.service.ts` — PreferencesDatabaseService (Firestore-backed, DI)
+  - `src/services/confirmation-token.service.ts` — ConfirmationTokenService (5-min expiry)
+  - `src/services/credentials-provider.ts` — StubCredentialsProvider, factory, singleton
+  - `src/services/space-config.service.ts` — getSpaceConfig, setSpaceConfig, DEFAULT_SPACE_CONFIG
+
+### Changed
+- M2 (Database & Configuration) marked complete
+- M3 (Core Services) started — 25% (1/4 tasks)
+
 ## [0.7.0] - 2026-02-27
 
 ### Added

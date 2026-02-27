@@ -1,9 +1,9 @@
 project:
   name: remember-core
-  version: 0.7.0
+  version: 0.8.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M2
+  current_milestone: M3
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -24,10 +24,10 @@ milestones:
 
   - id: M2
     name: Database & Configuration
-    status: in_progress
+    status: completed
     progress: 100
     started: 2026-02-27
-    completed: null
+    completed: 2026-02-27
     estimated_weeks: 1
     tasks_completed: 4
     tasks_total: 4
@@ -36,12 +36,12 @@ milestones:
 
   - id: M3
     name: Core Services
-    status: not_started
-    progress: 0
-    started: null
+    status: in_progress
+    progress: 25
+    started: 2026-02-27
     completed: null
     estimated_weeks: 2
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 4
     notes: |
       Extract business logic from 20 MCP tool handlers into reusable services.
@@ -134,12 +134,15 @@ tasks:
   milestone_3:
     - id: task-8
       name: Port Collection Utilities and Existing Services
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-3-core-services/task-8-collection-utils-existing-services.md
       estimated_hours: 5
-      completed_date: null
+      actual_hours: 0.1
+      completed_date: 2026-02-27
       notes: |
-        composite-ids, tracking-arrays, PreferencesService, ConfirmationTokenService, CredentialsProvider, SpaceConfigService
+        Collections: composite-ids.ts, tracking-arrays.ts, dot-notation.ts, index.ts.
+        Services: preferences.service.ts, confirmation-token.service.ts, credentials-provider.ts, space-config.service.ts.
+        All use DI pattern (accept Logger param). Updated services/index.ts barrel.
     - id: task-9
       name: Create MemoryService
       status: not_started
@@ -207,8 +210,8 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 40
-  overall: 40
+  implementation: 47
+  overall: 47
 
 recent_work:
   - date: 2026-02-27
@@ -241,6 +244,17 @@ recent_work:
       - "Created src/testing/test-data-generator.ts — synthetic memory generation, benchmarking utils"
       - "Created src/utils/index.ts — barrel exports"
       - "M2 Database & Configuration milestone 100% complete (4/4 tasks)"
+  - date: 2026-02-27
+    description: |
+      Task 8 — Port Collection Utilities and Existing Services (M3 begins)
+    items:
+      - "Created src/collections/ — composite-ids.ts, tracking-arrays.ts, dot-notation.ts, index.ts"
+      - "Created src/services/preferences.service.ts — PreferencesDatabaseService (Firestore-backed)"
+      - "Created src/services/confirmation-token.service.ts — ConfirmationTokenService (5-min expiry)"
+      - "Created src/services/credentials-provider.ts — StubCredentialsProvider, factory, singleton"
+      - "Created src/services/space-config.service.ts — getSpaceConfig, setSpaceConfig, DEFAULT_SPACE_CONFIG"
+      - "Updated src/services/index.ts barrel exports"
+      - "M2 marked complete, M3 started at 25%"
   - date: 2026-02-27
     description: |
       @acp.sync - Synchronized documentation with actual remember-mcp codebase.

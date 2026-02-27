@@ -1,7 +1,30 @@
-// src/services/index.ts
+/**
+ * Services module barrel exports.
+ */
 
-export type { Logger } from './base.service';
-export { BaseService } from './base.service';
+// Scaffolded base (keep for future use)
+// export type { Logger } from './base.service.js';
+// export { BaseService } from './base.service.js';
+// export type { UserRepository } from './user.service.js';
+// export { UserService } from './user.service.js';
 
-export type { UserRepository } from './user.service';
-export { UserService } from './user.service';
+// Ported services
+export { PreferencesDatabaseService } from './preferences.service.js';
+
+export {
+  ConfirmationTokenService,
+  type ConfirmationRequest,
+} from './confirmation-token.service.js';
+
+export {
+  StubCredentialsProvider,
+  createCredentialsProvider,
+  credentialsProvider,
+} from './credentials-provider.js';
+
+export {
+  getSpaceConfig,
+  setSpaceConfig,
+  DEFAULT_SPACE_CONFIG,
+  type SpaceConfig,
+} from './space-config.service.js';

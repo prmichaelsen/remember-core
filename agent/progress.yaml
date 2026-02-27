@@ -3,31 +3,94 @@ project:
   version: 0.2.0
   started: 2026-02-27
   status: in_progress
+  current_milestone: M1
   description: |
-    Core SDK for Remember MCP and REST services
+    Core SDK for Remember MCP and REST services.
+    Extracts transport-agnostic business logic from remember-mcp so both
+    remember-mcp-server and remember-rest-server can consume shared services.
 
-milestones: []
+milestones:
+  - id: M1
+    name: Types & Models
+    status: not_started
+    progress: 0
+    started: null
+    completed: null
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 3
+    notes: |
+      Port all type definitions, interfaces, and constants from remember-mcp.
+
+  - id: M2
+    name: Database & Configuration
+    status: not_started
+    progress: 0
+    started: null
+    completed: null
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 4
+    notes: |
+      Port Weaviate/Firestore init, schema, config, and utilities.
+
+  - id: M3
+    name: Core Services
+    status: not_started
+    progress: 0
+    started: null
+    completed: null
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 4
+    notes: |
+      Extract business logic from 22 MCP tool handlers into reusable services.
+
+  - id: M4
+    name: Integration & Packaging
+    status: not_started
+    progress: 0
+    started: null
+    completed: null
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 4
+    notes: |
+      NPM packaging, public API design, integration tests, migration guides.
 
 tasks: {}
 
 documentation:
-  design_documents: 0
-  milestone_documents: 0
-  pattern_documents: 0
+  design_documents: 1
+  milestone_documents: 4
+  pattern_documents: 25
   task_documents: 0
 
 progress:
-  planning: 0
+  planning: 50
   implementation: 0
   overall: 0
 
-recent_work: []
+recent_work:
+  - date: 2026-02-27
+    description: |
+      Project initialization, ACP setup, core-sdk package install, milestone planning.
+    items:
+      - "Initialized remember-core project with ACP"
+      - "Installed core-sdk package (v1.22.0) with 25 patterns and source scaffolding"
+      - "Updated ACP from v4.2.1 to v4.3.0"
+      - "Created 4 milestone documents from template"
+      - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Define project requirements in agent/design/requirements.md
-  - Plan milestones and tasks with @acp.plan
-  - Start development with @acp.proceed
+  - Create task documents for all 15 tasks via @acp.task-create
+  - Begin M1 Task 1 - Port core memory types
+  - Set up package.json with dependencies
 
-notes: []
+notes:
+  - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"
+  - "Consumer: remember-mcp-server (prmichaelsen/remember-mcp-server)"
+  - "Future consumer: remember-rest-server"
+  - "22 MCP tools map to 5 core services"
 
 current_blockers: []

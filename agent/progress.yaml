@@ -58,20 +58,154 @@ milestones:
     notes: |
       NPM packaging, public API design, integration tests, migration guides.
 
-tasks: {}
+tasks:
+  milestone_1:
+    - id: task-1
+      name: Port Core Memory Types
+      status: not_started
+      file: agent/tasks/milestone-1-types-and-models/task-1-core-memory-types.md
+      estimated_hours: 3
+      completed_date: null
+      notes: |
+        Memory, Relationship, MemoryContext, SearchFilters, SearchOptions, SearchResult
+    - id: task-2
+      name: Port Preferences and Space Types
+      status: not_started
+      file: agent/tasks/milestone-1-types-and-models/task-2-preferences-space-types.md
+      estimated_hours: 2
+      completed_date: null
+      notes: |
+        6 preference categories, SpaceMemory, published memory types
+    - id: task-3
+      name: Port Constants and LLM Types
+      status: not_started
+      file: agent/tasks/milestone-1-types-and-models/task-3-constants-llm-types.md
+      estimated_hours: 2
+      completed_date: null
+      notes: |
+        45+ content types, LLM types, shared enums
+
+  milestone_2:
+    - id: task-4
+      name: Port Weaviate Client and Schema
+      status: not_started
+      file: agent/tasks/milestone-2-database-and-config/task-4-weaviate-client-schema.md
+      estimated_hours: 4
+      completed_date: null
+      notes: |
+        client.ts, schema.ts, space-schema.ts, v2-collections.ts
+    - id: task-5
+      name: Port Firestore Initialization and Paths
+      status: not_started
+      file: agent/tasks/milestone-2-database-and-config/task-5-firestore-initialization.md
+      estimated_hours: 2
+      completed_date: null
+      notes: |
+        init.ts, paths.ts, Firebase Admin SDK wrapper
+    - id: task-6
+      name: Port Configuration Management
+      status: not_started
+      file: agent/tasks/milestone-2-database-and-config/task-6-configuration-management.md
+      estimated_hours: 2
+      completed_date: null
+      notes: |
+        config.ts, environment validation, debug levels
+    - id: task-7
+      name: Port Utility Modules
+      status: not_started
+      file: agent/tasks/milestone-2-database-and-config/task-7-utility-modules.md
+      estimated_hours: 3
+      completed_date: null
+      notes: |
+        logger, error-handler, weaviate-filters, debug
+
+  milestone_3:
+    - id: task-8
+      name: Port Collection Utilities and Existing Services
+      status: not_started
+      file: agent/tasks/milestone-3-core-services/task-8-collection-utils-existing-services.md
+      estimated_hours: 5
+      completed_date: null
+      notes: |
+        composite-ids, tracking-arrays, PreferencesService, ConfirmationTokenService
+    - id: task-9
+      name: Create MemoryService
+      status: not_started
+      file: agent/tasks/milestone-3-core-services/task-9-memory-service.md
+      estimated_hours: 8
+      completed_date: null
+      notes: |
+        Extract CRUD + search from 6 memory tool handlers
+    - id: task-10
+      name: Create RelationshipService and SpaceService
+      status: not_started
+      file: agent/tasks/milestone-3-core-services/task-10-relationship-space-services.md
+      estimated_hours: 8
+      completed_date: null
+      notes: |
+        Extract from 11 relationship and space tool handlers
+    - id: task-11
+      name: Service Tests and Validation
+      status: not_started
+      file: agent/tasks/milestone-3-core-services/task-11-service-tests.md
+      estimated_hours: 6
+      completed_date: null
+      notes: |
+        Unit tests for all services, integration test scaffold
+
+  milestone_4:
+    - id: task-12
+      name: NPM Package Setup
+      status: not_started
+      file: agent/tasks/milestone-4-integration-and-packaging/task-12-npm-package-setup.md
+      estimated_hours: 4
+      completed_date: null
+      notes: |
+        package.json, tsconfig, esbuild, exports map
+    - id: task-13
+      name: Public API Design and Barrel Exports
+      status: not_started
+      file: agent/tasks/milestone-4-integration-and-packaging/task-13-public-api-exports.md
+      estimated_hours: 3
+      completed_date: null
+      notes: |
+        src/index.ts, subpath exports, no leaky abstractions
+    - id: task-14
+      name: Integration Tests
+      status: not_started
+      file: agent/tasks/milestone-4-integration-and-packaging/task-14-integration-tests.md
+      estimated_hours: 5
+      completed_date: null
+      notes: |
+        End-to-end service flows against real/emulated DBs
+    - id: task-15
+      name: Migration Guide and Consumer Documentation
+      status: not_started
+      file: agent/tasks/milestone-4-integration-and-packaging/task-15-migration-guide.md
+      estimated_hours: 4
+      completed_date: null
+      notes: |
+        remember-mcp migration, REST server bootstrap guide
 
 documentation:
   design_documents: 1
   milestone_documents: 4
   pattern_documents: 25
-  task_documents: 0
+  task_documents: 15
 
 progress:
-  planning: 50
+  planning: 100
   implementation: 0
   overall: 0
 
 recent_work:
+  - date: 2026-02-27
+    description: |
+      Complete project planning - milestones, tasks, and progress tracking.
+    items:
+      - "Created 15 task documents from ACP template across 4 milestones"
+      - "Updated progress.yaml with all task entries"
+      - "Planning phase complete"
   - date: 2026-02-27
     description: |
       Project initialization, ACP setup, core-sdk package install, milestone planning.
@@ -83,9 +217,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Create task documents for all 15 tasks via @acp.task-create
   - Begin M1 Task 1 - Port core memory types
   - Set up package.json with dependencies
+  - Start implementation with @acp.proceed
 
 notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"

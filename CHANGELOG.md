@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.9.0] - 2026-02-27
+
+### Added
+- Create unified MemoryService (Task 9):
+  - `src/services/memory.service.ts` — 6 CRUD+search operations extracted from MCP tool handlers
+  - `create()` — insert memory with content type validation, scoring, tracking arrays
+  - `search()` — hybrid semantic+keyword search with alpha, filters, pagination
+  - `findSimilar()` — vector similarity via nearObject/nearText
+  - `query()` — semantic nearText for RAG retrieval
+  - `update()` — partial updates via replace(), version increment, ownership checks
+  - `delete()` — soft delete with orphaned relationship detection
+  - Typed input/output interfaces for all operations
+
+### Changed
+- M3 (Core Services) progress: 25% → 50% (2/4 tasks)
+
 ## [0.8.0] - 2026-02-27
 
 ### Added

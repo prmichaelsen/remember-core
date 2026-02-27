@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.8.0
+  version: 0.9.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M3
@@ -37,11 +37,11 @@ milestones:
   - id: M3
     name: Core Services
     status: in_progress
-    progress: 25
+    progress: 50
     started: 2026-02-27
     completed: null
     estimated_weeks: 2
-    tasks_completed: 1
+    tasks_completed: 2
     tasks_total: 4
     notes: |
       Extract business logic from 20 MCP tool handlers into reusable services.
@@ -145,12 +145,15 @@ tasks:
         All use DI pattern (accept Logger param). Updated services/index.ts barrel.
     - id: task-9
       name: Create MemoryService
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-3-core-services/task-9-memory-service.md
       estimated_hours: 8
-      completed_date: null
+      actual_hours: 0.1
+      completed_date: 2026-02-27
       notes: |
-        Extract CRUD + search from 6 memory tool handlers
+        MemoryService class: create(), search() (hybrid), findSimilar() (vector),
+        query() (semantic/nearText), update() (partial, replace), delete() (soft).
+        All 6 operations extracted from MCP tool handlers. No MCP-specific code.
     - id: task-10
       name: Create RelationshipService and SpaceService
       status: not_started
@@ -210,8 +213,8 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 47
-  overall: 47
+  implementation: 53
+  overall: 53
 
 recent_work:
   - date: 2026-02-27
@@ -257,6 +260,19 @@ recent_work:
       - "M2 marked complete, M3 started at 25%"
   - date: 2026-02-27
     description: |
+      Task 9 — Create MemoryService
+    items:
+      - "Created src/services/memory.service.ts — unified MemoryService with 6 operations"
+      - "create(): insert memory with validated content type, scoring, tracking arrays"
+      - "search(): hybrid (semantic+keyword) search with alpha, filters, deleted filter"
+      - "findSimilar(): vector similarity via nearObject/nearText with distance threshold"
+      - "query(): semantic nearText search for RAG retrieval"
+      - "update(): partial updates via replace() (Weaviate bug workaround), version increment"
+      - "delete(): soft delete (deleted_at/deleted_by/deletion_reason), finds orphaned relationships"
+      - "Updated services/index.ts with MemoryService exports"
+      - "M3 Core Services: 50% (2/4 tasks)"
+  - date: 2026-02-27
+    description: |
       @acp.sync - Synchronized documentation with actual remember-mcp codebase.
     items:
       - "Fixed tool count: 22 → 20 (actual tool handlers in src/tools/)"
@@ -286,9 +302,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M3 Task 8 - Port collection utilities and existing services
-  - M3 Task 9 - Create MemoryService
   - M3 Task 10 - Create RelationshipService and SpaceService
+  - M3 Task 11 - Service Tests and Validation
+  - M4 Task 12 - NPM Package Setup
 
 notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"

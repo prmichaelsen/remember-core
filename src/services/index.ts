@@ -28,3 +28,21 @@ export {
   DEFAULT_SPACE_CONFIG,
   type SpaceConfig,
 } from './space-config.service.js';
+
+export {
+  MemoryService,
+  type CreateMemoryInput,
+  type CreateMemoryResult,
+  type SearchMemoryInput,
+  type SearchMemoryResult,
+  type FindSimilarInput,
+  type FindSimilarResult,
+  type SimilarMemoryItem,
+  type QueryMemoryInput,
+  type QueryMemoryResult,
+  type RelevantMemoryItem,
+  type UpdateMemoryInput,
+  type UpdateMemoryResult,
+  type DeleteMemoryInput,
+  type DeleteMemoryResult,
+} from './memory.service.js';

@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.2.0
+  version: 0.3.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M1
@@ -12,12 +12,12 @@ project:
 milestones:
   - id: M1
     name: Types & Models
-    status: not_started
-    progress: 0
-    started: null
+    status: in_progress
+    progress: 33
+    started: 2026-02-27
     completed: null
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 3
     notes: |
       Port all type definitions, interfaces, and constants from remember-mcp.
@@ -62,10 +62,11 @@ tasks:
   milestone_1:
     - id: task-1
       name: Port Core Memory Types
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-1-types-and-models/task-1-core-memory-types.md
       estimated_hours: 3
-      completed_date: null
+      actual_hours: 0.1
+      completed_date: 2026-02-27
       notes: |
         Memory, Relationship, MemoryContext, SearchFilters, SearchOptions, SearchResult, Auth types (GroupPermissions, AuthContext, CredentialsProvider)
     - id: task-2
@@ -195,8 +196,8 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 0
-  overall: 0
+  implementation: 7
+  overall: 7
 
 recent_work:
   - date: 2026-02-27
@@ -230,9 +231,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Begin M1 Task 1 - Port core memory types
+  - M1 Task 2 - Port preferences and space types
+  - M1 Task 3 - Port constants and LLM types
   - Set up package.json with dependencies
-  - Start implementation with @acp.proceed
 
 notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"

@@ -1,0 +1,179 @@
+/**
+ * Core Memory and Relationship types for remember-core.
+ * Ported from remember-mcp/src/types/memory.ts
+ */
+
+import type { Location, MemoryContext } from './context.types';
+
+/**
+ * Content types for memories.
+ * Based on remember-mcp content-types-expansion design.
+ */
+export type ContentType =
+  // Core types
+  | 'code'
+  | 'note'
+  | 'documentation'
+  | 'reference'
+  // Task & Planning
+  | 'todo'
+  | 'checklist'
+  | 'project'
+  | 'goal'
+  | 'habit'
+  // Communication
+  | 'email'
+  | 'conversation'
+  | 'meeting'
+  | 'person'
+  // Content & Media
+  | 'article'
+  | 'webpage'
+  | 'social'
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'song'
+  | 'transcript'
+  | 'presentation'
+  | 'spreadsheet'
+  | 'pdf'
+  // Creative
+  | 'screenplay'
+  | 'recipe'
+  | 'idea'
+  | 'quote'
+  | 'poetry'
+  // Personal
+  | 'journal'
+  | 'memory'
+  | 'event'
+  // Organizational
+  | 'bookmark'
+  | 'form'
+  | 'location'
+  // Business
+  | 'invoice'
+  | 'contract'
+  // System
+  | 'system'
+  | 'action'
+  | 'audit'
+  | 'history'
+  // Cross-user & Threading
+  | 'ghost'
+  | 'comment';
+
+/**
+ * Core Memory interface.
+ * Stored in per-user Weaviate collections (Memory_users_{userId}).
+ */
+export interface Memory {
+  // Core Identity
+  id: string; // UUID from Weaviate
+  user_id: string;
+  doc_type: 'memory'; // Discriminator for unified collection
+
+  // Content
+  content: string; // Main memory content (vectorized)
+  title?: string;
+  summary?: string;
+  type: ContentType;
+
+  // Significance & Trust
+  weight: number; // 0-1, significance/priority
+  trust: number; // 0-1, access control level
+  confidence?: number; // 0-1, system confidence in accuracy
+
+  // Location (from platform)
+  location: Location;
+
+  // Context
+  context: MemoryContext;
+
+  // Relationships
+  relationships: string[]; // IDs of relationship documents
+
+  // Access Tracking (for weight calculation)
+  access_count: number;
+  last_accessed_at?: string; // ISO 8601 datetime
+  access_frequency?: number; // Accesses per day
+
+  // Metadata
+  created_at: string; // ISO 8601 datetime
+  updated_at: string; // ISO 8601 datetime
+  version: number;
+
+  // Organization
+  tags: string[];
+  category?: string;
+  references?: string[]; // Source URLs
+
+  // Template Integration (optional)
+  template_id?: string;
+  template_version?: string;
+  structured_content?: Record<string, unknown>;
+
+  // Computed Weight (for search ranking)
+  base_weight: number; // User-specified
+  computed_weight?: number; // Calculated with access multipliers
+
+  // Comment/Threading Fields (for threaded discussions in shared spaces)
+  parent_id?: string | null; // ID of parent memory or comment (null for top-level)
+  thread_root_id?: string | null; // Root memory ID for fetching entire thread (null for top-level)
+  moderation_flags?: string[]; // Per-space moderation flags (format: "{space_id}:{flag_type}")
+
+  // Soft Delete Fields
+  deleted_at?: Date | null; // Timestamp when memory was soft-deleted (null = not deleted)
+  deleted_by?: string; // User ID who deleted the memory
+  deletion_reason?: string; // Optional reason for deletion
+
+  // Publication Tracking (Memory Collection Pattern v2)
+  // Managed by remember_publish / remember_retract — do NOT modify directly
+  space_ids?: string[]; // Spaces this memory has been published to
+  group_ids?: string[]; // Groups this memory has been published to
+}
+
+/**
+ * Relationship interface.
+ * Stored in same collection as memories with doc_type: "relationship".
+ */
+export interface Relationship {
+  // Core Identity
+  id: string;
+  user_id: string;
+  doc_type: 'relationship'; // Discriminator
+
+  // Connection
+  memory_ids: string[]; // 2...N memory IDs
+  relationship_type: string; // Free-form: "causes", "contradicts", "inspired_by", etc.
+
+  // Observation
+  observation: string; // Description of the connection (vectorized)
+  strength: number; // 0-1
+  confidence: number; // 0-1
+
+  // Context
+  context: MemoryContext;
+
+  // Metadata
+  created_at: string;
+  updated_at: string;
+  version: number;
+  tags: string[];
+}
+
+/**
+ * Union type for documents in Memory collection
+ */
+export type MemoryDocument = Memory | Relationship;
+
+/**
+ * Partial memory for updates
+ */
+export type MemoryUpdate = Partial<Omit<Memory, 'id' | 'user_id' | 'doc_type' | 'created_at' | 'version'>>;
+
+/**
+ * Partial relationship for updates
+ */
+export type RelationshipUpdate = Partial<Omit<Relationship, 'id' | 'user_id' | 'doc_type' | 'created_at' | 'version'>>;

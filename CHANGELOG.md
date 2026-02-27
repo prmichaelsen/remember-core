@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.0] - 2026-02-27
+
+### Added
+- Port core memory types from remember-mcp: Memory, Relationship, MemoryDocument, MemoryUpdate, RelationshipUpdate
+- Port context/location types: GPSCoordinates, Address, Location, Participant, Source, Environment, MemoryContext
+- Port search types: SearchFilters, DeletedFilter, SearchOptions, SearchResult
+- Port auth types: GroupPermissions, GroupMembership, UserCredentials, AuthContext, WriteMode, CredentialsProvider
+- ContentType union (41 content types across 10 categories)
+- Barrel exports from src/types/index.ts
+
+### Changed
+- Fix tsconfig.json paths for config/ subdirectory location
+- Install TypeScript as dev dependency
+
 ## [0.2.0] - 2026-02-27
 
 ### Added

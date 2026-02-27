@@ -2,11 +2,21 @@
 # Tracks installed packages and their versions
 
 packages:
+  core-sdk:
+    source: https://github.com/prmichaelsen/acp-core-sdk.git
+    package_version: 1.22.0
+    commit: d01d8922dc5db281e7c972bd05af6a42111b32df
+    installed_at: 2026-02-27T07:14:16Z
+    updated_at: 2026-02-27T07:32:07Z
+    files:
+      patterns: []
+      commands: []
+      designs: []
   acp-core:
     source: https://github.com/prmichaelsen/agent-context-protocol.git
-    package_version: 4.2.1
+    package_version: 4.3.0
     installed_at: 2026-02-27T06:51:32Z
-    updated_at: 2026-02-27T06:51:32Z
+    updated_at: 2026-02-27T07:30:29Z
     files:
       commands:
         - name: acp.clarification-create.md
@@ -51,4 +61,4 @@ packages:
         - name: requirements.template.md
 
 manifest_version: 1.0.0
-last_updated: 2026-02-27T06:51:32Z
+last_updated: 2026-02-27T07:32:07Z

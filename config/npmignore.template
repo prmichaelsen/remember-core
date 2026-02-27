@@ -1,0 +1,27 @@
+# Exclude source files (only dist/ should be published)
+src/
+__tests__/
+
+# Exclude test files
+*.spec.ts
+*.e2e.ts
+
+# Exclude development files
+agent/
+.qodo/
+tsconfig.json
+jest.config.js
+esbuild.build.js
+esbuild.watch.js
+
+# Exclude git files
+.git/
+.gitignore
+
+# Exclude editor files
+.vscode/
+.idea/
+
+# Exclude logs
+*.log
+firebase-debug.log

@@ -14,32 +14,33 @@ Extract relationship CRUD and space operation business logic from MCP tool handl
 
 ## Context
 Relationship tools (4):
-- `tools/create-relationship.ts` → RelationshipService.create()
-- `tools/update-relationship.ts` → RelationshipService.update()
-- `tools/search-relationship.ts` → RelationshipService.search()
-- `tools/delete-relationship.ts` → RelationshipService.delete()
+- `src/tools/create-relationship.ts` → RelationshipService.create()
+- `src/tools/update-relationship.ts` → RelationshipService.update()
+- `src/tools/search-relationship.ts` → RelationshipService.search()
+- `src/tools/delete-relationship.ts` → RelationshipService.delete()
 
-Space tools (7):
-- `tools/publish.ts` → SpaceService.publish() (phase 1: generate confirmation token)
-- `tools/retract.ts` → SpaceService.retract()
-- `tools/revise.ts` → SpaceService.revise() (sync content changes)
-- `tools/confirm.ts` → SpaceService.confirm() (phase 2: execute pending action)
-- `tools/deny.ts` → SpaceService.deny()
-- `tools/search-space.ts` → SpaceService.search()
-- `tools/query-space.ts` → SpaceService.query()
+Space tools (8):
+- `src/tools/publish.ts` → SpaceService.publish() (phase 1: generate confirmation token)
+- `src/tools/retract.ts` → SpaceService.retract()
+- `src/tools/revise.ts` → SpaceService.revise() (sync content changes)
+- `src/tools/confirm.ts` → SpaceService.confirm() (phase 2: execute pending action)
+- `src/tools/deny.ts` → SpaceService.deny()
+- `src/tools/moderate.ts` → SpaceService.moderate() (exports `moderateTool` and `handleModerate()`; moderators can flag/unflag memories in spaces, requires group permissions)
+- `src/tools/search-space.ts` → SpaceService.search()
+- `src/tools/query-space.ts` → SpaceService.query()
 
 ---
 
 ## Steps
 
 ### 1. Read Source Files
-Read all 11 tool files from remember-mcp via `gh api`
+Read all 12 tool files from remember-mcp via `gh api`
 
 ### 2. Create RelationshipService
 Create `src/services/relationship.service.ts` with 4 operations
 
 ### 3. Create SpaceService
-Create `src/services/space.service.ts` with 7 operations
+Create `src/services/space.service.ts` with 8 operations
 
 ### 4. Implement RelationshipService Operations
 Implement CRUD + search on doc_type discriminated records
@@ -53,13 +54,16 @@ Remove from space, update tracking arrays
 ### 7. Implement SpaceService Revise
 Sync changes from private to published copy
 
-### 8. Wire SpaceService Confirm/Deny
+### 8. Implement SpaceService Moderate
+Implement moderate operation — moderators can flag/unflag memories in spaces (requires group permissions)
+
+### 9. Wire SpaceService Confirm/Deny
 Wire SpaceService confirm/deny to ConfirmationTokenService
 
-### 9. Update Services Barrel Exports
+### 10. Update Services Barrel Exports
 Update `src/services/index.ts` barrel exports
 
-### 10. Write Unit Tests
+### 11. Write Unit Tests
 Write unit tests for RelationshipService and SpaceService
 
 ---
@@ -69,6 +73,7 @@ Write unit tests for RelationshipService and SpaceService
 - [ ] Publish creates composite ID and copies to space collection
 - [ ] Retract removes from space and updates tracking arrays
 - [ ] Revise syncs content changes to all published copies
+- [ ] Moderate allows moderators to flag/unflag memories (requires group permissions)
 - [ ] Confirm/deny integrates with ConfirmationTokenService
 - [ ] Space search works across published memories
 - [ ] Unit tests pass
@@ -79,7 +84,7 @@ Write unit tests for RelationshipService and SpaceService
 
 **Key Files Created**:
 - `src/services/relationship.service.ts`: RelationshipService with 4 CRUD+search operations
-- `src/services/space.service.ts`: SpaceService with 7 publish/retract/revise/confirm/deny/search/query operations
+- `src/services/space.service.ts`: SpaceService with 8 publish/retract/revise/confirm/deny/moderate/search/query operations
 
 ---
 

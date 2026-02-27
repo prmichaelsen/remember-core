@@ -34,7 +34,7 @@ This milestone makes remember-core consumable. It defines the public API surface
 - Space publish flow: create -> publish -> search space -> retract
 
 ### 4. Consumer Documentation
-- Migration guide for remember-mcp (22 tool handler transformations)
+- Migration guide for remember-mcp (20 tool handler transformations)
 - Bootstrap guide for remember-rest-server
 - Updated README with installation and usage
 
@@ -46,7 +46,7 @@ This milestone makes remember-core consumable. It defines the public API surface
 - [ ] `npm pack` produces installable package
 - [ ] remember-mcp can `npm install` core and import all services
 - [ ] Integration tests pass against real or emulated databases
-- [ ] Migration guide covers all 22 tool handler transformations
+- [ ] Migration guide covers all 20 tool handler transformations
 - [ ] REST server can be bootstrapped using core services
 
 ---

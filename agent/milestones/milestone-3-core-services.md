@@ -1,6 +1,6 @@
 # Milestone 3: Core Services
 
-**Goal**: Extract business logic from remember-mcp's 22 tool handlers into reusable service classes that both MCP and REST adapters can call
+**Goal**: Extract business logic from remember-mcp's 20 tool handlers into reusable service classes that both MCP and REST adapters can call
 **Duration**: 2 weeks
 **Dependencies**: M1 - Types & Models, M2 - Database & Configuration
 **Status**: Not Started
@@ -11,7 +11,7 @@
 
 This is the most substantial milestone. The remember-mcp tool handlers each contain inline business logic that should live in core services. This milestone extracts that logic into proper service classes following the core-sdk patterns already scaffolded (base.service.ts, service interfaces).
 
-Two existing services port directly (PreferencesService, ConfirmationTokenService). The remaining logic is currently scattered across 22 tool files and needs to be consolidated into MemoryService, RelationshipService, and SpaceService.
+Four existing services port directly (PreferencesService, ConfirmationTokenService, CredentialsProvider, SpaceConfigService). The remaining logic is currently scattered across 20 tool files and needs to be consolidated into MemoryService, RelationshipService, and SpaceService.
 
 ---
 
@@ -25,6 +25,8 @@ Two existing services port directly (PreferencesService, ConfirmationTokenServic
 ### 2. Existing Services (port with refactor)
 - PreferencesService: getPreferences, updatePreferences, createPreferences (Firestore-backed)
 - ConfirmationTokenService: createRequest, validateToken, confirmRequest, denyRequest, retractRequest (5-min expiry)
+- CredentialsProvider: StubCredentialsProvider, createCredentialsProvider factory, singleton
+- SpaceConfigService: getSpaceConfig, setSpaceConfig, DEFAULT_SPACE_CONFIG (Firestore-backed)
 
 ### 3. MemoryService (extract from 6 tool handlers)
 - create() — validate input, build object, insert to Weaviate
@@ -38,11 +40,12 @@ Two existing services port directly (PreferencesService, ConfirmationTokenServic
 - create(), update(), search(), delete()
 - doc_type discriminator in same collection as memories
 
-### 5. SpaceService (extract from 7 tool handlers)
+### 5. SpaceService (extract from 8 tool handlers)
 - publish() — composite ID, copy to space collection, tracking arrays
 - retract() — remove from space, update tracking
 - revise() — sync changes to published copies
 - confirm/deny — integrate with ConfirmationTokenService
+- moderate() — flag/unflag memories in spaces (requires group permissions)
 - search/query — search across published memories
 
 ### 6. Service Tests
@@ -74,9 +77,11 @@ src/
     ├── index.ts                    (barrel exports)
     ├── memory.service.ts           (6 operations)
     ├── relationship.service.ts     (4 operations)
-    ├── space.service.ts            (7 operations)
+    ├── space.service.ts            (8 operations)
     ├── preferences.service.ts      (3 operations)
-    └── confirmation-token.service.ts (5 operations)
+    ├── confirmation-token.service.ts (5 operations)
+    ├── credentials-provider.ts     (factory + singleton)
+    └── space-config.service.ts     (2 operations)
 ```
 
 ---
@@ -85,7 +90,7 @@ src/
 
 1. [Task 8: Port Collection Utilities and Existing Services](../tasks/milestone-3-core-services/task-8-collection-utils-existing-services.md) - composite-ids, tracking-arrays, PreferencesService, ConfirmationTokenService
 2. [Task 9: Create MemoryService](../tasks/milestone-3-core-services/task-9-memory-service.md) - Extract from 6 memory tool handlers
-3. [Task 10: Create RelationshipService and SpaceService](../tasks/milestone-3-core-services/task-10-relationship-space-services.md) - Extract from 11 tool handlers
+3. [Task 10: Create RelationshipService and SpaceService](../tasks/milestone-3-core-services/task-10-relationship-space-services.md) - Extract from 12 tool handlers
 4. [Task 11: Service Tests and Validation](../tasks/milestone-3-core-services/task-11-service-tests.md) - Unit tests, integration scaffold
 
 ---
@@ -97,7 +102,9 @@ src/
 - [ ] ConfirmationTokenService tests (lifecycle, expiry, invalid tokens)
 - [ ] MemoryService tests (CRUD, search, soft delete)
 - [ ] RelationshipService tests (CRUD, doc_type discrimination)
-- [ ] SpaceService tests (publish flow, retract, revise, confirm/deny)
+- [ ] SpaceService tests (publish flow, retract, revise, confirm/deny, moderate)
+- [ ] CredentialsProvider tests (stub implementation, factory)
+- [ ] SpaceConfigService tests (get/set config, defaults)
 
 ---
 
@@ -120,4 +127,4 @@ src/
 
 **Next Milestone**: [Milestone 4: Integration & Packaging](milestone-4-integration-and-packaging.md)
 **Blockers**: None
-**Notes**: This is the highest-effort milestone. The 22 remember-mcp tools map to 5 core services.
+**Notes**: This is the highest-effort milestone. The 20 remember-mcp tools map to 5 core services, plus 2 additional existing services (CredentialsProvider, SpaceConfigService) port directly.

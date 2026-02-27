@@ -14,12 +14,12 @@ Extract the memory CRUD and search business logic from the 6 memory MCP tool han
 
 ## Context
 The remember-mcp tool handlers contain inline business logic that should be service methods:
-- `tools/create-memory.ts` → MemoryService.create()
-- `tools/search-memory.ts` → MemoryService.search() (hybrid vector/keyword search)
-- `tools/find-similar.ts` → MemoryService.findSimilar()
-- `tools/query-memory.ts` → MemoryService.query() (filtered retrieval)
-- `tools/update-memory.ts` → MemoryService.update()
-- `tools/delete-memory.ts` → MemoryService.delete() (soft delete)
+- `src/tools/create-memory.ts` → MemoryService.create()
+- `src/tools/search-memory.ts` → MemoryService.search() (hybrid vector/keyword search)
+- `src/tools/find-similar.ts` → MemoryService.findSimilar()
+- `src/tools/query-memory.ts` → MemoryService.query() (filtered retrieval)
+- `src/tools/update-memory.ts` → MemoryService.update()
+- `src/tools/delete-memory.ts` → MemoryService.delete() (soft delete)
 
 Each tool currently handles: input validation, Weaviate operations, filter building, result formatting, error handling.
 

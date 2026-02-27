@@ -35,9 +35,13 @@ These types are 100% transport-agnostic — they define the data model for memor
 - SpaceMemory interface (published_at, revised_at, author_id, ghost_id, attribution)
 - Published memory tracking fields
 
-### 5. Constants & LLM Types
-- 45+ content type definitions for memory classification
-- LLM-related type definitions
+### 5. Auth Types
+- GroupPermissions, GroupMembership, UserCredentials, AuthContext interfaces
+- WriteMode type literal, CredentialsProvider interface
+
+### 6. Constants & LLM Types
+- 41 content type definitions for memory classification
+- LLM types placeholder (upstream file is currently empty)
 
 ---
 
@@ -62,10 +66,11 @@ src/
 │   ├── search.types.ts       (SearchFilters, SearchOptions, SearchResult)
 │   ├── preferences.types.ts  (UserPreferences, 6 categories, defaults)
 │   ├── space.types.ts        (SpaceMemory, published memory)
-│   └── llm.types.ts          (LLM-related types)
+│   ├── llm.types.ts          (LLM types placeholder)
+│   └── auth.types.ts         (auth/permissions types)
 └── constants/
     ├── index.ts              (barrel exports)
-    └── content-types.ts      (45+ content type definitions)
+    └── content-types.ts      (41 content type definitions)
 ```
 
 ---
@@ -74,7 +79,7 @@ src/
 
 1. [Task 1: Port Core Memory Types](../tasks/milestone-1-types-and-models/task-1-core-memory-types.md) - Memory, Relationship, MemoryContext, search types
 2. [Task 2: Port Preferences and Space Types](../tasks/milestone-1-types-and-models/task-2-preferences-space-types.md) - 6 preference categories, SpaceMemory
-3. [Task 3: Port Constants and LLM Types](../tasks/milestone-1-types-and-models/task-3-constants-llm-types.md) - 45+ content types, LLM types
+3. [Task 3: Port Constants and LLM Types](../tasks/milestone-1-types-and-models/task-3-constants-llm-types.md) - 41 content types, LLM types placeholder
 
 ---
 

@@ -8,7 +8,7 @@
 ---
 
 ## Objective
-Port logger, error handler, Weaviate filter builder, and debug utilities from `remember-mcp` into `remember-core`.
+Port logger, error handler, Weaviate filter builder, auth helpers, and debug utilities from `remember-mcp` into `remember-core`.
 
 ---
 
@@ -17,6 +17,7 @@ Source files:
 - `remember-mcp/src/utils/logger.ts` — Structured logging with context
 - `remember-mcp/src/utils/error-handler.ts` — Error handling utilities
 - `remember-mcp/src/utils/weaviate-filters.ts` — Dynamic Weaviate where-filter building (content type, tags, weight, trust, date, location, soft-delete)
+- `remember-mcp/src/utils/auth-helpers.ts` — Auth permission helpers (`canModerate`, `canModerateAny`)
 - `remember-mcp/src/utils/debug.ts` — Debug level config
 - `remember-mcp/src/utils/test-data-generator.ts` — Test helper
 
@@ -36,13 +37,18 @@ Create `src/utils/error-handler.ts` with error handling utilities
 ### 4. Create Weaviate Filter Builder
 Create `src/utils/filters.ts` with Weaviate filter builder
 
-### 5. Create Barrel Exports
+### 5. Create Auth Helpers
+Create `src/utils/auth-helpers.ts` with group moderation permission checks:
+- `canModerate(groupMemberships, groupId)` — checks if user has moderation permission for a specific group
+- `canModerateAny(groupMemberships)` — checks if user has moderation permission for any group
+
+### 6. Create Barrel Exports
 Create `src/utils/index.ts` barrel exports
 
-### 6. Move Test Data Generator
+### 7. Move Test Data Generator
 Move test-data-generator to `src/testing/` (already scaffolded)
 
-### 7. Verify Compilation
+### 8. Verify Compilation
 Verify compilation
 
 ---
@@ -51,6 +57,7 @@ Verify compilation
 - [ ] Logger respects debug levels
 - [ ] Error handler provides consistent error formatting
 - [ ] Filter builder supports all filter types (content type, tags, weight, trust, date, location, soft-delete)
+- [ ] Auth helpers correctly check moderation permissions per-group and across all groups
 - [ ] Test data generator available in testing module
 
 ---
@@ -61,6 +68,7 @@ Verify compilation
 - `src/utils/logger.ts`: Structured logging with context
 - `src/utils/error-handler.ts`: Error handling utilities
 - `src/utils/filters.ts`: Dynamic Weaviate where-filter builder
+- `src/utils/auth-helpers.ts`: Group moderation permission checks (`canModerate`, `canModerateAny`)
 - `src/utils/index.ts`: Barrel exports
 - `src/testing/test-data-generator.ts`: Test helper (moved from utils)
 

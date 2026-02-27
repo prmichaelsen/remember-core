@@ -44,7 +44,7 @@ milestones:
     tasks_completed: 0
     tasks_total: 4
     notes: |
-      Extract business logic from 22 MCP tool handlers into reusable services.
+      Extract business logic from 20 MCP tool handlers into reusable services.
 
   - id: M4
     name: Integration & Packaging
@@ -67,7 +67,7 @@ tasks:
       estimated_hours: 3
       completed_date: null
       notes: |
-        Memory, Relationship, MemoryContext, SearchFilters, SearchOptions, SearchResult
+        Memory, Relationship, MemoryContext, SearchFilters, SearchOptions, SearchResult, Auth types (GroupPermissions, AuthContext, CredentialsProvider)
     - id: task-2
       name: Port Preferences and Space Types
       status: not_started
@@ -83,7 +83,7 @@ tasks:
       estimated_hours: 2
       completed_date: null
       notes: |
-        45+ content types, LLM types, shared enums
+        41 content types, LLM types, shared enums
 
   milestone_2:
     - id: task-4
@@ -117,7 +117,7 @@ tasks:
       estimated_hours: 3
       completed_date: null
       notes: |
-        logger, error-handler, weaviate-filters, debug
+        logger, error-handler, weaviate-filters, debug, auth-helpers
 
   milestone_3:
     - id: task-8
@@ -127,7 +127,7 @@ tasks:
       estimated_hours: 5
       completed_date: null
       notes: |
-        composite-ids, tracking-arrays, PreferencesService, ConfirmationTokenService
+        composite-ids, tracking-arrays, PreferencesService, ConfirmationTokenService, CredentialsProvider, SpaceConfigService
     - id: task-9
       name: Create MemoryService
       status: not_started
@@ -143,7 +143,7 @@ tasks:
       estimated_hours: 8
       completed_date: null
       notes: |
-        Extract from 11 relationship and space tool handlers
+        Extract from 12 relationship and space tool handlers (including moderate)
     - id: task-11
       name: Service Tests and Validation
       status: not_started
@@ -201,6 +201,19 @@ progress:
 recent_work:
   - date: 2026-02-27
     description: |
+      @acp.sync - Synchronized documentation with actual remember-mcp codebase.
+    items:
+      - "Fixed tool count: 22 → 20 (actual tool handlers in src/tools/)"
+      - "Fixed content type count: 45+ → 41 (exact count from CONTENT_TYPES array)"
+      - "Added missing auth.ts types to Task 1 (GroupPermissions, AuthContext, etc.)"
+      - "Added missing credentials-provider.ts and space-config.service.ts to Task 8"
+      - "Added missing auth-helpers.ts to Task 7"
+      - "Added moderate.ts tool handler to Task 10 SpaceService"
+      - "Fixed tool paths: tools/ → src/tools/ in Tasks 9, 10"
+      - "Noted LLM types file is empty placeholder in Task 3"
+      - "Updated all milestone docs and progress.yaml with corrected numbers"
+  - date: 2026-02-27
+    description: |
       Complete project planning - milestones, tasks, and progress tracking.
     items:
       - "Created 15 task documents from ACP template across 4 milestones"
@@ -225,6 +238,6 @@ notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"
   - "Consumer: remember-mcp-server (prmichaelsen/remember-mcp-server)"
   - "Future consumer: remember-rest-server"
-  - "22 MCP tools map to 5 core services"
+  - "20 MCP tools map to 5 core services + 2 existing services port directly"
 
 current_blockers: []

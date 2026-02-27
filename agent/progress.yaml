@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.4.0
+  version: 0.5.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M2
@@ -24,12 +24,12 @@ milestones:
 
   - id: M2
     name: Database & Configuration
-    status: not_started
-    progress: 0
-    started: null
+    status: in_progress
+    progress: 50
+    started: 2026-02-27
     completed: null
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 2
     tasks_total: 4
     notes: |
       Port Weaviate/Firestore init, schema, config, and utilities.
@@ -91,20 +91,24 @@ tasks:
   milestone_2:
     - id: task-4
       name: Port Weaviate Client and Schema
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-2-database-and-config/task-4-weaviate-client-schema.md
       estimated_hours: 4
-      completed_date: null
+      actual_hours: 0.1
+      completed_date: 2026-02-27
       notes: |
-        client.ts, schema.ts, space-schema.ts, v2-collections.ts
+        client.ts, schema.ts, space-schema.ts, v2-collections.ts, index.ts barrel exports.
+        Design: WeaviateConfig param instead of importing from config module (not yet ported).
     - id: task-5
       name: Port Firestore Initialization and Paths
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-2-database-and-config/task-5-firestore-initialization.md
       estimated_hours: 2
-      completed_date: null
+      actual_hours: 0.1
+      completed_date: 2026-02-27
       notes: |
-        init.ts, paths.ts, Firebase Admin SDK wrapper
+        init.ts (FirestoreConfig param pattern, re-exports SDK helpers), paths.ts (env-based prefixes),
+        index.ts barrel. Design: FirestoreConfig + FirestoreLogger params, same pattern as WeaviateConfig.
     - id: task-6
       name: Port Configuration Management
       status: not_started
@@ -198,10 +202,20 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 20
-  overall: 20
+  implementation: 27
+  overall: 27
 
 recent_work:
+  - date: 2026-02-27
+    description: |
+      Task 5 — Port Firestore Initialization and Paths
+    items:
+      - "Created src/database/firestore/init.ts — Firebase Admin SDK init with FirestoreConfig param pattern"
+      - "Created src/database/firestore/paths.ts — env-based collection path helpers (user-scoped, cross-user, global)"
+      - "Created src/database/firestore/index.ts — barrel exports"
+      - "Installed @prmichaelsen/firebase-admin-sdk-v8 dependency"
+      - "Re-exports: getDocument, setDocument, addDocument, updateDocument, deleteDocument, queryDocuments, batchWrite, FieldValue, verifyIdToken"
+      - "Zero compilation errors"
   - date: 2026-02-27
     description: |
       @acp.sync - Synchronized documentation with actual remember-mcp codebase.
@@ -233,9 +247,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Begin M2 Task 4 - Port Weaviate client and schema
-  - M2 Task 5 - Port Firestore initialization
   - M2 Task 6 - Port configuration management
+  - M2 Task 7 - Port utility modules
+  - M3 Task 8 - Port collection utilities and existing services
 
 notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"

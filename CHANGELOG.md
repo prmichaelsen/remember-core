@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.5.0] - 2026-02-27
+
+### Added
+- Port Weaviate client and schema module (Task 4):
+  - `src/database/weaviate/client.ts` — WeaviateConfig-based client init, ALL_MEMORY_PROPERTIES, fetchMemoryWithAllProperties
+  - `src/database/weaviate/schema.ts` — user memory collection CRUD (create, ensure, get, delete)
+  - `src/database/weaviate/space-schema.ts` — space collection management, sanitizeSpaceId, PUBLIC_COLLECTION_NAME
+  - `src/database/weaviate/v2-collections.ts` — v2 schema definitions (user, space, group), ~50 common + ~18 published properties
+  - `src/database/weaviate/index.ts` — barrel exports
+- Port Firestore initialization and paths (Task 5):
+  - `src/database/firestore/init.ts` — Firebase Admin SDK init with FirestoreConfig param, re-exports SDK helpers
+  - `src/database/firestore/paths.ts` — environment-based collection path helpers (user-scoped, cross-user, global)
+  - `src/database/firestore/index.ts` — barrel exports
+- Add `weaviate-client` ^3.11.0 dependency
+- Add `@prmichaelsen/firebase-admin-sdk-v8` dependency
+
+### Changed
+- M2 (Database & Configuration) progress: 0% → 50% (2/4 tasks complete)
+
 ## [0.4.0] - 2026-02-27
 
 ### Added

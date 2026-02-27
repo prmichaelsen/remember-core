@@ -1,5 +1,9 @@
 {
   "devDependencies": {
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@prmichaelsen/firebase-admin-sdk-v8": "^2.5.1",
+    "weaviate-client": "^3.11.0"
   }
 }

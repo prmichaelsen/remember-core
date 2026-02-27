@@ -46,3 +46,42 @@ export {
   type DeleteMemoryInput,
   type DeleteMemoryResult,
 } from './memory.service.js';
+
+export {
+  RelationshipService,
+  type CreateRelationshipInput,
+  type CreateRelationshipResult,
+  type UpdateRelationshipInput,
+  type UpdateRelationshipResult,
+  type SearchRelationshipInput,
+  type SearchRelationshipResult,
+  type DeleteRelationshipInput,
+  type DeleteRelationshipResult,
+} from './relationship.service.js';
+
+export {
+  SpaceService,
+  type PublishInput,
+  type PublishResult,
+  type RetractInput,
+  type RetractResult,
+  type ReviseInput,
+  type ReviseResult,
+  type ConfirmInput,
+  type ConfirmResult,
+  type DenyInput,
+  type DenyResult,
+  type ModerateInput,
+  type ModerateResult,
+  type SearchSpaceInput,
+  type SearchSpaceResult,
+  type QuerySpaceInput,
+  type QuerySpaceResult,
+  type ModerationAction,
+  type ModerationFilter,
+  type RevisionEntry,
+  type RevisionResult,
+  buildModerationFilter,
+  parseRevisionHistory,
+  buildRevisionHistory,
+} from './space.service.js';

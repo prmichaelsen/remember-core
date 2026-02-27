@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.10.0] - 2026-02-27
+
+### Added
+- Create RelationshipService and SpaceService (Task 10):
+  - `src/services/relationship.service.ts` — RelationshipService with 4 CRUD+search operations
+    - `create()` — validate memory IDs, insert with doc_type='relationship', bidirectional references
+    - `update()` — partial updates (relationship_type, observation, strength, confidence, tags)
+    - `search()` — hybrid search filtered to relationships with type/strength/confidence filters
+    - `delete()` — hard delete with memory reference cleanup
+  - `src/services/space.service.ts` — SpaceService with 8 operations
+    - `publish()` — phase 1: validate memory + generate confirmation token
+    - `retract()` — phase 1: validate publication status + generate confirmation token
+    - `revise()` — phase 1: validate published copies exist + generate confirmation token
+    - `confirm()` — phase 2: execute pending publish/retract/revise with composite IDs
+    - `deny()` — cancel pending action via ConfirmationTokenService
+    - `moderate()` — approve/reject/remove published memories (requires moderator permissions)
+    - `search()` — multi-source hybrid/bm25/semantic search across spaces+groups with deduplication
+    - `query()` — semantic nearText query on public spaces collection
+  - Exported helpers: buildModerationFilter, parseRevisionHistory, buildRevisionHistory
+  - Updated `src/services/index.ts` barrel exports
+
+### Changed
+- M3 (Core Services) progress: 50% → 75% (3/4 tasks)
+
 ## [0.9.0] - 2026-02-27
 
 ### Added

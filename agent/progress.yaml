@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.9.0
+  version: 0.10.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M3
@@ -37,11 +37,11 @@ milestones:
   - id: M3
     name: Core Services
     status: in_progress
-    progress: 50
+    progress: 75
     started: 2026-02-27
     completed: null
     estimated_weeks: 2
-    tasks_completed: 2
+    tasks_completed: 3
     tasks_total: 4
     notes: |
       Extract business logic from 20 MCP tool handlers into reusable services.
@@ -156,12 +156,15 @@ tasks:
         All 6 operations extracted from MCP tool handlers. No MCP-specific code.
     - id: task-10
       name: Create RelationshipService and SpaceService
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-3-core-services/task-10-relationship-space-services.md
       estimated_hours: 8
-      completed_date: null
+      actual_hours: 0.1
+      completed_date: 2026-02-27
       notes: |
-        Extract from 12 relationship and space tool handlers (including moderate)
+        RelationshipService: 4 CRUD+search operations (create, update, search, delete).
+        SpaceService: 8 operations (publish, retract, revise, confirm, deny, moderate, search, query).
+        Two-phase confirmation flow, composite IDs, tracking arrays, moderation, revision history.
     - id: task-11
       name: Service Tests and Validation
       status: not_started
@@ -213,10 +216,31 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 53
-  overall: 53
+  implementation: 60
+  overall: 60
 
 recent_work:
+  - date: 2026-02-27
+    description: |
+      Task 10 — Create RelationshipService and SpaceService
+    items:
+      - "Created src/services/relationship.service.ts — 4 CRUD+search operations"
+      - "create(): validate memory IDs, insert relationship doc, bidirectional references"
+      - "update(): partial updates (relationship_type, observation, strength, confidence, tags)"
+      - "search(): hybrid search filtered to doc_type='relationship' with type/strength/confidence filters"
+      - "delete(): remove relationship doc and clean up memory references"
+      - "Created src/services/space.service.ts — 8 operations"
+      - "publish(): phase 1 confirmation token for multi-space/group publish"
+      - "retract(): phase 1 confirmation token for selective retraction"
+      - "revise(): phase 1 confirmation token for content sync to published copies"
+      - "confirm(): phase 2 executor (publish/retract/revise), composite IDs, tracking arrays"
+      - "deny(): cancel pending action via ConfirmationTokenService"
+      - "moderate(): approve/reject/remove published memories (requires group permissions)"
+      - "search(): multi-source search across spaces+groups with deduplication"
+      - "query(): semantic nearText on public spaces collection"
+      - "Helper exports: buildModerationFilter, parseRevisionHistory, buildRevisionHistory"
+      - "Updated src/services/index.ts barrel exports"
+      - "M3 Core Services: 75% (3/4 tasks)"
   - date: 2026-02-27
     description: |
       Task 5 — Port Firestore Initialization and Paths
@@ -302,9 +326,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M3 Task 10 - Create RelationshipService and SpaceService
   - M3 Task 11 - Service Tests and Validation
   - M4 Task 12 - NPM Package Setup
+  - M4 Task 13 - Public API Design and Barrel Exports
 
 notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"

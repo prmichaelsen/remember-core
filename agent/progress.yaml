@@ -1,9 +1,9 @@
 project:
   name: remember-core
-  version: 0.3.0
+  version: 0.4.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M1
+  current_milestone: M2
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -13,11 +13,11 @@ milestones:
   - id: M1
     name: Types & Models
     status: in_progress
-    progress: 33
+    progress: 100
     started: 2026-02-27
-    completed: null
+    completed: 2026-02-27
     estimated_weeks: 1
-    tasks_completed: 1
+    tasks_completed: 3
     tasks_total: 3
     notes: |
       Port all type definitions, interfaces, and constants from remember-mcp.
@@ -71,18 +71,20 @@ tasks:
         Memory, Relationship, MemoryContext, SearchFilters, SearchOptions, SearchResult, Auth types (GroupPermissions, AuthContext, CredentialsProvider)
     - id: task-2
       name: Port Preferences and Space Types
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-1-types-and-models/task-2-preferences-space-types.md
       estimated_hours: 2
-      completed_date: null
+      actual_hours: 0.05
+      completed_date: 2026-02-27
       notes: |
         6 preference categories, SpaceMemory, published memory types
     - id: task-3
       name: Port Constants and LLM Types
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-1-types-and-models/task-3-constants-llm-types.md
       estimated_hours: 2
-      completed_date: null
+      actual_hours: 0.05
+      completed_date: 2026-02-27
       notes: |
         41 content types, LLM types, shared enums
 
@@ -196,8 +198,8 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 7
-  overall: 7
+  implementation: 20
+  overall: 20
 
 recent_work:
   - date: 2026-02-27
@@ -231,9 +233,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M1 Task 2 - Port preferences and space types
-  - M1 Task 3 - Port constants and LLM types
-  - Set up package.json with dependencies
+  - Begin M2 Task 4 - Port Weaviate client and schema
+  - M2 Task 5 - Port Firestore initialization
+  - M2 Task 6 - Port configuration management
 
 notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"

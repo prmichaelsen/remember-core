@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.0] - 2026-02-27
+
+### Added
+- Port preference types: 6 category interfaces, defaults, descriptions, schema generator
+- Port space types: SpaceMemory, SpaceSearchOptions, SpaceSearchResult, SpaceId, constants
+- Port 41 content type constants with full metadata registry and category groupings
+- Content type helpers: isValidContentType, getContentTypeMetadata, getContentTypesByCategory
+- LLM types placeholder file for future use
+- Constants barrel exports (src/constants/index.ts)
+
+### Changed
+- Milestone 1 (Types & Models) complete — all 3 tasks done
+
 ## [0.3.0] - 2026-02-27
 
 ### Added

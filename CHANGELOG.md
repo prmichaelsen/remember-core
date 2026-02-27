@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.7.0] - 2026-02-27
+
+### Added
+- Port utility modules (Task 7) — completes M2 milestone:
+  - `src/utils/logger.ts` — createLogger() factory with structured JSON output
+  - `src/utils/error-handler.ts` — formatDetailedError, handleToolError, withErrorHandling
+  - `src/utils/filters.ts` — Weaviate v3 filter builders (combined, memory-only, relationship-only, deleted)
+  - `src/utils/auth-helpers.ts` — canModerate(), canModerateAny() permission checks
+  - `src/utils/debug.ts` — DebugLogger class (trace/debug/info/warn/error/dump/time)
+  - `src/utils/index.ts` — barrel exports
+  - `src/testing/test-data-generator.ts` — synthetic memory generation, benchmarking utils
+
+### Changed
+- M2 (Database & Configuration) complete — 100% (4/4 tasks)
+
 ## [0.6.0] - 2026-02-27
 
 ### Added

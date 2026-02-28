@@ -569,6 +569,7 @@ tasks:
       status: completed
       file: agent/tasks/milestone-8-bug-fixes/task-47-fix-composite-id-weaviate-uuid.md
       estimated_hours: 3
+      actual_hours: 0.5
       completed_date: 2026-02-28
       notes: |
         Added compositeIdToUuid() using uuid v5 (DNS namespace, matching Weaviate).

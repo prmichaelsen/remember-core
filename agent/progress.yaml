@@ -2,8 +2,8 @@ project:
   name: remember-core
   version: 0.15.0
   started: 2026-02-27
-  status: completed
-  current_milestone: M7
+  status: in_progress
+  current_milestone: M9
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -105,6 +105,36 @@ milestones:
       Server-side only (browser guard). Framework-agnostic.
       42 new tests across 6 suites (323 total, 18 suites).
       See: agent/milestones/milestone-7-web-client-sdk.md
+
+  - id: M8
+    name: Bug Fixes
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 1
+    started: null
+    completed: null
+    notes: |
+      Critical bug fixes identified from production usage and GitHub issues.
+
+  - id: M9
+    name: Client SDKs (Svc + App)
+    status: in_progress
+    progress: 10
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 10
+    started: null
+    completed: null
+    notes: |
+      Two typed REST client SDKs wrapping remember-rest-service API.
+      Svc client: 1:1 mirror of /api/svc/v1/ routes (29 methods).
+      App client: use-case compound operations (5 methods).
+      Replaces src/web/ (direct-service calls) with REST wrappers.
+      Supabase-style { data, error } + .throwOnError().
+      Both server-side only. No auto-confirm.
+      See: agent/milestones/milestone-9-client-sdks.md
 
 tasks:
   milestone_1:
@@ -522,16 +552,132 @@ tasks:
         ✅ README: /web subpath in table, Web SDK section, test count 323.
         ✅ Version bump: 0.14.0 → 0.15.0.
 
+  milestone_8:
+    - id: task-36
+      name: Fix Memory Search Indexing for Newly Created Memories
+      status: not_started
+      file: agent/tasks/milestone-8-bug-fixes/task-36-fix-memory-search-indexing.md
+      estimated_hours: 4-8
+      completed_date: null
+      notes: |
+        CRITICAL: Newly created memories return success but are not searchable.
+        Source: GitHub Issue #1 (agentbase.me)
+
+  milestone_9:
+    - id: task-37
+      name: Install openapi-typescript + Generate Types
+      status: completed
+      file: agent/tasks/milestone-9-client-sdks/task-37-generate-types-from-openapi.md
+      estimated_hours: 2
+      completed_date: 2026-02-28
+      notes: |
+        ✅ openapi-typescript 7.13.0 installed as devDependency.
+        ✅ src/clients/svc/v1/types.generated.ts generated from docs/openapi.yaml.
+        ✅ src/app/types.generated.ts generated from docs/openapi-web.yaml.
+        ✅ npm scripts: generate:types:svc, generate:types:app, generate:types.
+        ✅ Build compiles with generated types.
+    - id: task-38
+      name: Build Shared Client Infrastructure
+      status: not_started
+      file: agent/tasks/milestone-9-client-sdks/task-38-shared-client-infrastructure.md
+      estimated_hours: 4
+      dependencies: [task-37]
+      completed_date: null
+      notes: |
+        HttpClient (fetch + auth), SdkResponse<T> + throwOnError(), RememberError, assertServerSide guard.
+        Colocated tests: http.spec.ts, response.spec.ts.
+    - id: task-39
+      name: Build Svc Client — Memories + Relationships Resources
+      status: not_started
+      file: agent/tasks/milestone-9-client-sdks/task-39-svc-client-memories-relationships.md
+      estimated_hours: 4
+      dependencies: [task-38]
+      completed_date: null
+      notes: |
+        MemoriesResource (6 methods), RelationshipsResource (4 methods).
+        1:1 mirror of /api/svc/v1/ routes. Colocated test: memories.spec.ts.
+    - id: task-40
+      name: Build Svc Client — Spaces + Confirmations Resources
+      status: not_started
+      file: agent/tasks/milestone-9-client-sdks/task-40-svc-client-spaces-confirmations.md
+      estimated_hours: 3
+      dependencies: [task-38]
+      completed_date: null
+      notes: |
+        SpacesResource (6 methods), ConfirmationsResource (2 methods).
+        No auto-confirm. publish/retract/revise return { token }.
+        Colocated test: spaces.spec.ts.
+    - id: task-41
+      name: Build Svc Client — Preferences + Trust + Health Resources
+      status: not_started
+      file: agent/tasks/milestone-9-client-sdks/task-41-svc-client-preferences-trust-health.md
+      estimated_hours: 3
+      dependencies: [task-38]
+      completed_date: null
+      notes: |
+        PreferencesResource (2 methods), TrustResource (7 methods), HealthResource (2 methods).
+        Colocated test: trust.spec.ts.
+    - id: task-42
+      name: Build Svc Client — Factory + Barrel + Tests
+      status: not_started
+      file: agent/tasks/milestone-9-client-sdks/task-42-svc-client-factory-barrel.md
+      estimated_hours: 3
+      dependencies: [task-39, task-40, task-41]
+      completed_date: null
+      notes: |
+        createSvcClient(config) factory composing all 7 resource groups (29 methods).
+        Barrel exports. Colocated test: index.spec.ts.
+    - id: task-43
+      name: Build App Client — Profiles + Ghost + Factory
+      status: not_started
+      file: agent/tasks/milestone-9-client-sdks/task-43-app-client-profiles-ghost-factory.md
+      estimated_hours: 4
+      dependencies: [task-38]
+      completed_date: null
+      notes: |
+        ProfilesResource (4 methods), GhostResource (1 method), createAppClient factory.
+        App client does NOT wrap svc client. Colocated tests: profiles.spec.ts, index.spec.ts.
+    - id: task-44
+      name: Update OpenAPI Spec + Replace src/web/ + Package.json Exports
+      status: not_started
+      file: agent/tasks/milestone-9-client-sdks/task-44-openapi-spec-update-replace-web.md
+      estimated_hours: 3
+      dependencies: [task-42, task-43]
+      completed_date: null
+      notes: |
+        Rename openapi-web.yaml web→app. Remove "confirmation-free" language.
+        Delete src/web/. Update package.json exports: ./web→./app, add ./clients/svc/v1.
+    - id: task-45
+      name: Tests for All Client Modules
+      status: not_started
+      file: agent/tasks/milestone-9-client-sdks/task-45-tests-all-client-modules.md
+      estimated_hours: 4
+      dependencies: [task-42, task-43, task-44]
+      completed_date: null
+      notes: |
+        Verify all colocated tests pass. Fill coverage gaps.
+        Run full test suite: npm test with 0 failures.
+    - id: task-46
+      name: Documentation (CHANGELOG, README, Migration Guide)
+      status: not_started
+      file: agent/tasks/milestone-9-client-sdks/task-46-documentation.md
+      estimated_hours: 2
+      dependencies: [task-44, task-45]
+      completed_date: null
+      notes: |
+        CHANGELOG v0.16.0. README client SDK section. Migration guide before/after.
+        Version bump 0.15.0→0.16.0.
+
 documentation:
-  design_documents: 6
-  milestone_documents: 7
+  design_documents: 7
+  milestone_documents: 9
   pattern_documents: 25
-  task_documents: 35
+  task_documents: 46
 
 progress:
   planning: 100
-  implementation: 100
-  overall: 100
+  implementation: 97
+  overall: 97
 
 recent_work:
   - date: 2026-02-28
@@ -775,10 +921,13 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Publish v0.15.0 to npm
-  - Migrate remaining 3 remember-mcp ghost tools
-  - Build remember-rest-server consumer
-  - Migrate agentbase.me to web SDK (replace ProfileMemoryService with web SDK calls)
+  - "M9: Task 37 — Install openapi-typescript + generate types"
+  - "M9: Task 38 — Build shared client infrastructure (http, response, guard)"
+  - "M9: Tasks 39-41 — Build svc client resource modules (memories, relationships, spaces, confirmations, preferences, trust, health)"
+  - "M9: Task 42 — Build svc client factory + barrel"
+  - "M9: Task 43 — Build app client (profiles, ghost, factory)"
+  - "M9: Task 44 — Update OpenAPI spec + replace src/web/ + package.json exports"
+  - "M9: Tasks 45-46 — Tests + documentation"
 
 notes:
   - "Source: remember-mcp v3.8.0-v3.13.0 (prmichaelsen/remember-mcp)"

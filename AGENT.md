@@ -1,7 +1,7 @@
 # Agent Context Protocol (ACP)
 
 **Also Known As**: The Agent Directory Pattern
-**Version**: 4.6.0
+**Version**: 5.0.0
 **Created**: 2026-02-11
 **Status**: Production Pattern
 
@@ -123,6 +123,10 @@ project-root/
 │   │   ├── unassigned/             # Tasks without milestone
 │   │   │   └── task-{M}-{name}.md
 │   │   └── task-{N}-{name}.md      # Legacy flat structure (older tasks)
+│   │
+│   ├── files/                      # Template source files (in packages)
+│   │   ├── config/                 # Config templates
+│   │   └── src/                    # Source code templates
 │   │
 │   └── progress.yaml               # Progress tracking
 │
@@ -677,6 +681,85 @@ When working in any project, you can discover globally installed packages:
 
 ---
 
+## Project Registry System
+
+ACP supports a global project registry at `~/.acp/projects.yaml` that tracks all projects in the `~/.acp/projects/` workspace. This enables project discovery, context switching, and metadata management across your entire ACP workspace.
+
+### Key Features
+
+- **Project Discovery**: List all registered projects with filtering options
+- **Context Switching**: Quickly switch between projects using `@acp.project-set`
+- **Metadata Tracking**: Track project type, status, tags, and relationships
+- **Automatic Registration**: Projects auto-register when created via `@acp.project-create`
+- **Sync Discovery**: Find and register existing projects with `@acp.projects-sync`
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| [`@acp.project-list`](agent/commands/acp.project-list.md) | List all registered projects with optional filtering |
+| [`@acp.project-set`](agent/commands/acp.project-set.md) | Switch to a project (set as current) |
+| [`@acp.project-info`](agent/commands/acp.project-info.md) | Show detailed project information |
+| [`@acp.project-update`](agent/commands/acp.project-update.md) | Update project metadata |
+| [`@acp.project-remove`](agent/commands/acp.project-remove.md) | Remove project from registry |
+| [`@acp.projects-sync`](agent/commands/acp.projects-sync.md) | Discover and register existing projects |
+
+### Registry Structure
+
+The `~/.acp/projects.yaml` file tracks all registered projects:
+
+```yaml
+projects:
+  - name: my-project
+    path: /home/user/.acp/projects/my-project
+    type: library
+    status: in_progress
+    registered: 2026-02-23T10:00:00Z
+    last_accessed: 2026-02-26T15:30:00Z
+    tags:
+      - typescript
+      - npm
+    related_projects: []
+    description: My awesome project
+
+current_project: my-project
+```
+
+### Example Workflow
+
+```bash
+# List all projects
+@acp.project-list
+
+# Switch to a specific project
+@acp.project-set my-project
+
+# View project details
+@acp.project-info
+
+# Update project metadata
+@acp.project-update --tags "typescript,api,rest"
+
+# Discover unregistered projects
+@acp.projects-sync
+
+# Remove a project from registry (keeps files)
+@acp.project-remove old-project
+```
+
+### For Agents: How to Use the Registry
+
+When working in any ACP project, you can:
+
+1. **Check current project**: Read `~/.acp/projects.yaml` and find `current_project`
+2. **List available projects**: Use `@acp.project-list` to see all projects
+3. **Switch context**: Use `@acp.project-set <name>` to change projects
+4. **Get project info**: Use `@acp.project-info` for detailed metadata
+
+**Automatic Tracking**: The `@acp.init` command automatically reads the registry and reports the current project context.
+
+---
+
 ## Experimental Features
 
 ACP supports marking features as "experimental" to enable safe innovation without affecting stable installations.
@@ -751,6 +834,84 @@ Validation ensures consistency:
 3. **Graduate promptly** - Move to stable once proven
 4. **Version appropriately** - Use 0.x.x versions for experimental
 5. **Communicate clearly** - Note experimental status in README.md
+
+---
+
+## Template Source Files
+
+ACP packages can bundle template source files (code, configs, etc.) alongside patterns, commands, and designs. Templates are declared in the `contents.files` section of `package.yaml` and stored in the `agent/files/` directory of the package.
+
+### Templates vs Other Content Types
+
+| Type | Location | Purpose |
+|------|----------|---------|
+| Patterns | `agent/patterns/` | Documentation and guidance |
+| Commands | `agent/commands/` | Agent directives |
+| Designs | `agent/design/` | Architecture documentation |
+| Scripts | `agent/scripts/` | Shell utilities |
+| **Files** | **Project root (target paths)** | **Actual code and config files** |
+
+### Installing Template Files
+
+```bash
+# Install all files (templates install to target paths)
+@acp.package-install --repo <url>
+
+# Install specific template files only
+@acp.package-install --files config/tsconfig.json src/schemas/example.schema.ts --repo <url>
+
+# Preview what would be installed
+@acp.package-install --list --repo <url>
+```
+
+### Variable Substitution
+
+Templates with `.template` extension can contain `{{VARIABLE}}` placeholders that are replaced during installation:
+
+```json
+{
+  "name": "{{PACKAGE_NAME}}",
+  "author": "{{AUTHOR_NAME}}"
+}
+```
+
+Variables are declared in `package.yaml` and values are prompted during installation. Variable values are stored in the manifest for reproducible updates.
+
+### Target Paths
+
+Each file declares a `target` path in `package.yaml`:
+- `target: ./` installs to project root
+- `target: src/schemas/` installs to `src/schemas/` directory
+- `.template` extension is stripped (e.g., `settings.json.template` becomes `settings.json`)
+- Unsafe paths (`../`, absolute paths) are rejected
+
+### Security Considerations
+
+Templates install to project directories (not `agent/`):
+- May overwrite existing files
+- Always prompted before installation (unless `-y` flag)
+- Target paths validated for safety
+- Conflict detection warns about overwrites
+- Use `--list` to preview before installing
+
+### Package.yaml Declaration
+
+```yaml
+contents:
+  files:
+    - name: config/tsconfig.json
+      description: TypeScript configuration
+      target: ./
+      required: true
+
+    - name: config/settings.json.template
+      description: Settings with variable substitution
+      target: config/
+      required: false
+      variables:
+        - PROJECT_NAME
+        - AUTHOR_NAME
+```
 
 ---
 

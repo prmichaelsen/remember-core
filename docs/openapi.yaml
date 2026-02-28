@@ -1,0 +1,1864 @@
+openapi: 3.1.0
+info:
+  title: Remember REST API
+  description: |
+    REST API for the Remember personal memory management system.
+    Wraps @prmichaelsen/remember-core services over HTTP.
+    This spec is the source of truth for both the REST server (remember-rest-service)
+    and generated client SDKs.
+  version: 0.1.0
+  contact:
+    name: prmichaelsen
+  license:
+    name: MIT
+
+servers:
+  - url: https://remember-rest-server-e1.run.app
+    description: Staging (e1)
+  - url: https://remember-rest-server.run.app
+    description: Production
+  - url: http://localhost:8080
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: memories
+    description: Memory CRUD and search operations
+  - name: relationships
+    description: Relationship CRUD and search operations
+  - name: spaces
+    description: Shared space publishing, moderation, and search
+  - name: confirmations
+    description: Two-phase confirmation token operations
+  - name: preferences
+    description: User preference management
+  - name: trust
+    description: Ghost config and trust enforcement
+  - name: health
+    description: Public health and version endpoints
+
+paths:
+  # ============================================================
+  # Health (Public - no auth required)
+  # ============================================================
+  /health:
+    get:
+      tags: [health]
+      summary: Health check
+      security: []
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, timestamp]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /version:
+    get:
+      tags: [health]
+      summary: Service version
+      security: []
+      operationId: getVersion
+      responses:
+        '200':
+          description: Service version info
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, environment]
+                properties:
+                  version:
+                    type: string
+                  environment:
+                    type: string
+
+  # ============================================================
+  # Memories
+  # ============================================================
+  /api/svc/v1/memories:
+    post:
+      tags: [memories]
+      summary: Create a memory
+      operationId: createMemory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMemoryInput'
+      responses:
+        '201':
+          description: Memory created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateMemoryResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/memories/{memoryId}:
+    patch:
+      tags: [memories]
+      summary: Update a memory
+      operationId: updateMemory
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemoryInput'
+      responses:
+        '200':
+          description: Memory updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateMemoryResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags: [memories]
+      summary: Soft delete a memory
+      operationId: deleteMemory
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteMemoryInput'
+      responses:
+        '200':
+          description: Memory deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteMemoryResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/svc/v1/memories/search:
+    post:
+      tags: [memories]
+      summary: Hybrid search (BM25 + semantic)
+      operationId: searchMemories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchMemoryInput'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchMemoryResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/memories/similar:
+    post:
+      tags: [memories]
+      summary: Find similar memories by vector similarity
+      operationId: findSimilarMemories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FindSimilarInput'
+      responses:
+        '200':
+          description: Similar memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindSimilarResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/memories/query:
+    post:
+      tags: [memories]
+      summary: Semantic query (vector-only)
+      operationId: queryMemories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryMemoryInput'
+      responses:
+        '200':
+          description: Query results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryMemoryResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ============================================================
+  # Relationships
+  # ============================================================
+  /api/svc/v1/relationships:
+    post:
+      tags: [relationships]
+      summary: Create a relationship between memories
+      operationId: createRelationship
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRelationshipInput'
+      responses:
+        '201':
+          description: Relationship created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRelationshipResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/relationships/{relationshipId}:
+    patch:
+      tags: [relationships]
+      summary: Update a relationship
+      operationId: updateRelationship
+      parameters:
+        - $ref: '#/components/parameters/relationshipId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRelationshipInput'
+      responses:
+        '200':
+          description: Relationship updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateRelationshipResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags: [relationships]
+      summary: Delete a relationship
+      operationId: deleteRelationship
+      parameters:
+        - $ref: '#/components/parameters/relationshipId'
+      responses:
+        '200':
+          description: Relationship deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteRelationshipResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/svc/v1/relationships/search:
+    post:
+      tags: [relationships]
+      summary: Search relationships
+      operationId: searchRelationships
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRelationshipInput'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchRelationshipResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ============================================================
+  # Spaces
+  # ============================================================
+  /api/svc/v1/spaces/publish:
+    post:
+      tags: [spaces]
+      summary: Publish a memory to shared spaces
+      description: Returns a confirmation token. Call /confirmations/{token}/confirm to execute.
+      operationId: publishToSpace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishInput'
+      responses:
+        '200':
+          description: Confirmation token generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/spaces/retract:
+    post:
+      tags: [spaces]
+      summary: Retract a memory from shared spaces
+      description: Returns a confirmation token. Call /confirmations/{token}/confirm to execute.
+      operationId: retractFromSpace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetractInput'
+      responses:
+        '200':
+          description: Confirmation token generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/spaces/revise:
+    post:
+      tags: [spaces]
+      summary: Propose a content revision
+      description: Returns a confirmation token. Call /confirmations/{token}/confirm to execute.
+      operationId: reviseInSpace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviseInput'
+      responses:
+        '200':
+          description: Confirmation token generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/spaces/moderate:
+    post:
+      tags: [spaces]
+      summary: Moderate content in a space or group
+      operationId: moderateSpace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModerateInput'
+      responses:
+        '200':
+          description: Moderation action applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModerateResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/svc/v1/spaces/search:
+    post:
+      tags: [spaces]
+      summary: Search shared spaces
+      operationId: searchSpaces
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchSpaceInput'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchSpaceResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/spaces/query:
+    post:
+      tags: [spaces]
+      summary: Semantic query across shared spaces
+      operationId: querySpaces
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuerySpaceInput'
+      responses:
+        '200':
+          description: Query results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuerySpaceResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ============================================================
+  # Confirmations
+  # ============================================================
+  /api/svc/v1/confirmations/{token}/confirm:
+    post:
+      tags: [confirmations]
+      summary: Confirm a pending action
+      operationId: confirmAction
+      parameters:
+        - $ref: '#/components/parameters/confirmationToken'
+      responses:
+        '200':
+          description: Action confirmed and executed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/svc/v1/confirmations/{token}/deny:
+    post:
+      tags: [confirmations]
+      summary: Deny a pending action
+      operationId: denyAction
+      parameters:
+        - $ref: '#/components/parameters/confirmationToken'
+      responses:
+        '200':
+          description: Action denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DenyResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ============================================================
+  # Preferences
+  # ============================================================
+  /api/svc/v1/preferences:
+    get:
+      tags: [preferences]
+      summary: Get user preferences
+      operationId: getPreferences
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags: [preferences]
+      summary: Update user preferences
+      operationId: updatePreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePreferencesInput'
+      responses:
+        '200':
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ============================================================
+  # Trust / Ghost Config
+  # ============================================================
+  /api/svc/v1/trust/ghost-config:
+    get:
+      tags: [trust]
+      summary: Get ghost configuration
+      operationId: getGhostConfig
+      responses:
+        '200':
+          description: Ghost configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GhostConfigResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags: [trust]
+      summary: Update ghost configuration
+      operationId: updateGhostConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGhostConfigInput'
+      responses:
+        '200':
+          description: Updated ghost config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GhostConfigResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/trust/set-user-trust:
+    post:
+      tags: [trust]
+      summary: Set trust level for a specific user
+      operationId: setUserTrust
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_user_id, trust_level]
+              properties:
+                target_user_id:
+                  type: string
+                trust_level:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+      responses:
+        '200':
+          description: Trust level set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/trust/remove-user-trust:
+    post:
+      tags: [trust]
+      summary: Remove custom trust level for a user (revert to default)
+      operationId: removeUserTrust
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_user_id]
+              properties:
+                target_user_id:
+                  type: string
+      responses:
+        '200':
+          description: Trust level removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/trust/block-user:
+    post:
+      tags: [trust]
+      summary: Block a user
+      operationId: blockUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_user_id]
+              properties:
+                target_user_id:
+                  type: string
+      responses:
+        '200':
+          description: User blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/trust/unblock-user:
+    post:
+      tags: [trust]
+      summary: Unblock a user
+      operationId: unblockUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_user_id]
+              properties:
+                target_user_id:
+                  type: string
+      responses:
+        '200':
+          description: User unblocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/trust/check-access:
+    post:
+      tags: [trust]
+      summary: Check memory access for a user
+      operationId: checkAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [memory_id, accessor_user_id]
+              properties:
+                memory_id:
+                  type: string
+                accessor_user_id:
+                  type: string
+      responses:
+        '200':
+          description: Access check result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accessible, trust_tier]
+                properties:
+                  accessible:
+                    type: boolean
+                  trust_tier:
+                    type: string
+                    enum: [full_access, partial_access, summary_only, metadata_only, existence_only]
+                  reason:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+# ============================================================
+# Components
+# ============================================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT issued by agentbase.me.
+        Claims: sub (userId), iss (agentbase.me), aud (svc|web), iat, exp
+
+  parameters:
+    memoryId:
+      name: memoryId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Memory UUID
+
+    relationshipId:
+      name: relationshipId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Relationship UUID
+
+    confirmationToken:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Confirmation token string
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              kind: validation
+              message: Content is required
+              context:
+                fields:
+                  content: ['must not be empty']
+
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              kind: unauthorized
+              message: Invalid or missing authentication token
+              context: {}
+
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              kind: forbidden
+              message: Insufficient permissions for this operation
+              context: {}
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              kind: not_found
+              message: Memory not found
+              context:
+                resource: memory
+                id: abc-123
+
+  schemas:
+    # ----------------------------------------------------------
+    # Error
+    # ----------------------------------------------------------
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [kind, message, context]
+          properties:
+            kind:
+              type: string
+              enum: [validation, not_found, unauthorized, forbidden, conflict, rate_limit, external, internal]
+            message:
+              type: string
+            context:
+              type: object
+              additionalProperties: true
+
+    # ----------------------------------------------------------
+    # Common types
+    # ----------------------------------------------------------
+    ContentType:
+      type: string
+      enum:
+        # Core
+        - code
+        - note
+        - documentation
+        - reference
+        # Task & Planning
+        - todo
+        - checklist
+        - project
+        - goal
+        - habit
+        # Communication
+        - email
+        - conversation
+        - meeting
+        - person
+        # Content & Media
+        - article
+        - webpage
+        - social
+        - image
+        - video
+        - audio
+        - song
+        - transcript
+        - presentation
+        - spreadsheet
+        - pdf
+        # Creative
+        - screenplay
+        - recipe
+        - idea
+        - quote
+        - poetry
+        # Personal
+        - journal
+        - memory
+        - event
+        # Organizational
+        - bookmark
+        - form
+        - location
+        # Business
+        - invoice
+        - contract
+        # System
+        - system
+        - action
+        - audit
+        - history
+        # Cross-user & Threading
+        - ghost
+        - comment
+
+    DeletedFilter:
+      type: string
+      enum: [exclude, include, only]
+      default: exclude
+
+    SearchFilters:
+      type: object
+      properties:
+        types:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentType'
+        tags:
+          type: array
+          items:
+            type: string
+        weight_min:
+          type: number
+          minimum: 0
+          maximum: 1
+        weight_max:
+          type: number
+          minimum: 0
+          maximum: 1
+        trust_min:
+          type: number
+          minimum: 0
+          maximum: 1
+        trust_max:
+          type: number
+          minimum: 0
+          maximum: 1
+        date_from:
+          type: string
+          format: date-time
+        date_to:
+          type: string
+          format: date-time
+        has_relationships:
+          type: boolean
+
+    GhostSearchContext:
+      type: object
+      required: [accessor_trust_level, owner_user_id]
+      properties:
+        accessor_trust_level:
+          type: number
+          minimum: 0
+          maximum: 1
+        owner_user_id:
+          type: string
+        include_ghost_content:
+          type: boolean
+
+    ModerationAction:
+      type: string
+      enum: [approve, reject, remove]
+
+    ModerationFilter:
+      type: string
+      enum: [approved, pending, rejected, removed, all]
+      default: approved
+
+    # ----------------------------------------------------------
+    # Memory inputs
+    # ----------------------------------------------------------
+    CreateMemoryInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        title:
+          type: string
+        type:
+          $ref: '#/components/schemas/ContentType'
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        trust:
+          type: number
+          minimum: 0
+          maximum: 1
+        tags:
+          type: array
+          items:
+            type: string
+        references:
+          type: array
+          items:
+            type: string
+        template_id:
+          type: string
+        parent_id:
+          type: string
+          nullable: true
+        thread_root_id:
+          type: string
+          nullable: true
+        moderation_flags:
+          type: array
+          items:
+            type: string
+        context_summary:
+          type: string
+        context_conversation_id:
+          type: string
+
+    SearchMemoryInput:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+        alpha:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.7
+          description: Balance between semantic (1.0) and keyword (0.0) search
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        include_relationships:
+          type: boolean
+          default: true
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    FindSimilarInput:
+      type: object
+      properties:
+        memory_id:
+          type: string
+          description: Find memories similar to this memory (provide memory_id or text)
+        text:
+          type: string
+          description: Find memories similar to this text (provide memory_id or text)
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        min_similarity:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.7
+        include_relationships:
+          type: boolean
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    QueryMemoryInput:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 5
+        min_relevance:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.6
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    UpdateMemoryInput:
+      type: object
+      properties:
+        content:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        trust:
+          type: number
+          minimum: 0
+          maximum: 1
+        tags:
+          type: array
+          items:
+            type: string
+        references:
+          type: array
+          items:
+            type: string
+        parent_id:
+          type: string
+          nullable: true
+        thread_root_id:
+          type: string
+          nullable: true
+        moderation_flags:
+          type: array
+          items:
+            type: string
+
+    DeleteMemoryInput:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    # ----------------------------------------------------------
+    # Memory results
+    # ----------------------------------------------------------
+    CreateMemoryResult:
+      type: object
+      required: [memory_id, created_at]
+      properties:
+        memory_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    SearchMemoryResult:
+      type: object
+      required: [memories, total, offset, limit]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        relationships:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    FindSimilarResult:
+      type: object
+      required: [similar_memories, total]
+      properties:
+        similar_memories:
+          type: array
+          items:
+            type: object
+            required: [id, similarity]
+            properties:
+              id:
+                type: string
+              similarity:
+                type: number
+            additionalProperties: true
+        total:
+          type: integer
+
+    QueryMemoryResult:
+      type: object
+      required: [memories, total]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            required: [id, relevance]
+            properties:
+              id:
+                type: string
+              relevance:
+                type: number
+            additionalProperties: true
+        total:
+          type: integer
+
+    UpdateMemoryResult:
+      type: object
+      required: [memory_id, updated_at, version, updated_fields]
+      properties:
+        memory_id:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        updated_fields:
+          type: array
+          items:
+            type: string
+
+    DeleteMemoryResult:
+      type: object
+      required: [memory_id, deleted_at, orphaned_relationship_ids]
+      properties:
+        memory_id:
+          type: string
+        deleted_at:
+          type: string
+          format: date-time
+        orphaned_relationship_ids:
+          type: array
+          items:
+            type: string
+
+    # ----------------------------------------------------------
+    # Relationship inputs
+    # ----------------------------------------------------------
+    CreateRelationshipInput:
+      type: object
+      required: [memory_ids, relationship_type, observation]
+      properties:
+        memory_ids:
+          type: array
+          items:
+            type: string
+          minItems: 2
+        relationship_type:
+          type: string
+        observation:
+          type: string
+        strength:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.5
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.8
+        tags:
+          type: array
+          items:
+            type: string
+        context_summary:
+          type: string
+        context_conversation_id:
+          type: string
+
+    SearchRelationshipInput:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+        relationship_types:
+          type: array
+          items:
+            type: string
+        strength_min:
+          type: number
+          minimum: 0
+          maximum: 1
+        confidence_min:
+          type: number
+          minimum: 0
+          maximum: 1
+        tags:
+          type: array
+          items:
+            type: string
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+
+    UpdateRelationshipInput:
+      type: object
+      properties:
+        relationship_type:
+          type: string
+        observation:
+          type: string
+        strength:
+          type: number
+          minimum: 0
+          maximum: 1
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        tags:
+          type: array
+          items:
+            type: string
+
+    # ----------------------------------------------------------
+    # Relationship results
+    # ----------------------------------------------------------
+    CreateRelationshipResult:
+      type: object
+      required: [relationship_id, memory_ids, created_at]
+      properties:
+        relationship_id:
+          type: string
+        memory_ids:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+
+    SearchRelationshipResult:
+      type: object
+      required: [relationships, total, offset, limit]
+      properties:
+        relationships:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    UpdateRelationshipResult:
+      type: object
+      required: [relationship_id, updated_at, version, updated_fields]
+      properties:
+        relationship_id:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        updated_fields:
+          type: array
+          items:
+            type: string
+
+    DeleteRelationshipResult:
+      type: object
+      required: [relationship_id, memories_updated]
+      properties:
+        relationship_id:
+          type: string
+        memories_updated:
+          type: integer
+
+    # ----------------------------------------------------------
+    # Space inputs
+    # ----------------------------------------------------------
+    PublishInput:
+      type: object
+      required: [memory_id]
+      properties:
+        memory_id:
+          type: string
+        spaces:
+          type: array
+          items:
+            type: string
+        groups:
+          type: array
+          items:
+            type: string
+        additional_tags:
+          type: array
+          items:
+            type: string
+
+    RetractInput:
+      type: object
+      required: [memory_id]
+      properties:
+        memory_id:
+          type: string
+        spaces:
+          type: array
+          items:
+            type: string
+        groups:
+          type: array
+          items:
+            type: string
+
+    ReviseInput:
+      type: object
+      required: [memory_id]
+      properties:
+        memory_id:
+          type: string
+
+    ModerateInput:
+      type: object
+      required: [memory_id, action]
+      properties:
+        memory_id:
+          type: string
+        space_id:
+          type: string
+        group_id:
+          type: string
+        action:
+          $ref: '#/components/schemas/ModerationAction'
+        reason:
+          type: string
+
+    SearchSpaceInput:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+        spaces:
+          type: array
+          items:
+            type: string
+        groups:
+          type: array
+          items:
+            type: string
+        search_type:
+          type: string
+          enum: [hybrid, bm25, semantic]
+          default: hybrid
+        content_type:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        min_weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        max_weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        date_from:
+          type: string
+          format: date-time
+        date_to:
+          type: string
+          format: date-time
+        moderation_filter:
+          $ref: '#/components/schemas/ModerationFilter'
+        include_comments:
+          type: boolean
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+
+    QuerySpaceInput:
+      type: object
+      required: [question, spaces]
+      properties:
+        question:
+          type: string
+        spaces:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        content_type:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        min_weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        date_from:
+          type: string
+          format: date-time
+        date_to:
+          type: string
+          format: date-time
+        moderation_filter:
+          $ref: '#/components/schemas/ModerationFilter'
+        include_comments:
+          type: boolean
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+
+    # ----------------------------------------------------------
+    # Space results
+    # ----------------------------------------------------------
+    TokenResult:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
+    ConfirmResult:
+      type: object
+      required: [action, success]
+      properties:
+        action:
+          type: string
+        success:
+          type: boolean
+        composite_id:
+          type: string
+        published_to:
+          type: array
+          items:
+            type: string
+        retracted_from:
+          type: array
+          items:
+            type: string
+        revised_at:
+          type: string
+          format: date-time
+        space_ids:
+          type: array
+          items:
+            type: string
+        group_ids:
+          type: array
+          items:
+            type: string
+        failed:
+          type: array
+          items:
+            type: string
+        results:
+          type: array
+          items:
+            type: object
+            required: [location, status]
+            properties:
+              location:
+                type: string
+              status:
+                type: string
+                enum: [success, failed, skipped]
+              error:
+                type: string
+        memory_id:
+          type: string
+
+    DenyResult:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+
+    ModerateResult:
+      type: object
+      required: [memory_id, action, moderation_status, moderated_by, moderated_at, location]
+      properties:
+        memory_id:
+          type: string
+        action:
+          $ref: '#/components/schemas/ModerationAction'
+        moderation_status:
+          type: string
+        moderated_by:
+          type: string
+        moderated_at:
+          type: string
+          format: date-time
+        location:
+          type: string
+
+    SearchSpaceResult:
+      type: object
+      required: [spaces_searched, groups_searched, memories, total, offset, limit]
+      properties:
+        spaces_searched:
+          oneOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+              enum: [all_public]
+        groups_searched:
+          type: array
+          items:
+            type: string
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    QuerySpaceResult:
+      type: object
+      required: [question, spaces_queried, memories, total]
+      properties:
+        question:
+          type: string
+        spaces_queried:
+          type: array
+          items:
+            type: string
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+
+    # ----------------------------------------------------------
+    # Preferences
+    # ----------------------------------------------------------
+    UserPreferences:
+      type: object
+      required: [user_id, templates, search, location, privacy, notifications, display, created_at, updated_at]
+      properties:
+        user_id:
+          type: string
+        templates:
+          $ref: '#/components/schemas/TemplatePreferences'
+        search:
+          $ref: '#/components/schemas/SearchPreferences'
+        location:
+          $ref: '#/components/schemas/LocationPreferences'
+        privacy:
+          $ref: '#/components/schemas/PrivacyPreferences'
+        notifications:
+          $ref: '#/components/schemas/NotificationPreferences'
+        display:
+          $ref: '#/components/schemas/DisplayPreferences'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TemplatePreferences:
+      type: object
+      properties:
+        auto_suggest:
+          type: boolean
+        suggestion_threshold:
+          type: number
+        max_suggestions:
+          type: integer
+        show_preview:
+          type: boolean
+        remember_choice:
+          type: boolean
+        suppressed_categories:
+          type: array
+          items:
+            type: string
+        suppressed_templates:
+          type: array
+          items:
+            type: string
+        always_suggest:
+          type: array
+          items:
+            type: string
+
+    SearchPreferences:
+      type: object
+      properties:
+        default_limit:
+          type: integer
+        include_low_trust:
+          type: boolean
+        weight_by_access:
+          type: boolean
+        weight_by_recency:
+          type: boolean
+        default_alpha:
+          type: number
+
+    LocationPreferences:
+      type: object
+      properties:
+        auto_capture:
+          type: boolean
+        precision:
+          type: string
+          enum: [exact, approximate, city, none]
+        share_with_memories:
+          type: boolean
+
+    PrivacyPreferences:
+      type: object
+      properties:
+        default_trust_level:
+          type: number
+        allow_cross_user_access:
+          type: boolean
+        auto_approve_requests:
+          type: boolean
+        audit_logging:
+          type: boolean
+
+    NotificationPreferences:
+      type: object
+      properties:
+        trust_violations:
+          type: boolean
+        access_requests:
+          type: boolean
+        memory_reminders:
+          type: boolean
+        relationship_suggestions:
+          type: boolean
+
+    DisplayPreferences:
+      type: object
+      properties:
+        date_format:
+          type: string
+        time_format:
+          type: string
+        timezone:
+          type: string
+        language:
+          type: string
+
+    UpdatePreferencesInput:
+      type: object
+      description: Partial update — only include fields to change
+      properties:
+        templates:
+          $ref: '#/components/schemas/TemplatePreferences'
+        search:
+          $ref: '#/components/schemas/SearchPreferences'
+        location:
+          $ref: '#/components/schemas/LocationPreferences'
+        privacy:
+          $ref: '#/components/schemas/PrivacyPreferences'
+        notifications:
+          $ref: '#/components/schemas/NotificationPreferences'
+        display:
+          $ref: '#/components/schemas/DisplayPreferences'
+
+    # ----------------------------------------------------------
+    # Trust / Ghost Config
+    # ----------------------------------------------------------
+    GhostConfig:
+      type: object
+      required: [enabled, public_ghost_enabled, default_friend_trust, default_public_trust, per_user_trust, blocked_users, enforcement_mode]
+      properties:
+        enabled:
+          type: boolean
+        public_ghost_enabled:
+          type: boolean
+        default_friend_trust:
+          type: number
+          minimum: 0
+          maximum: 1
+        default_public_trust:
+          type: number
+          minimum: 0
+          maximum: 1
+        per_user_trust:
+          type: object
+          additionalProperties:
+            type: number
+        blocked_users:
+          type: array
+          items:
+            type: string
+        enforcement_mode:
+          type: string
+          enum: [query, prompt, hybrid]
+
+    UpdateGhostConfigInput:
+      type: object
+      description: Partial update — only include fields to change
+      properties:
+        enabled:
+          type: boolean
+        public_ghost_enabled:
+          type: boolean
+        default_friend_trust:
+          type: number
+          minimum: 0
+          maximum: 1
+        default_public_trust:
+          type: number
+          minimum: 0
+          maximum: 1
+        enforcement_mode:
+          type: string
+          enum: [query, prompt, hybrid]
+
+    GhostConfigResult:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+        config:
+          $ref: '#/components/schemas/GhostConfig'
+        message:
+          type: string
+
+    TrustResult:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string

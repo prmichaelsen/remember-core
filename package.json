@@ -1,6 +1,6 @@
 {
   "name": "@prmichaelsen/remember-core",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
   "type": "module",
   "main": "dist/index.js",
@@ -49,6 +49,10 @@
     "./testing": {
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.js"
     }
   },
   "typesVersions": {
@@ -62,7 +66,8 @@
       "database/firestore": ["dist/database/firestore/index.d.ts"],
       "utils": ["dist/utils/index.d.ts"],
       "errors": ["dist/errors/index.d.ts"],
-      "testing": ["dist/testing/index.d.ts"]
+      "testing": ["dist/testing/index.d.ts"],
+      "web": ["dist/web/index.d.ts"]
     }
   },
   "files": [

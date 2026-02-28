@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.12.0
+  version: 0.15.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M7
@@ -90,13 +90,13 @@ milestones:
 
   - id: M7
     name: Web Client SDK
-    status: in_progress
-    progress: 10
+    status: completed
+    progress: 100
     estimated_weeks: 1.5
-    tasks_completed: 7
+    tasks_completed: 10
     tasks_total: 10
     started: 2026-02-28
-    completed: null
+    completed: 2026-02-28
     notes: |
       @prmichaelsen/remember-core/web subpath export.
       Use-case-oriented server-side SDK for web apps.
@@ -489,28 +489,37 @@ tasks:
         ✅ retractProfile, updateAndRepublishProfile. Build passes.
     - id: task-33
       name: Preferences Use Cases + Barrel Exports + Subpath Config
-      status: pending
+      status: completed
+      completed_date: 2026-02-28
       file: agent/tasks/milestone-7-web-client-sdk/task-33-preferences-barrel-subpath.md
       estimated_hours: 2
       dependencies: [task-27]
       notes: |
-        2 preference functions, src/web/index.ts barrel, package.json exports["./web"] subpath.
+        ✅ Created src/web/preferences.ts — getPreferences, updatePreferences.
+        ✅ Created src/web/index.ts barrel — exports all 31 functions, types, factories.
+        ✅ Updated package.json — exports["./web"], typesVersions. Build passes.
     - id: task-34
       name: Unit Tests
-      status: pending
+      status: completed
+      completed_date: 2026-02-28
       file: agent/tasks/milestone-7-web-client-sdk/task-34-unit-tests.md
       estimated_hours: 4
       dependencies: [task-28, task-29, task-30, task-31, task-32, task-33]
       notes: |
-        40-60 tests across 5-7 suites. Mock WebSDKContext. Test ok/err paths, auto-confirm, searchAsGhost, profiles.
+        ✅ 42 new tests across 6 suites: result (9), guard (3), memories (8), spaces (6), ghost (8), profiles (4).
+        ✅ Plus helpers.ts with createMockWebSDKContext. 323 total tests, 18 suites, 0 failures.
     - id: task-35
       name: Update Docs (Migration Guide, CHANGELOG, README)
-      status: pending
+      status: completed
+      completed_date: 2026-02-28
       file: agent/tasks/milestone-7-web-client-sdk/task-35-update-docs.md
       estimated_hours: 2
       dependencies: [task-34]
       notes: |
-        Migration guide web SDK section, CHANGELOG 0.15.0, README /web subpath, version bump.
+        ✅ Migration guide: Step 6 web SDK section with before/after, WebSDKContext, searchAsGhost, Result pattern.
+        ✅ CHANGELOG: 0.15.0 entry listing all 31 functions and 42 new tests.
+        ✅ README: /web subpath in table, Web SDK section, test count 323.
+        ✅ Version bump: 0.14.0 → 0.15.0.
 
 documentation:
   design_documents: 6
@@ -520,10 +529,23 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 74
-  overall: 77
+  implementation: 100
+  overall: 100
 
 recent_work:
+  - date: 2026-02-28
+    description: |
+      M7 Web Client SDK — COMPLETE (10 tasks)
+    items:
+      - "Created src/web/ module with 10 files: result.ts, errors.ts, guard.ts, context.ts, memories.ts, relationships.ts, spaces.ts, ghost.ts, profiles.ts, preferences.ts, types.ts, index.ts"
+      - "31 use-case functions across 6 modules (memories 6, relationships 4, spaces 7, ghost 8, profiles 4, preferences 2)"
+      - "Auto-confirmed space operations (collapse 2-phase token flow)"
+      - "searchAsGhost compound operation (resolves trust internally)"
+      - "Profile compound operations (create+publish, search, retract, update+republish)"
+      - "42 new tests across 6 suites (323 total, 18 suites, 0 failures)"
+      - "package.json exports['./web'] + typesVersions configured (12 subpath exports)"
+      - "Migration guide, CHANGELOG 0.15.0, README updated"
+      - "Version bump: 0.14.0 → 0.15.0"
   - date: 2026-02-28
     description: |
       M6 Ghost/Trust Integration into MemoryService — COMPLETE (4 tasks)
@@ -752,10 +774,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - "M7: Implement Web Client SDK (Tasks 26-35)"
-  - "Start with Task 26: Foundation (Result type, WebSDKError, browser guard)"
-  - Publish v0.14.0 to npm
+  - Publish v0.15.0 to npm
   - Migrate remaining 3 remember-mcp ghost tools
+  - Migrate agentbase.me to web SDK (replace ProfileMemoryService with web SDK calls)
 
 notes:
   - "Source: remember-mcp v3.8.0-v3.13.0 (prmichaelsen/remember-mcp)"

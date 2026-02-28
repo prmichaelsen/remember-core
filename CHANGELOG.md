@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.15.0] - 2026-02-28
+
+### Added
+- **Web Client SDK** — M7 complete (10 tasks), `@prmichaelsen/remember-core/web` subpath export:
+  - `src/web/result.ts` — `Result<T, E>` discriminated union (`{ ok, data/error }`), `ok()`, `err()`, `isOk()`, `mapOk()`, `tryCatch()`
+  - `src/web/errors.ts` — `WebSDKError` interface (8 error kinds matching OpenAPI), `createError()`, 6 convenience factories
+  - `src/web/guard.ts` — `assertServerSide()` browser guard (runs at import time)
+  - `src/web/context.ts` — `WebSDKContext` interface, `createWebSDKContext()` factory
+  - `src/web/memories.ts` — 6 functions: `createMemory`, `searchMemories`, `findSimilarMemories`, `queryMemories`, `updateMemory`, `deleteMemory`
+  - `src/web/relationships.ts` — 4 functions: `createRelationship`, `searchRelationships`, `updateRelationship`, `deleteRelationship`
+  - `src/web/spaces.ts` — 7 functions: `publishToSpace`, `retractFromSpace`, `reviseInSpace` (auto-confirmed), `moderateSpace`, `searchSpace`, `querySpace`
+  - `src/web/ghost.ts` — 8 functions: `getGhostConfig`, `updateGhostConfig`, `setUserTrust`, `removeUserTrust`, `blockUser`, `unblockUser`, `checkAccess`, `searchAsGhost` (compound)
+  - `src/web/profiles.ts` — 4 compound functions: `createAndPublishProfile`, `searchProfiles`, `retractProfile`, `updateAndRepublishProfile`
+  - `src/web/preferences.ts` — 2 functions: `getPreferences`, `updatePreferences`
+  - `src/web/types.ts` — `PaginatedResult<T>` (with `hasMore`), `MemorySearchResult`, `SimilarMemory`, `RelevantMemory`, `RelationshipSearchResult`, `SpaceSearchResult`, `ProfileSearchResult`, `RedactedMemory`
+  - `src/web/index.ts` — barrel export (31 functions, all types, factories)
+  - `package.json` — `exports["./web"]` and `typesVersions` for subpath resolution
+  - 42 new tests across 6 suites (result, guard, memories, spaces, ghost, profiles)
+  - Updated migration guide with web SDK section (before/after examples, WebSDKContext init, Result pattern matching)
+
+### Changed
+- 12 subpath exports (was 11)
+- 323 total tests across 18 suites (was 281 across 12)
+
 ## [0.14.0] - 2026-02-28
 
 ### Added

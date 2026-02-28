@@ -362,6 +362,110 @@ interface GhostSearchContext {
 | `query_memory` | `MemoryService.query()` + `ghost_context` | Was deferred in remember-mcp M17 |
 | `ghost_config` | Direct imports from core | No service changes needed — already migrable |
 
+## Step 6: Migrate to Web SDK (v0.15.0+)
+
+The `@prmichaelsen/remember-core/web` subpath export provides use-case-oriented functions that bundle multi-step business logic into single calls. Server-side only.
+
+### Before (manual orchestration with services)
+
+```typescript
+// Create a profile: 3 calls + manual orchestration
+import { MemoryService, SpaceService, ConfirmationTokenService } from '@prmichaelsen/remember-core';
+
+const memory = await memoryService.create({
+  content: `Name: ${displayName}\nBio: ${bio}`,
+  type: 'profile',
+  tags,
+});
+const { token } = await spaceService.publish({
+  memory_id: memory.memory_id,
+  spaces: ['profiles'],
+});
+const confirmed = await spaceService.confirm({ token });
+// + manual error handling, composite ID parsing
+```
+
+### After (single web SDK call)
+
+```typescript
+import { createAndPublishProfile } from '@prmichaelsen/remember-core/web';
+
+const result = await createAndPublishProfile(ctx, {
+  display_name: 'Jane Doe',
+  bio: 'Software engineer',
+  tags: ['developer'],
+});
+if (result.ok) {
+  console.log(result.data.memory_id, result.data.composite_id);
+} else {
+  console.error(result.error.kind, result.error.message);
+}
+```
+
+### WebSDKContext Initialization
+
+```typescript
+import { createWebSDKContext } from '@prmichaelsen/remember-core/web';
+
+const ctx = createWebSDKContext({
+  userId: 'user-123',
+  memoryService,
+  spaceService,
+  confirmationTokenService,
+  ghostConfigProvider,
+  escalationStore,
+  relationshipService,   // optional
+  preferencesService,    // optional
+  logger,                // optional
+});
+```
+
+### searchAsGhost — Ghost Context Resolved Internally
+
+```typescript
+// Before: manual trust resolution + ghost_context
+const ghostConfig = await getGhostConfig(ownerUserId);
+const trustLevel = resolveAccessorTrustLevel(ghostConfig, accessorUserId);
+const results = await memoryService.search({
+  query: 'topic',
+  ghost_context: { accessor_trust_level: trustLevel, owner_user_id: ownerUserId },
+});
+// + manual content redaction
+
+// After: single call
+import { searchAsGhost } from '@prmichaelsen/remember-core/web';
+const result = await searchAsGhost(ctx, {
+  owner_user_id: ownerUserId,
+  query: 'topic',
+});
+// result.data.items contains redacted memories with trust_tier
+```
+
+### Result Pattern Matching
+
+All web SDK functions return `Result<T, WebSDKError>`:
+
+```typescript
+import { searchMemories } from '@prmichaelsen/remember-core/web';
+
+const result = await searchMemories(ctx, { query: 'important' });
+if (result.ok) {
+  // result.data: PaginatedResult<MemorySearchResult>
+  for (const memory of result.data.items) {
+    console.log(memory.memory_id, memory.content);
+  }
+  console.log(`Page ${result.data.offset}/${result.data.total}, hasMore: ${result.data.hasMore}`);
+} else {
+  // result.error: WebSDKError { kind, message, context }
+  switch (result.error.kind) {
+    case 'validation': /* handle */ break;
+    case 'not_found': /* handle */ break;
+    case 'unauthorized': /* handle */ break;
+    default: /* handle */ break;
+  }
+}
+```
+
 ## Migration Checklist
 
 - [ ] Install `@prmichaelsen/remember-core`
@@ -376,3 +480,8 @@ interface GhostSearchContext {
 - [ ] Remove duplicated source files
 - [ ] Verify build succeeds
 - [ ] Verify all tests pass
+- [ ] Migrate to web SDK (replace manual orchestration with single calls)
+- [ ] Initialize WebSDKContext in app startup
+- [ ] Replace ProfileMemoryService with createAndPublishProfile/searchProfiles/retractProfile
+- [ ] Replace manual ghost resolution with searchAsGhost
+- [ ] Update error handling from try/catch to Result pattern matching

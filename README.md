@@ -48,6 +48,7 @@ const results = await memoryService.search({
 | `@prmichaelsen/remember-core/errors` | Typed errors (AppError, 8 subclasses) |
 | `@prmichaelsen/remember-core/utils` | Logger, filters, auth helpers, debug |
 | `@prmichaelsen/remember-core/testing` | Weaviate mock, test data generator |
+| `@prmichaelsen/remember-core/web` | Web SDK — use-case-oriented server-side functions |
 
 ## Core Services
 
@@ -71,10 +72,29 @@ const results = await memoryService.search({
 
 **EscalationService** — Trust penalty tracking and automatic blocking after repeated unauthorized access attempts.
 
+### Web SDK (`@prmichaelsen/remember-core/web`)
+
+Server-side, use-case-oriented functions that bundle multi-step business logic into single calls. 31 functions across 6 modules:
+
+- **Memories** (6) — CRUD + search with `Result<T>` responses
+- **Relationships** (4) — CRUD + search
+- **Spaces** (7) — publish/retract/revise auto-confirmed (no tokens), moderate, search, query
+- **Ghost/Trust** (8) — config, trust management, `searchAsGhost` (resolves trust internally)
+- **Profiles** (4) — compound operations (create+publish, search, retract, update+republish)
+- **Preferences** (2) — get/update
+
+```typescript
+import { createWebSDKContext, createAndPublishProfile, searchAsGhost } from '@prmichaelsen/remember-core/web';
+
+const ctx = createWebSDKContext({ userId, memoryService, spaceService, ... });
+const result = await createAndPublishProfile(ctx, { display_name: 'Jane', bio: 'Engineer' });
+if (result.ok) console.log(result.data.composite_id);
+```
+
 ## Testing
 
 ```bash
-npm test           # Unit tests (281 tests)
+npm test           # Unit tests (323 tests)
 npm run test:e2e   # Integration tests (22 tests)
 npm run typecheck  # Type checking
 npm run build      # TypeScript compilation

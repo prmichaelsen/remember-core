@@ -8,7 +8,7 @@ export {
   formatDetailedError,
   handleToolError,
   withErrorHandling,
-  type ErrorContext,
+  type ErrorContext as ToolErrorContext,
 } from './error-handler.js';
 
 export {
@@ -18,7 +18,6 @@ export {
   combineFiltersWithAnd,
   hasFilters,
   buildDeletedFilter,
-  type DeletedFilter,
 } from './filters.js';
 
 export { canModerate, canModerateAny } from './auth-helpers.js';

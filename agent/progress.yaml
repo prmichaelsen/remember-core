@@ -36,7 +36,7 @@ milestones:
 
   - id: M3
     name: Core Services
-    status: in_progress
+    status: completed
     progress: 100
     started: 2026-02-27
     completed: 2026-02-27
@@ -48,12 +48,12 @@ milestones:
 
   - id: M4
     name: Integration & Packaging
-    status: not_started
-    progress: 0
-    started: null
+    status: in_progress
+    progress: 25
+    started: 2026-02-27
     completed: null
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 4
     notes: |
       NPM packaging, public API design, integration tests, migration guides.
@@ -180,12 +180,15 @@ tasks:
   milestone_4:
     - id: task-12
       name: NPM Package Setup
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-4-integration-and-packaging/task-12-npm-package-setup.md
       estimated_hours: 4
-      completed_date: null
+      actual_hours: 0.2
+      completed_date: 2026-02-27
       notes: |
-        package.json, tsconfig, esbuild, exports map
+        Created src/index.ts root barrel. Fixed export name collisions (DeletedFilter, ErrorContext).
+        Updated tsconfig: module/moduleResolution to Node16. Added typesVersions for backwards compat.
+        npm pack: 198 files, 100.5 kB. Verified install with both moduleResolution: node and node16.
     - id: task-13
       name: Public API Design and Barrel Exports
       status: not_started
@@ -219,10 +222,22 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 73
-  overall: 73
+  implementation: 80
+  overall: 80
 
 recent_work:
+  - date: 2026-02-27
+    description: |
+      Task 12 — NPM Package Setup (M4 begins)
+    items:
+      - "Created src/index.ts — root barrel re-exporting types, constants, config, errors, collections, utils, services"
+      - "Fixed DeletedFilter duplicate: removed local definition in utils/filters.ts, imports from types/search.types.ts"
+      - "Fixed ErrorContext collision: renamed to ToolErrorContext in utils/index.ts re-export"
+      - "Updated tsconfig.json: module → Node16, moduleResolution → node16 (proper for ESM)"
+      - "Added typesVersions to package.json for backwards-compatible subpath type resolution"
+      - "npm pack: 198 files, 100.5 kB compressed, 496.0 kB unpacked"
+      - "Verified install: all 11 subpath exports resolve with both moduleResolution: node and node16"
+      - "120 tests still pass, 6 suites, 0 failures"
   - date: 2026-02-27
     description: |
       Task 11 — Service Tests and Validation (M3 COMPLETE)
@@ -345,9 +360,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M4 Task 12 - NPM Package Setup
   - M4 Task 13 - Public API Design and Barrel Exports
   - M4 Task 14 - Integration Tests
+  - M4 Task 15 - Migration Guide and Consumer Documentation
 
 notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"

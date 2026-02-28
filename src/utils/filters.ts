@@ -6,12 +6,8 @@
  */
 
 import { Filters } from 'weaviate-client';
-import type { SearchFilters } from '../types/search.types.js';
-
-/**
- * Deleted filter options.
- */
-export type DeletedFilter = 'exclude' | 'include' | 'only';
+import type { SearchFilters, DeletedFilter } from '../types/search.types.js';
+export type { DeletedFilter } from '../types/search.types.js';
 
 /**
  * Build filters for searching both memories and relationships.

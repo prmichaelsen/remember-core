@@ -3,7 +3,7 @@ project:
   version: 0.12.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M6
+  current_milestone: M7
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -87,6 +87,23 @@ milestones:
       ✅ Migration guide updated with ghost search examples.
       Unblocks remember-mcp migration of 3 deferred ghost tools.
       See: agent/milestones/milestone-6-ghost-memory-service-integration.md
+
+  - id: M7
+    name: Web Client SDK
+    status: not_started
+    progress: 0
+    estimated_weeks: 1.5
+    tasks_completed: 0
+    tasks_total: 10
+    started: null
+    completed: null
+    notes: |
+      @prmichaelsen/remember-core/web subpath export.
+      Use-case-oriented server-side SDK for web apps.
+      31 functions across 6 modules (memories, relationships, spaces, ghost, profiles, preferences).
+      Auto-confirmed space operations, searchAsGhost compound, profile compounds.
+      Server-side only (browser guard). Framework-agnostic.
+      See: agent/milestones/milestone-7-web-client-sdk.md
 
 tasks:
   milestone_1:
@@ -395,16 +412,98 @@ tasks:
         ✅ CHANGELOG: v0.14.0 entry.
         ✅ README: test count updated to 281.
 
+  milestone_7:
+    - id: task-26
+      name: Foundation — Result Type, WebSDKError, Browser Guard
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-26-foundation-result-type-error-browser-guard.md
+      estimated_hours: 2
+      dependencies: []
+      notes: |
+        Result<T, E> discriminated union, ok/err/tryCatch helpers, WebSDKError (8 error kinds), assertServerSide() guard.
+    - id: task-27
+      name: WebSDKContext and Factory
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-27-web-sdk-context-and-factory.md
+      estimated_hours: 2
+      dependencies: [task-26]
+      notes: |
+        WebSDKContext interface, createWebSDKContext() factory, service initialization from raw dependencies.
+    - id: task-28
+      name: Memory Use Cases
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-28-memory-use-cases.md
+      estimated_hours: 3
+      dependencies: [task-27]
+      notes: |
+        6 functions: createMemory, searchMemories, findSimilarMemories, queryMemories, updateMemory, deleteMemory.
+    - id: task-29
+      name: Relationship Use Cases
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-29-relationship-use-cases.md
+      estimated_hours: 2
+      dependencies: [task-27]
+      notes: |
+        4 functions: createRelationship, searchRelationships, updateRelationship, deleteRelationship.
+    - id: task-30
+      name: Space Use Cases (Collapsed Confirmations)
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-30-space-use-cases.md
+      estimated_hours: 3
+      dependencies: [task-27]
+      notes: |
+        7 functions. publish/retract/revise auto-confirm (collapse 2-phase flow). moderate, search, query.
+    - id: task-31
+      name: Ghost/Trust Use Cases + searchAsGhost
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-31-ghost-trust-use-cases.md
+      estimated_hours: 3
+      dependencies: [task-27]
+      notes: |
+        8 functions. Ghost config, trust management, checkAccess, searchAsGhost compound operation.
+    - id: task-32
+      name: Profile Compound Use Cases
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-32-profile-compound-use-cases.md
+      estimated_hours: 3
+      dependencies: [task-28, task-30]
+      notes: |
+        4 functions. createAndPublishProfile, searchProfiles, retractProfile, updateAndRepublishProfile.
+    - id: task-33
+      name: Preferences Use Cases + Barrel Exports + Subpath Config
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-33-preferences-barrel-subpath.md
+      estimated_hours: 2
+      dependencies: [task-27]
+      notes: |
+        2 preference functions, src/web/index.ts barrel, package.json exports["./web"] subpath.
+    - id: task-34
+      name: Unit Tests
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-34-unit-tests.md
+      estimated_hours: 4
+      dependencies: [task-28, task-29, task-30, task-31, task-32, task-33]
+      notes: |
+        40-60 tests across 5-7 suites. Mock WebSDKContext. Test ok/err paths, auto-confirm, searchAsGhost, profiles.
+    - id: task-35
+      name: Update Docs (Migration Guide, CHANGELOG, README)
+      status: pending
+      file: agent/tasks/milestone-7-web-client-sdk/task-35-update-docs.md
+      estimated_hours: 2
+      dependencies: [task-34]
+      notes: |
+        Migration guide web SDK section, CHANGELOG 0.15.0, README /web subpath, version bump.
+
 documentation:
-  design_documents: 5
-  milestone_documents: 6
+  design_documents: 6
+  milestone_documents: 7
   pattern_documents: 25
-  task_documents: 25
+  task_documents: 35
 
 progress:
   planning: 100
-  implementation: 100
-  overall: 100
+  implementation: 74
+  overall: 77
 
 recent_work:
   - date: 2026-02-28
@@ -635,9 +734,10 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
+  - "M7: Implement Web Client SDK (Tasks 26-35)"
+  - "Start with Task 26: Foundation (Result type, WebSDKError, browser guard)"
   - Publish v0.14.0 to npm
-  - Migrate remaining 3 remember-mcp ghost tools (search_memory, query_memory, ghost_config)
-  - Begin remember-rest-server migration
+  - Migrate remaining 3 remember-mcp ghost tools
 
 notes:
   - "Source: remember-mcp v3.8.0-v3.13.0 (prmichaelsen/remember-mcp)"

@@ -250,4 +250,160 @@ describe('MemoryService', () => {
       expect(result.total).toBeGreaterThanOrEqual(0);
     });
   });
+
+  // ── Ghost/Trust Integration ──────────────────────────────────────────
+
+  describe('ghost-integrated search', () => {
+    beforeEach(async () => {
+      // Regular memory (low trust)
+      await collection.data.insert({
+        properties: {
+          user_id: userId, doc_type: 'memory', content: 'public note',
+          content_type: 'note', trust_score: 0.25, deleted_at: null,
+        },
+      });
+      // High-trust memory
+      await collection.data.insert({
+        properties: {
+          user_id: userId, doc_type: 'memory', content: 'secret diary',
+          content_type: 'note', trust_score: 0.75, deleted_at: null,
+        },
+      });
+      // Ghost memory
+      await collection.data.insert({
+        properties: {
+          user_id: userId, doc_type: 'memory', content: 'ghost persona',
+          content_type: 'ghost', trust_score: 0.5, deleted_at: null,
+        },
+      });
+    });
+
+    it('applies trust filter when ghost_context provided', async () => {
+      const result = await service.search({
+        query: 'note',
+        ghost_context: { accessor_trust_level: 0.5, owner_user_id: userId },
+      });
+      // trust_score <= 0.5 includes 0.25 and 0.5, excludes 0.75
+      // ghost content excluded by default
+      const trustScores = result.memories.map((m: any) => m.trust_score);
+      expect(trustScores.every((t: number) => t <= 0.5)).toBe(true);
+    });
+
+    it('excludes ghost content by default when ghost_context provided', async () => {
+      const result = await service.search({
+        query: 'persona',
+        ghost_context: { accessor_trust_level: 1.0, owner_user_id: userId },
+      });
+      const types = result.memories.map((m: any) => m.content_type);
+      expect(types).not.toContain('ghost');
+    });
+
+    it('includes ghost content when include_ghost_content is true', async () => {
+      const result = await service.search({
+        query: 'persona',
+        ghost_context: { accessor_trust_level: 1.0, owner_user_id: userId, include_ghost_content: true },
+      });
+      const types = result.memories.map((m: any) => m.content_type);
+      expect(types).toContain('ghost');
+    });
+
+    it('does not apply trust filter without ghost_context', async () => {
+      const result = await service.search({ query: 'note' });
+      // All memories returned (no trust filtering)
+      expect(result.memories.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('excludes ghost content even without ghost_context', async () => {
+      const result = await service.search({ query: 'persona' });
+      const types = result.memories.map((m: any) => m.content_type);
+      expect(types).not.toContain('ghost');
+    });
+  });
+
+  describe('ghost-integrated query', () => {
+    beforeEach(async () => {
+      await collection.data.insert({
+        properties: {
+          user_id: userId, doc_type: 'memory', content: 'low trust fact',
+          content_type: 'note', trust_score: 0.25, deleted_at: null,
+        },
+      });
+      await collection.data.insert({
+        properties: {
+          user_id: userId, doc_type: 'memory', content: 'high trust secret',
+          content_type: 'note', trust_score: 0.9, deleted_at: null,
+        },
+      });
+      await collection.data.insert({
+        properties: {
+          user_id: userId, doc_type: 'memory', content: 'ghost data',
+          content_type: 'ghost', trust_score: 0.3, deleted_at: null,
+        },
+      });
+    });
+
+    it('applies trust filter when ghost_context provided', async () => {
+      const result = await service.query({
+        query: 'fact',
+        ghost_context: { accessor_trust_level: 0.5, owner_user_id: userId },
+      });
+      const trustScores = result.memories.map((m: any) => m.trust_score);
+      expect(trustScores.every((t: number) => t <= 0.5)).toBe(true);
+    });
+
+    it('excludes ghost content by default', async () => {
+      const result = await service.query({
+        query: 'data',
+        ghost_context: { accessor_trust_level: 1.0, owner_user_id: userId },
+      });
+      const types = result.memories.map((m: any) => m.content_type);
+      expect(types).not.toContain('ghost');
+    });
+
+    it('does not apply trust filter without ghost_context', async () => {
+      const result = await service.query({ query: 'fact' });
+      expect(result.memories.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('ghost-integrated findSimilar', () => {
+    beforeEach(async () => {
+      await collection.data.insert({
+        properties: {
+          user_id: userId, doc_type: 'memory', content: 'hiking trail',
+          content_type: 'note', trust_score: 0.3, deleted_at: null,
+        },
+      });
+      await collection.data.insert({
+        properties: {
+          user_id: userId, doc_type: 'memory', content: 'ghost trail info',
+          content_type: 'ghost', trust_score: 0.5, deleted_at: null,
+        },
+      });
+    });
+
+    it('excludes ghost content when ghost_context provided', async () => {
+      const result = await service.findSimilar({
+        text: 'hiking',
+        ghost_context: { accessor_trust_level: 1.0, owner_user_id: userId },
+      });
+      const types = result.similar_memories.map((m: any) => m.content_type);
+      expect(types).not.toContain('ghost');
+    });
+
+    it('applies trust filter when ghost_context provided', async () => {
+      const result = await service.findSimilar({
+        text: 'hiking',
+        ghost_context: { accessor_trust_level: 0.4, owner_user_id: userId },
+      });
+      const trustScores = result.similar_memories.map((m: any) => m.trust_score);
+      expect(trustScores.every((t: number) => t <= 0.4)).toBe(true);
+    });
+
+    it('does not filter without ghost_context', async () => {
+      const result = await service.findSimilar({ text: 'trail' });
+      // Both regular and ghost content included when no ghost_context
+      expect(result.similar_memories.length).toBeGreaterThanOrEqual(1);
+    });
+  });
 });

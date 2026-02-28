@@ -3,7 +3,7 @@ project:
   version: 0.12.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M5
+  current_milestone: M6
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -70,6 +70,23 @@ milestones:
     notes: |
       Extract trust enforcement, access control, and ghost/persona system from
       remember-mcp (v3.9.0-v3.13.0). New types, 6 services, schema updates, tests.
+
+  - id: M6
+    name: Ghost/Trust Integration into MemoryService
+    status: completed
+    progress: 100
+    estimated_weeks: 0.5
+    tasks_completed: 4
+    tasks_total: 4
+    started: 2026-02-28
+    completed: 2026-02-28
+    notes: |
+      ✅ Ghost/trust filtering wired into MemoryService search/query/findSimilar.
+      ✅ GhostSearchContext type, ghost_context parameter on 3 input types.
+      ✅ 11 new unit tests, 281 total (12 suites).
+      ✅ Migration guide updated with ghost search examples.
+      Unblocks remember-mcp migration of 3 deferred ghost tools.
+      See: agent/milestones/milestone-6-ghost-memory-service-integration.md
 
 tasks:
   milestone_1:
@@ -328,11 +345,61 @@ tasks:
         Updated CHANGELOG.md: comprehensive 0.13.0 entry covering all M5 changes.
         Updated README.md: trust & ghost services section, test count (270), content type count (43).
 
+  milestone_6:
+    - id: task-22
+      name: Extend MemoryService Input Types with Ghost Context
+      status: completed
+      completed_date: 2026-02-28
+      file: agent/tasks/milestone-6-ghost-memory-service-integration/task-22-extend-memory-service-inputs.md
+      estimated_hours: 2
+      dependencies: [task-21]
+      notes: |
+        ✅ Created GhostSearchContext type in search.types.ts.
+        ✅ Added ghost_context to SearchMemoryInput, QueryMemoryInput, FindSimilarInput.
+        ✅ Exported from types/index.ts barrel.
+
+    - id: task-23
+      name: Wire Ghost Filtering into MemoryService Methods
+      status: completed
+      completed_date: 2026-02-28
+      file: agent/tasks/milestone-6-ghost-memory-service-integration/task-23-wire-ghost-filtering-into-memory-service.md
+      estimated_hours: 3
+      dependencies: [task-22]
+      notes: |
+        ✅ search() applies buildTrustFilter + ghost exclusion when ghost_context present.
+        ✅ query() applies buildTrustFilter + ghost exclusion when ghost_context present.
+        ✅ findSimilar() applies trust + ghost exclusion when ghost_context present.
+        ✅ Default behavior unchanged without ghost_context.
+
+    - id: task-24
+      name: Unit Tests for Ghost-Integrated MemoryService
+      status: completed
+      completed_date: 2026-02-28
+      file: agent/tasks/milestone-6-ghost-memory-service-integration/task-24-ghost-memory-service-tests.md
+      estimated_hours: 3
+      dependencies: [task-23]
+      notes: |
+        ✅ 11 new ghost-integrated tests (search: 5, query: 3, findSimilar: 3).
+        ✅ 281 total tests, 12 suites, 0 failures.
+        ✅ Added lessThanOrEqual alias to mock collection.
+
+    - id: task-25
+      name: Update Migration Guide and Documentation
+      status: completed
+      completed_date: 2026-02-28
+      file: agent/tasks/milestone-6-ghost-memory-service-integration/task-25-update-migration-guide.md
+      estimated_hours: 1
+      dependencies: [task-24]
+      notes: |
+        ✅ Migration guide: ghost search before/after, GhostSearchContext docs, deferred tool table.
+        ✅ CHANGELOG: v0.14.0 entry.
+        ✅ README: test count updated to 281.
+
 documentation:
   design_documents: 5
-  milestone_documents: 5
+  milestone_documents: 6
   pattern_documents: 25
-  task_documents: 21
+  task_documents: 25
 
 progress:
   planning: 100
@@ -340,6 +407,16 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-02-28
+    description: |
+      M6 Ghost/Trust Integration into MemoryService — COMPLETE (4 tasks)
+    items:
+      - "Created GhostSearchContext type, added ghost_context to SearchMemoryInput/QueryMemoryInput/FindSimilarInput"
+      - "Wired buildTrustFilter + ghost exclusion into MemoryService search/query/findSimilar"
+      - "11 new unit tests (281 total, 12 suites, 0 failures)"
+      - "Updated migration guide with ghost search before/after, CHANGELOG v0.14.0, README test count"
+      - "Added lessThanOrEqual alias to mock collection (matches Weaviate v3 API)"
+      - "Unblocks remember-mcp migration of 3 deferred ghost tools"
   - date: 2026-02-28
     description: |
       Task 21 — Update Migration Guide (M5 COMPLETE)
@@ -558,8 +635,8 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Publish v0.13.0 to npm
-  - Begin remember-mcp migration (consumer adoption)
+  - Publish v0.14.0 to npm
+  - Migrate remaining 3 remember-mcp ghost tools (search_memory, query_memory, ghost_config)
   - Begin remember-rest-server migration
 
 notes:

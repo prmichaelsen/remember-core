@@ -10,7 +10,7 @@
 
 import { Filters } from 'weaviate-client';
 import type { Logger } from '../utils/logger.js';
-import type { SearchFilters } from '../types/search.types.js';
+import type { SearchFilters, GhostSearchContext } from '../types/search.types.js';
 import type { ContentType } from '../types/index.js';
 import { isValidContentType, DEFAULT_CONTENT_TYPE } from '../constants/content-types.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
@@ -21,6 +21,7 @@ import {
   combineFiltersWithAnd,
   type DeletedFilter,
 } from '../utils/filters.js';
+import { buildTrustFilter } from './trust-enforcement.service.js';
 
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ export interface SearchMemoryInput {
   filters?: SearchFilters;
   include_relationships?: boolean;
   deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
 }
 
 export interface SearchMemoryResult {
@@ -70,6 +72,7 @@ export interface FindSimilarInput {
   min_similarity?: number;
   include_relationships?: boolean;
   deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
 }
 
 export interface SimilarMemoryItem {
@@ -89,6 +92,7 @@ export interface QueryMemoryInput {
   min_relevance?: number;
   filters?: SearchFilters;
   deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
 }
 
 export interface RelevantMemoryItem {
@@ -207,8 +211,18 @@ export class MemoryService {
     const searchFilters = includeRelationships
       ? buildCombinedSearchFilters(this.collection, input.filters)
       : buildMemoryOnlyFilters(this.collection, input.filters);
+
+    // Ghost/trust filtering
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+
     const combinedFilters = combineFiltersWithAnd(
-      [deletedFilter, searchFilters].filter((f) => f !== null),
+      [deletedFilter, searchFilters, ...ghostFilters].filter((f) => f !== null),
     );
 
     const searchOptions: any = { alpha, limit: limit + offset };
@@ -245,6 +259,18 @@ export class MemoryService {
     const minSimilarity = input.min_similarity ?? 0.7;
     const deletedFilter = buildDeletedFilter(this.collection, input.deleted_filter || 'exclude');
 
+    // Ghost/trust filtering — combine deleted + ghost filters
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+    const combinedFilter = combineFiltersWithAnd(
+      [deletedFilter, ...ghostFilters].filter((f) => f !== null),
+    );
+
     let results: any;
 
     if (input.memory_id) {
@@ -256,12 +282,12 @@ export class MemoryService {
       if (memory.properties.doc_type !== 'memory') throw new Error('Can only find similar for memory documents');
 
       const opts: any = { limit: limit + 1, distance: 1 - minSimilarity, returnMetadata: ['distance'] };
-      if (deletedFilter) opts.filters = deletedFilter;
+      if (combinedFilter) opts.filters = combinedFilter;
       results = await this.collection.query.nearObject(input.memory_id, opts);
       results.objects = results.objects.filter((o: any) => o.uuid !== input.memory_id);
     } else {
       const opts: any = { limit, distance: 1 - minSimilarity, returnMetadata: ['distance'] };
-      if (deletedFilter) opts.filters = deletedFilter;
+      if (combinedFilter) opts.filters = combinedFilter;
       results = await this.collection.query.nearText(input.text!, opts);
     }
 
@@ -291,8 +317,18 @@ export class MemoryService {
 
     const deletedFilter = buildDeletedFilter(this.collection, input.deleted_filter || 'exclude');
     const searchFilters = buildCombinedSearchFilters(this.collection, input.filters);
+
+    // Ghost/trust filtering
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+
     const combinedFilters = combineFiltersWithAnd(
-      [deletedFilter, searchFilters].filter((f) => f !== null),
+      [deletedFilter, searchFilters, ...ghostFilters].filter((f) => f !== null),
     );
 
     const opts: any = { limit, distance: 1 - minRelevance, returnMetadata: ['distance'] };

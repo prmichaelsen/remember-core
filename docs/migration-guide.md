@@ -311,6 +311,57 @@ npm test
 # Manual smoke test of each tool
 ```
 
+## Ghost-Integrated Memory Search (v0.14.0+)
+
+`MemoryService.search()`, `.query()`, and `.findSimilar()` now accept an optional `ghost_context` parameter for trust-level filtering and ghost content exclusion.
+
+### Before (inline ghost filtering in remember-mcp)
+
+```typescript
+// search-memory.ts handler — manual ghost filtering
+const ghostMode = authContext?.ghostMode;
+const trustFilter = ghostMode
+  ? buildTrustFilter(collection, ghostMode.accessor_trust_level)
+  : null;
+const ghostExclusionFilter = collection.filter.byProperty('content_type').notEqual('ghost');
+const combined = combineFiltersWithAnd([deletedFilter, trustFilter, ghostExclusionFilter, searchFilters]);
+const results = await collection.query.hybrid(args.query, { filters: combined });
+```
+
+### After (delegated to remember-core)
+
+```typescript
+// search-memory.ts handler — thin adapter
+const { memory } = createCoreServices(userId);
+const result = await memory.search({
+  query: args.query,
+  ghost_context: authContext?.ghostMode ? {
+    accessor_trust_level: authContext.ghostMode.accessor_trust_level,
+    owner_user_id: authContext.ghostMode.owner_user_id,
+  } : undefined,
+});
+```
+
+### GhostSearchContext
+
+```typescript
+import type { GhostSearchContext } from '@prmichaelsen/remember-core';
+
+interface GhostSearchContext {
+  accessor_trust_level: number;   // 0-1, filters memories by trust_score
+  owner_user_id: string;          // Owner of the ghost memories
+  include_ghost_content?: boolean; // true = include ghost content_type (default: exclude)
+}
+```
+
+### Deferred Tool Migration (now unblocked)
+
+| Tool | Core Method | Notes |
+|------|-------------|-------|
+| `search_memory` | `MemoryService.search()` + `ghost_context` | Was deferred in remember-mcp M17 |
+| `query_memory` | `MemoryService.query()` + `ghost_context` | Was deferred in remember-mcp M17 |
+| `ghost_config` | Direct imports from core | No service changes needed — already migrable |
+
 ## Migration Checklist
 
 - [ ] Install `@prmichaelsen/remember-core`
@@ -321,7 +372,7 @@ npm test
 - [ ] Migrate preferences tools (get, set)
 - [ ] Migrate ghost config tools (get, update, set_trust, block, unblock)
 - [ ] Set up AccessControlService with GhostConfigProvider and EscalationStore
-- [ ] Add trust enforcement to search queries (buildTrustFilter or formatMemoryForPrompt)
+- [ ] Add trust enforcement to search queries (use `ghost_context` parameter)
 - [ ] Remove duplicated source files
 - [ ] Verify build succeeds
 - [ ] Verify all tests pass

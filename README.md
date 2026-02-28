@@ -74,7 +74,7 @@ const results = await memoryService.search({
 ## Testing
 
 ```bash
-npm test           # Unit tests (270 tests)
+npm test           # Unit tests (281 tests)
 npm run test:e2e   # Integration tests (22 tests)
 npm run typecheck  # Type checking
 npm run build      # TypeScript compilation

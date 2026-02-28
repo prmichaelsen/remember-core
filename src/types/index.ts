@@ -77,6 +77,7 @@ export type {
   DeletedFilter,
   SearchOptions,
   SearchResult,
+  GhostSearchContext,
 } from './search.types.js';
 
 // Auth types (ported from remember-mcp)

@@ -42,6 +42,19 @@ export interface SearchOptions {
 }
 
 /**
+ * Ghost/trust context for memory searches.
+ * When provided, MemoryService applies trust-level filtering and ghost content exclusion.
+ */
+export interface GhostSearchContext {
+  /** Trust level of the user accessing ghost memories (0-1) */
+  accessor_trust_level: number;
+  /** Owner of the ghost memories being searched */
+  owner_user_id: string;
+  /** If true, skip ghost content_type exclusion (explicit ghost search) */
+  include_ghost_content?: boolean;
+}
+
+/**
  * Search result
  */
 export interface SearchResult {

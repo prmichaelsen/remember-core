@@ -154,6 +154,9 @@ export function createMockCollection() {
           lessOrEqual(value: any) {
             return { _type: 'lte', field: name, value };
           },
+          lessThanOrEqual(value: any) {
+            return { _type: 'lte', field: name, value };
+          },
           containsAny(values: any[]) {
             return { _type: 'containsAny', field: name, values };
           },

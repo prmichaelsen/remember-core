@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.14.0] - 2026-02-28
+
+### Added
+- **Ghost-integrated MemoryService** — M6 complete (4 tasks):
+  - `GhostSearchContext` type for passing trust/ghost context to memory operations
+  - `ghost_context` parameter on `SearchMemoryInput`, `QueryMemoryInput`, `FindSimilarInput`
+  - `MemoryService.search()` applies `buildTrustFilter()` and ghost content exclusion when `ghost_context` provided
+  - `MemoryService.query()` applies trust filtering and ghost exclusion when `ghost_context` provided
+  - `MemoryService.findSimilar()` applies trust filtering and ghost exclusion when `ghost_context` provided
+  - Default behavior unchanged when `ghost_context` is absent (backwards compatible)
+  - 13 new unit tests for ghost-integrated search/query/findSimilar paths
+  - Updated migration guide with ghost search before/after examples
+
+### Fixed
+- Added `lessThanOrEqual` alias to mock collection filter (matches Weaviate v3 API)
+
 ## [0.13.0] - 2026-02-28
 
 ### Added

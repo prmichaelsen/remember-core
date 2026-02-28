@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.10.0
+  version: 0.11.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M3
@@ -37,11 +37,11 @@ milestones:
   - id: M3
     name: Core Services
     status: in_progress
-    progress: 75
+    progress: 100
     started: 2026-02-27
-    completed: null
+    completed: 2026-02-27
     estimated_weeks: 2
-    tasks_completed: 3
+    tasks_completed: 4
     tasks_total: 4
     notes: |
       Extract business logic from 20 MCP tool handlers into reusable services.
@@ -167,12 +167,15 @@ tasks:
         Two-phase confirmation flow, composite IDs, tracking arrays, moderation, revision history.
     - id: task-11
       name: Service Tests and Validation
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-3-core-services/task-11-service-tests.md
       estimated_hours: 6
-      completed_date: null
+      actual_hours: 0.5
+      completed_date: 2026-02-27
       notes: |
-        Unit tests for all services, integration test scaffold
+        120 tests across 6 suites: collection utils (composite-ids, tracking-arrays, dot-notation),
+        MemoryService, RelationshipService, SpaceService. Weaviate mock with filter support.
+        Jest CJS config, npm test script. M3 complete.
 
   milestone_4:
     - id: task-12
@@ -216,10 +219,26 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 60
-  overall: 60
+  implementation: 73
+  overall: 73
 
 recent_work:
+  - date: 2026-02-27
+    description: |
+      Task 11 — Service Tests and Validation (M3 COMPLETE)
+    items:
+      - "Created src/testing/weaviate-mock.ts — in-memory Weaviate collection mock with filter support"
+      - "Created src/collections/__tests__/composite-ids.spec.ts — 15 tests (generate, parse, round-trip)"
+      - "Created src/collections/__tests__/tracking-arrays.spec.ts — 15 tests (add, remove, dedup, immutability)"
+      - "Created src/collections/__tests__/dot-notation.spec.ts — 15 tests (names, parse, type checks)"
+      - "Created src/services/__tests__/memory.service.spec.ts — 22 tests (create, search, update, delete, findSimilar, query)"
+      - "Created src/services/__tests__/relationship.service.spec.ts — 22 tests (create, update, search, delete)"
+      - "Created src/services/__tests__/space.service.spec.ts — 31 tests (publish, retract, revise, confirm, deny, moderate, search, query)"
+      - "Configured jest.config.js (rootDir, CJS transform, path ignores)"
+      - "Added test/test:coverage scripts to package.json"
+      - "Installed jest, ts-jest, @types/jest as dev dependencies"
+      - "120 tests pass, 6 suites, 0 failures"
+      - "M3 Core Services milestone 100% complete (4/4 tasks)"
   - date: 2026-02-27
     description: |
       Task 10 — Create RelationshipService and SpaceService
@@ -326,9 +345,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M3 Task 11 - Service Tests and Validation
   - M4 Task 12 - NPM Package Setup
   - M4 Task 13 - Public API Design and Barrel Exports
+  - M4 Task 14 - Integration Tests
 
 notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"

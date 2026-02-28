@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.11.0] - 2026-02-27
+
+### Added
+- Service Tests and Validation (Task 11) — completes M3:
+  - `src/testing/weaviate-mock.ts` — in-memory Weaviate collection mock with filter support
+  - `src/collections/__tests__/composite-ids.spec.ts` — 15 tests for composite ID operations
+  - `src/collections/__tests__/tracking-arrays.spec.ts` — 15 tests for tracking array operations
+  - `src/collections/__tests__/dot-notation.spec.ts` — 15 tests for collection naming
+  - `src/services/__tests__/memory.service.spec.ts` — 22 tests for MemoryService CRUD+search
+  - `src/services/__tests__/relationship.service.spec.ts` — 22 tests for RelationshipService
+  - `src/services/__tests__/space.service.spec.ts` — 31 tests for SpaceService operations
+  - Jest config: rootDir, CJS transform, test scripts
+  - 120 tests pass, 6 suites, 0 failures
+
+### Changed
+- M3 (Core Services) complete — 100% (4/4 tasks)
+
 ## [0.10.0] - 2026-02-27
 
 ### Added

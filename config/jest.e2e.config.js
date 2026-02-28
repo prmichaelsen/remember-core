@@ -16,19 +16,7 @@ export default {
       }
     ]
   },
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.spec.ts',
-    '!src/**/*.e2e.ts',
-    '!src/testing/**'
-  ],
-  coverageReporters: ['text', 'lcov', 'html'],
-  testMatch: [
-    '**/*.spec.ts',
-  ],
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/examples/',
-    'user\\.service\\.spec\\.ts',
-  ],
+  testMatch: ['**/*.e2e.ts'],
+  testPathIgnorePatterns: ['/node_modules/'],
+  testTimeout: 30000,
 }

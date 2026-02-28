@@ -49,11 +49,11 @@ milestones:
   - id: M4
     name: Integration & Packaging
     status: in_progress
-    progress: 25
+    progress: 75
     started: 2026-02-27
     completed: null
     estimated_weeks: 1
-    tasks_completed: 1
+    tasks_completed: 3
     tasks_total: 4
     notes: |
       NPM packaging, public API design, integration tests, migration guides.
@@ -191,20 +191,25 @@ tasks:
         npm pack: 198 files, 100.5 kB. Verified install with both moduleResolution: node and node16.
     - id: task-13
       name: Public API Design and Barrel Exports
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-4-integration-and-packaging/task-13-public-api-exports.md
       estimated_hours: 3
-      completed_date: null
+      actual_hours: 0.05
+      completed_date: 2026-02-27
       notes: |
-        src/index.ts, subpath exports, no leaky abstractions
+        Completed as part of Task 12. Root barrel excludes database internals.
+        11 subpath exports configured. No circular dependencies. typesVersions fallback in place.
     - id: task-14
       name: Integration Tests
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-4-integration-and-packaging/task-14-integration-tests.md
       estimated_hours: 5
-      completed_date: null
+      actual_hours: 0.3
+      completed_date: 2026-02-27
       notes: |
-        End-to-end service flows against real/emulated DBs
+        22 integration tests across 3 suites: memory lifecycle (7), memory+relationship cross-service (8),
+        space publishing flow (9). Mock ConfirmationTokenService for Firestore-free testing.
+        Separate jest.e2e.config.js with 30s timeout. npm test:e2e script added.
     - id: task-15
       name: Migration Guide and Consumer Documentation
       status: not_started
@@ -222,10 +227,23 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 80
-  overall: 80
+  implementation: 93
+  overall: 93
 
 recent_work:
+  - date: 2026-02-27
+    description: |
+      Task 13 — Public API verified, Task 14 — Integration Tests
+    items:
+      - "Task 13 confirmed complete (root barrel, subpath exports, typesVersions already done in T12)"
+      - "Created config/jest.e2e.config.js — separate e2e config with 30s timeout, runInBand"
+      - "Created memory-lifecycle.e2e.ts — 7 tests (create→search→update→delete, pagination, findSimilar, query, version increment, orphan detection)"
+      - "Created memory-relationship.e2e.ts — 8 tests (cross-service: create+link, search with relationships, update, delete+cleanup, full lifecycle)"
+      - "Created space-publish.e2e.ts — 9 tests (validation, publish token, deny, confirm+verify, retract validation, group publish, search, query)"
+      - "Created in-memory mock ConfirmationTokenService for Firestore-free space testing"
+      - "Updated jest.config.js to exclude *.e2e.ts from unit test runs"
+      - "Added npm test:e2e script to package.json"
+      - "142 total tests (120 unit + 22 integration), 9 suites, 0 failures"
   - date: 2026-02-27
     description: |
       Task 12 — NPM Package Setup (M4 begins)
@@ -360,8 +378,6 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M4 Task 13 - Public API Design and Barrel Exports
-  - M4 Task 14 - Integration Tests
   - M4 Task 15 - Migration Guide and Consumer Documentation
 
 notes:

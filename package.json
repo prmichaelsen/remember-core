@@ -74,6 +74,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest --config config/jest.config.js",
     "test:coverage": "jest --config config/jest.config.js --coverage",
+    "test:e2e": "jest --config config/jest.e2e.config.js --runInBand",
     "prepublishOnly": "npm run clean && npm run build && npm run test"
   },
   "keywords": [

@@ -93,7 +93,7 @@ milestones:
     status: in_progress
     progress: 10
     estimated_weeks: 1.5
-    tasks_completed: 5
+    tasks_completed: 6
     tasks_total: 10
     started: 2026-02-28
     completed: null
@@ -468,12 +468,14 @@ tasks:
         ✅ moderate, search (with hasMore), query. SpaceSearchResult mapping. Build passes.
     - id: task-31
       name: Ghost/Trust Use Cases + searchAsGhost
-      status: pending
+      status: completed
+      completed_date: 2026-02-28
       file: agent/tasks/milestone-7-web-client-sdk/task-31-ghost-trust-use-cases.md
       estimated_hours: 3
       dependencies: [task-27]
       notes: |
-        8 functions. Ghost config, trust management, checkAccess, searchAsGhost compound operation.
+        ✅ Created src/web/ghost.ts — 8 functions. Ghost config, trust management, checkAccess.
+        ✅ searchAsGhost compound: resolves trust → builds ghost_context → searches → redacts. Build passes.
     - id: task-32
       name: Profile Compound Use Cases
       status: pending

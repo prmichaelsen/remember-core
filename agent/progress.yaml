@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.11.0
+  version: 0.12.0
   started: 2026-02-27
   status: complete
   current_milestone: complete
@@ -234,6 +234,17 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-02-28
+    description: |
+      Post-completion cleanup — ESM import fixes, scaffold removal, build verification
+    items:
+      - "Fixed extensionless imports across 11 files (.js extensions for ESM resolution)"
+      - "Removed 7 unused core-sdk scaffold files (user.service, base.service, client/, config/schema, config/loader, testing/helpers, testing/fixtures)"
+      - "Created .npmignore excluding src/, agent/, config/, tests"
+      - "Updated testing/index.ts barrel to export weaviate-mock and test-data-generator"
+      - "Clean rebuild: 48 .js + 48 .d.ts files, 100KB tarball"
+      - "Verified npm install + all 11 subpath imports resolve correctly"
+      - "All 120 unit tests pass after cleanup"
   - date: 2026-02-27
     description: |
       Task 15 — Migration Guide and Documentation (M4 COMPLETE, PROJECT COMPLETE)

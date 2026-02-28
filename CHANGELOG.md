@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.12.0] - 2026-02-28
+
+### Fixed
+- ESM import resolution — added `.js` extensions to 11 scaffolded source files
+- Removed 7 unused core-sdk scaffold files that blocked TypeScript build
+
+### Added
+- `.npmignore` for clean package publishing
+- `tsconfig.json` at project root for `npm run build`
+- `@prmichaelsen/remember-core@0.1.0` package.json with 11 subpath exports
+
+### Changed
+- `src/testing/index.ts` — barrel now exports weaviate-mock and test-data-generator
+
 ## [0.11.0] - 2026-02-27
 
 ### Added

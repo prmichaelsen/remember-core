@@ -16,7 +16,7 @@ import type { ConfirmationTokenService, ConfirmationRequest } from './confirmati
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import { ensurePublicCollection, isValidSpaceId } from '../database/weaviate/space-schema.js';
 import { CollectionType, getCollectionName } from '../collections/dot-notation.js';
-import { generateCompositeId } from '../collections/composite-ids.js';
+import { generateCompositeId, compositeIdToUuid } from '../collections/composite-ids.js';
 import { getSpaceConfig } from './space-config.service.js';
 import { canModerate, canModerateAny } from '../utils/auth-helpers.js';
 
@@ -694,6 +694,7 @@ export class SpaceService {
     if (originalMemory.properties.user_id !== this.userId) throw new Error('Permission denied');
 
     const compositeId = generateCompositeId(this.userId, request.payload.memory_id);
+    const weaviateId = compositeIdToUuid(compositeId);
 
     // Existing tracking arrays
     const existingSpaceIds: string[] = Array.isArray(originalMemory.properties.space_ids)
@@ -721,7 +722,7 @@ export class SpaceService {
         const publicCollection = await ensurePublicCollection(this.weaviateClient);
         let existingSpaceMemory = null;
         try {
-          existingSpaceMemory = await fetchMemoryWithAllProperties(publicCollection, compositeId);
+          existingSpaceMemory = await fetchMemoryWithAllProperties(publicCollection, weaviateId);
         } catch { /* doesn't exist */ }
 
         const newSpaceIds = [...new Set([...existingSpaceIds, ...spaces])];
@@ -738,7 +739,7 @@ export class SpaceService {
 
         const publishedMemory: Record<string, any> = {
           ...originalMemory.properties,
-          id: compositeId,
+          composite_id: compositeId,
           space_ids: newSpaceIds,
           group_ids: existingGroupIds,
           spaces,
@@ -752,9 +753,9 @@ export class SpaceService {
         delete publishedMemory._additional;
 
         if (existingSpaceMemory) {
-          await publicCollection.data.update({ id: compositeId, properties: publishedMemory });
+          await publicCollection.data.update({ id: weaviateId, properties: publishedMemory });
         } else {
-          await publicCollection.data.insert({ id: compositeId, properties: publishedMemory });
+          await publicCollection.data.insert({ id: weaviateId, properties: publishedMemory });
         }
 
         successfulPublications.push(`spaces: ${spaces.join(', ')}`);
@@ -770,7 +771,7 @@ export class SpaceService {
         const groupCollection = this.weaviateClient.collections.get(groupCollectionName);
         let existingGroupMemory = null;
         try {
-          existingGroupMemory = await fetchMemoryWithAllProperties(groupCollection, compositeId);
+          existingGroupMemory = await fetchMemoryWithAllProperties(groupCollection, weaviateId);
         } catch { /* doesn't exist */ }
 
         const newGroupIds = [...new Set([...existingGroupIds, groupId])];
@@ -779,7 +780,7 @@ export class SpaceService {
 
         const groupMemory: Record<string, any> = {
           ...originalMemory.properties,
-          id: compositeId,
+          composite_id: compositeId,
           space_ids: existingSpaceIds,
           group_ids: newGroupIds,
           author_id: this.userId,
@@ -792,9 +793,9 @@ export class SpaceService {
         delete groupMemory._additional;
 
         if (existingGroupMemory) {
-          await groupCollection.data.update({ id: compositeId, properties: groupMemory });
+          await groupCollection.data.update({ id: weaviateId, properties: groupMemory });
         } else {
-          await groupCollection.data.insert({ id: compositeId, properties: groupMemory });
+          await groupCollection.data.insert({ id: weaviateId, properties: groupMemory });
         }
 
         successfulPublications.push(`group: ${groupId}`);
@@ -866,6 +867,7 @@ export class SpaceService {
       : [];
 
     const compositeId = generateCompositeId(this.userId, request.payload.memory_id);
+    const weaviateId = compositeIdToUuid(compositeId);
     const successfulRetractions: string[] = [];
     const failedRetractions: string[] = [];
 
@@ -874,12 +876,12 @@ export class SpaceService {
       try {
         const spacesCollectionName = getCollectionName(CollectionType.SPACES);
         const publicCollection = this.weaviateClient.collections.get(spacesCollectionName);
-        const publishedMemory = await fetchMemoryWithAllProperties(publicCollection, compositeId);
+        const publishedMemory = await fetchMemoryWithAllProperties(publicCollection, weaviateId);
 
         if (publishedMemory) {
           const newSpaceIds = currentSpaceIds.filter((id) => !spaces.includes(id));
           await publicCollection.data.update({
-            id: compositeId,
+            id: weaviateId,
             properties: { space_ids: newSpaceIds, retracted_at: new Date().toISOString() },
           });
           successfulRetractions.push(`spaces: ${spaces.join(', ')}`);
@@ -896,7 +898,7 @@ export class SpaceService {
       const groupCollectionName = getCollectionName(CollectionType.GROUPS, groupId);
       try {
         const groupCollection = this.weaviateClient.collections.get(groupCollectionName);
-        const groupMemory = await fetchMemoryWithAllProperties(groupCollection, compositeId);
+        const groupMemory = await fetchMemoryWithAllProperties(groupCollection, weaviateId);
 
         if (groupMemory) {
           const groupMemoryGroupIds: string[] = Array.isArray(groupMemory.properties.group_ids)
@@ -904,7 +906,7 @@ export class SpaceService {
             : [];
           const newGroupIds = groupMemoryGroupIds.filter((id) => id !== groupId);
           await groupCollection.data.update({
-            id: compositeId,
+            id: weaviateId,
             properties: { group_ids: newGroupIds, retracted_at: new Date().toISOString() },
           });
           successfulRetractions.push(`group: ${groupId}`);
@@ -969,12 +971,13 @@ export class SpaceService {
     const newContent = String(sourceMemory.properties.content ?? '');
     const revisedAt = new Date().toISOString();
     const compositeId = generateCompositeId(this.userId, memory_id);
+    const weaviateId = compositeIdToUuid(compositeId);
     const results: RevisionResult[] = [];
 
     const reviseInCollection = async (collectionName: string, locationLabel: string) => {
       try {
         const collection = this.weaviateClient.collections.get(collectionName);
-        const publishedMemory = await fetchMemoryWithAllProperties(collection, compositeId);
+        const publishedMemory = await fetchMemoryWithAllProperties(collection, weaviateId);
 
         if (!publishedMemory) {
           results.push({ location: locationLabel, status: 'skipped', error: 'Published copy not found' });
@@ -993,7 +996,7 @@ export class SpaceService {
             : 0;
 
         await collection.data.update({
-          id: compositeId,
+          id: weaviateId,
           properties: {
             content: newContent,
             revised_at: revisedAt,

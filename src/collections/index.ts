@@ -10,6 +10,7 @@ export {
   getUserIdFromComposite,
   getMemoryIdFromComposite,
   belongsToUser,
+  compositeIdToUuid,
   InvalidCompositeIdError,
   type CompositeIdComponents,
 } from './composite-ids.js';

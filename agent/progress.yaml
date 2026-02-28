@@ -108,13 +108,13 @@ milestones:
 
   - id: M8
     name: Bug Fixes
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 1
-    started: null
-    completed: null
+    started: 2026-02-28
+    completed: 2026-02-28
     notes: |
       Bug fixes placeholder. Task 36 (memory search indexing) moved out —
       likely a Weaviate/infrastructure issue, not a remember-core library bug.
@@ -566,14 +566,14 @@ tasks:
         Source: GitHub Issue #1 (agentbase.me)
     - id: task-47
       name: Fix Composite ID to Use Weaviate-Valid UUID v5
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-8-bug-fixes/task-47-fix-composite-id-weaviate-uuid.md
       estimated_hours: 3
-      completed_date: null
+      completed_date: 2026-02-28
       notes: |
-        Weaviate requires UUID v3/v4/v5 for object IDs. Current dot-delimited
-        composite IDs (e.g. user1.mem1) are rejected. Switch to deterministic
-        UUID v5 via generateUuid5() from weaviate-client.
+        Added compositeIdToUuid() using uuid v5 (DNS namespace, matching Weaviate).
+        Updated SpaceService to use UUID for Weaviate ops, composite string as property.
+        5 new tests, 399 total passing.
 
   milestone_9:
     - id: task-37
@@ -706,6 +706,18 @@ progress:
   overall: 97
 
 recent_work:
+  - date: 2026-02-28
+    description: |
+      Task 47 — Fix Composite ID to Use Weaviate-Valid UUID v5 (M8 COMPLETE)
+    items:
+      - "Added compositeIdToUuid() to src/collections/composite-ids.ts — UUID v5 with DNS namespace (matches Weaviate's generateUuid5)"
+      - "Updated SpaceService executePublish/executeRetract/executeRevise to use UUID for Weaviate object IDs"
+      - "Published memories now store composite_id as a property (not as the Weaviate id field)"
+      - "Used uuid package (CJS-compatible) instead of weaviate-client (ESM-only, breaks Jest)"
+      - "Installed @types/uuid devDependency"
+      - "5 new tests in composite-ids.spec.ts (determinism, UUID format, uniqueness, validation)"
+      - "399 total tests, 26 suites, 0 failures"
+      - "Updated barrel export in collections/index.ts"
   - date: 2026-02-28
     description: |
       M9 Client SDKs (Svc + App) — COMPLETE (10 tasks)

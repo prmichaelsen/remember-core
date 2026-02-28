@@ -3,7 +3,7 @@
 **Milestone**: [M8 - Bug Fixes](../milestones/milestone-8-bug-fixes.md)
 **Estimated Time**: 2-4 hours
 **Dependencies**: None
-**Status**: Not Started
+**Status**: Completed
 
 ---
 

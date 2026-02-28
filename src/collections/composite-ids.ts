@@ -4,7 +4,15 @@
  * Ported from remember-mcp/src/collections/composite-ids.ts.
  * Provides utilities for working with composite IDs in Memory Collection Pattern v2.
  * Format: {userId}.{memoryId}
+ *
+ * Weaviate requires UUID v3/v4/v5 for object IDs. compositeIdToUuid() converts
+ * the logical composite string into a deterministic UUID v5 suitable for Weaviate.
  */
+
+import { v5 as uuidv5, v5 } from 'uuid';
+
+/** Weaviate's generateUuid5 uses the DNS namespace for UUID v5. */
+const WEAVIATE_UUID_NAMESPACE = v5.DNS;
 
 export interface CompositeIdComponents {
   userId: string;
@@ -105,4 +113,19 @@ export function belongsToUser(compositeId: string, userId: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Convert a composite ID string to a deterministic UUID v5.
+ *
+ * Weaviate requires UUID v3/v4/v5 for object IDs. This function takes a
+ * logical composite ID (e.g. "user1.mem1") and returns a valid UUID v5
+ * that is always the same for the same input.
+ *
+ * Use this as the Weaviate object `id` field. Store the original composite
+ * string in a property for reverse lookups.
+ */
+export function compositeIdToUuid(compositeId: string): string {
+  validateCompositeId(compositeId);
+  return uuidv5(compositeId, WEAVIATE_UUID_NAMESPACE);
 }

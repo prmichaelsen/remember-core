@@ -6,6 +6,7 @@ import {
   getUserIdFromComposite,
   getMemoryIdFromComposite,
   belongsToUser,
+  compositeIdToUuid,
   InvalidCompositeIdError,
 } from '../composite-ids.js';
 
@@ -115,6 +116,36 @@ describe('composite-ids', () => {
       const parsed = parseCompositeId(id);
       expect(parsed.userId).toBe('alice');
       expect(parsed.memoryId).toBe('abc-123');
+    });
+  });
+
+  describe('compositeIdToUuid', () => {
+    it('returns a valid UUID v5 string', () => {
+      const uuid = compositeIdToUuid('user1.mem1');
+      expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    });
+
+    it('is deterministic (same input → same UUID)', () => {
+      const uuid1 = compositeIdToUuid('user1.mem1');
+      const uuid2 = compositeIdToUuid('user1.mem1');
+      expect(uuid1).toBe(uuid2);
+    });
+
+    it('produces different UUIDs for different inputs', () => {
+      const uuid1 = compositeIdToUuid('user1.mem1');
+      const uuid2 = compositeIdToUuid('user2.mem1');
+      const uuid3 = compositeIdToUuid('user1.mem2');
+      expect(uuid1).not.toBe(uuid2);
+      expect(uuid1).not.toBe(uuid3);
+      expect(uuid2).not.toBe(uuid3);
+    });
+
+    it('throws for invalid composite ID', () => {
+      expect(() => compositeIdToUuid('invalid')).toThrow(InvalidCompositeIdError);
+    });
+
+    it('throws for empty string', () => {
+      expect(() => compositeIdToUuid('')).toThrow(InvalidCompositeIdError);
     });
   });
 });

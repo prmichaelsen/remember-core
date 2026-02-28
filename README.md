@@ -48,7 +48,8 @@ const results = await memoryService.search({
 | `@prmichaelsen/remember-core/errors` | Typed errors (AppError, 8 subclasses) |
 | `@prmichaelsen/remember-core/utils` | Logger, filters, auth helpers, debug |
 | `@prmichaelsen/remember-core/testing` | Weaviate mock, test data generator |
-| `@prmichaelsen/remember-core/web` | Web SDK — use-case-oriented server-side functions |
+| `@prmichaelsen/remember-core/app` | App client — use-case REST wrapper (profiles, ghost) |
+| `@prmichaelsen/remember-core/clients/svc/v1` | Svc client — 1:1 REST route mirror (29 methods) |
 
 ## Core Services
 
@@ -72,29 +73,45 @@ const results = await memoryService.search({
 
 **EscalationService** — Trust penalty tracking and automatic blocking after repeated unauthorized access attempts.
 
-### Web SDK (`@prmichaelsen/remember-core/web`)
+### Client SDKs
 
-Server-side, use-case-oriented functions that bundle multi-step business logic into single calls. 31 functions across 6 modules:
+Two typed REST client SDKs wrapping the remember-rest-service API. Both are server-side only (browser guard). Supabase-style `{ data, error }` responses with `.throwOnError()`.
 
-- **Memories** (6) — CRUD + search with `Result<T>` responses
-- **Relationships** (4) — CRUD + search
-- **Spaces** (7) — publish/retract/revise auto-confirmed (no tokens), moderate, search, query
-- **Ghost/Trust** (8) — config, trust management, `searchAsGhost` (resolves trust internally)
-- **Profiles** (4) — compound operations (create+publish, search, retract, update+republish)
-- **Preferences** (2) — get/update
+**Svc Client** (`@prmichaelsen/remember-core/clients/svc/v1`) — 1:1 mirror of `/api/svc/v1/` routes, 29 methods across 7 resource groups:
 
 ```typescript
-import { createWebSDKContext, createAndPublishProfile, searchAsGhost } from '@prmichaelsen/remember-core/web';
+import { createSvcClient } from '@prmichaelsen/remember-core/clients/svc/v1';
 
-const ctx = createWebSDKContext({ userId, memoryService, spaceService, ... });
-const result = await createAndPublishProfile(ctx, { display_name: 'Jane', bio: 'Engineer' });
-if (result.ok) console.log(result.data.composite_id);
+const client = createSvcClient({
+  baseUrl: 'https://remember-rest-server-e1.run.app',
+  getAuthToken: async (userId) => generateJwt(userId),
+});
+
+const { data, error } = await client.memories.search('user1', { query: 'meeting notes', limit: 10 });
+if (error) console.error(error.code, error.message);
+
+// Or throw on error
+const results = await client.memories.search('user1', { query: 'meeting notes' }).throwOnError();
+```
+
+**App Client** (`@prmichaelsen/remember-core/app`) — compound use-case operations (profiles, ghost), 5 methods:
+
+```typescript
+import { createAppClient } from '@prmichaelsen/remember-core/app';
+
+const client = createAppClient({
+  baseUrl: 'https://remember-rest-server-e1.run.app',
+  auth: { serviceToken: process.env.PLATFORM_SERVICE_TOKEN },
+});
+
+const { data } = await client.profiles.createAndPublish('user1', { display_name: 'Jane', bio: 'Engineer' });
+const ghost = await client.ghost.searchAsGhost('user1', { owner_user_id: 'user2', query: 'notes' });
 ```
 
 ## Testing
 
 ```bash
-npm test           # Unit tests (323 tests)
+npm test           # Unit tests (394 tests)
 npm run test:e2e   # Integration tests (22 tests)
 npm run typecheck  # Type checking
 npm run build      # TypeScript compilation
@@ -116,13 +133,16 @@ remember-core (this package)
   ├── collections/   Weaviate collection utilities
   ├── utils/         Logger, filters, auth helpers
   ├── services/      Business logic (5 core + 4 trust/ghost service modules)
+  ├── clients/       Shared HTTP transport, SdkResponse, browser guard
+  │   └── svc/v1/   Svc client (1:1 REST route mirror, 29 methods)
+  ├── app/           App client (compound use-case operations, 5 methods)
   └── testing/       Mock infrastructure for consumers
+
+remember-rest-service (server)
+  └── REST routes wrapping remember-core services
 
 remember-mcp-server (consumer)
   └── MCP tool handlers → thin adapters calling remember-core services
-
-remember-rest-server (consumer, planned)
-  └── REST routes → thin adapters calling remember-core services
 ```
 
 ## License

@@ -480,8 +480,108 @@ if (result.ok) {
 - [ ] Remove duplicated source files
 - [ ] Verify build succeeds
 - [ ] Verify all tests pass
-- [ ] Migrate to web SDK (replace manual orchestration with single calls)
-- [ ] Initialize WebSDKContext in app startup
-- [ ] Replace ProfileMemoryService with createAndPublishProfile/searchProfiles/retractProfile
-- [ ] Replace manual ghost resolution with searchAsGhost
-- [ ] Update error handling from try/catch to Result pattern matching
+- [ ] Migrate to client SDKs (replace hand-written fetch with typed REST wrappers)
+- [ ] Use `createSvcClient` for granular 1:1 REST route access
+- [ ] Use `createAppClient` for compound use-case operations (profiles, ghost)
+- [ ] Replace ProfileMemoryService with `client.profiles.createAndPublish`/`search`/`retract`
+- [ ] Replace manual ghost resolution with `client.ghost.searchAsGhost`
+- [ ] Update error handling to Supabase-style `{ data, error }` / `.throwOnError()`
+
+## Step 7: Client SDK Usage (v0.16.0+)
+
+**BREAKING**: The `./web` export has been replaced by `./app` and `./clients/svc/v1`. The old web SDK called database services directly — the new client SDKs are typed REST wrappers around remember-rest-service.
+
+### Before (hand-written fetch):
+
+```typescript
+const response = await fetch(`${baseUrl}/api/svc/v1/memories/search`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  },
+  body: JSON.stringify({ query: 'meeting notes', limit: 10 }),
+});
+const data = await response.json();
+```
+
+### After (svc client):
+
+```typescript
+import { createSvcClient } from '@prmichaelsen/remember-core/clients/svc/v1';
+
+const client = createSvcClient({
+  baseUrl: 'https://remember-rest-server-e1.run.app',
+  getAuthToken: async (userId) => generateJwt(userId),
+});
+
+const { data, error } = await client.memories.search('user1', {
+  query: 'meeting notes',
+  limit: 10,
+});
+```
+
+### After (app client — compound operations):
+
+```typescript
+import { createAppClient } from '@prmichaelsen/remember-core/app';
+
+const client = createAppClient({
+  baseUrl: 'https://remember-rest-server-e1.run.app',
+  auth: { serviceToken: process.env.PLATFORM_SERVICE_TOKEN },
+});
+
+// Create and publish profile in one call
+const { data } = await client.profiles.createAndPublish('user1', {
+  display_name: 'Jane',
+  bio: 'Software engineer',
+  tags: ['developer'],
+});
+
+// Search as ghost (trust-filtered)
+const ghost = await client.ghost.searchAsGhost('user1', {
+  owner_user_id: 'user2',
+  query: 'meeting notes',
+  limit: 10,
+});
+```
+
+### Auth patterns:
+
+```typescript
+// Pattern A: Consumer provides token
+const client = createSvcClient({
+  baseUrl: 'https://api.example.com',
+  getAuthToken: async (userId) => {
+    return await myAuthService.generateToken(userId);
+  },
+});
+
+// Pattern B: SDK generates JWT (requires jsonwebtoken peer dep)
+const client = createSvcClient({
+  baseUrl: 'https://api.example.com',
+  auth: {
+    serviceToken: process.env.PLATFORM_SERVICE_TOKEN,
+    jwtOptions: { issuer: 'my-app', expiresIn: '1h' },
+  },
+});
+```
+
+### Error handling:
+
+```typescript
+// Default: { data, error }
+const { data, error } = await client.memories.create('user1', { content: 'hello' });
+if (error) {
+  console.error(`${error.code}: ${error.message} (HTTP ${error.status})`);
+  return;
+}
+console.log(data);
+
+// Throw mode
+try {
+  const data = await client.memories.create('user1', { content: 'hello' }).throwOnError();
+} catch (e) {
+  // e is a RememberError with .code, .message, .status
+}
+```

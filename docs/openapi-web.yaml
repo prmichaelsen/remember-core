@@ -1,16 +1,15 @@
 openapi: 3.1.0
 info:
-  title: Remember Web API
+  title: Remember App API
   description: |
-    Web-tier REST API for the Remember personal memory management system.
+    App-tier REST API for the Remember personal memory management system.
     Provides use-case-oriented endpoints that collapse multi-step service operations
-    into single calls. Designed for web app consumption (agentbase.me first).
+    into single calls. Designed for server-side app consumption (agentbase.me first).
 
-    This is the **web tier** (`/api/web/v1/`). For fine-grained service operations,
+    This is the **app tier** (`/api/app/v1/`). For fine-grained service operations,
     see the service tier (`/api/svc/v1/`) in openapi.yaml.
 
     Key differences from the service tier:
-    - Space publish/retract/revise are single calls (no confirmation tokens)
     - Profile operations are first-class (create+publish, search, retract in one call)
     - Ghost context is resolved server-side (no ghost_context in search inputs)
     - searchAsGhost compound operation resolves trust → builds context → searches
@@ -39,7 +38,7 @@ tags:
   - name: relationships
     description: Relationship CRUD and search
   - name: spaces
-    description: Space publishing, moderation, and search (confirmation-free)
+    description: Space publishing, moderation, and search
   - name: trust
     description: Ghost config, trust management, and ghost search
   - name: preferences
@@ -56,7 +55,7 @@ paths:
       tags: [health]
       summary: Health check
       security: []
-      operationId: webGetHealth
+      operationId: appGetHealth
       responses:
         '200':
           description: Service is healthy
@@ -78,7 +77,7 @@ paths:
       tags: [health]
       summary: Service version
       security: []
-      operationId: webGetVersion
+      operationId: appGetVersion
       responses:
         '200':
           description: Service version info
@@ -94,20 +93,20 @@ paths:
                     type: string
                   tier:
                     type: string
-                    enum: [web]
+                    enum: [app]
 
   # ============================================================
   # Profiles (compound use-case operations)
   # ============================================================
-  /api/web/v1/profiles:
+  /api/app/v1/profiles:
     post:
       tags: [profiles]
       summary: Create and publish a profile
       description: |
         Compound operation that creates a profile memory, publishes it to the
-        'profiles' space, and auto-confirms — all in one call.
-        Equivalent to: createMemory → publishToSpace → confirmAction (3 svc calls).
-      operationId: webCreateAndPublishProfile
+        'profiles' space — all in one call.
+        Equivalent to: createMemory → publishToSpace (2 svc calls collapsed to 1).
+      operationId: appCreateAndPublishProfile
       requestBody:
         required: true
         content:
@@ -132,14 +131,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/web/v1/profiles/{memoryId}:
+  /api/app/v1/profiles/{memoryId}:
     patch:
       tags: [profiles]
       summary: Update and republish a profile
       description: |
         Compound operation that updates the profile memory content, then
-        republishes to the profiles space with auto-confirm.
-      operationId: webUpdateAndRepublishProfile
+        republishes to the profiles space.
+      operationId: appUpdateAndRepublishProfile
       parameters:
         - $ref: '#/components/parameters/memoryId'
       requestBody:
@@ -167,8 +166,8 @@ paths:
       summary: Retract a profile
       description: |
         Compound operation that retracts the profile from the profiles space
-        and auto-confirms. The underlying memory is soft-deleted.
-      operationId: webRetractProfile
+        The underlying memory is soft-deleted.
+      operationId: appRetractProfile
       parameters:
         - $ref: '#/components/parameters/memoryId'
       responses:
@@ -188,14 +187,14 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
 
-  /api/web/v1/profiles/search:
+  /api/app/v1/profiles/search:
     post:
       tags: [profiles]
       summary: Search published profiles
       description: |
         Searches the profiles space for published user profiles.
         Returns enriched results with user_id, display_name, etc.
-      operationId: webSearchProfiles
+      operationId: appSearchProfiles
       requestBody:
         required: true
         content:
@@ -217,11 +216,11 @@ paths:
   # ============================================================
   # Memories
   # ============================================================
-  /api/web/v1/memories:
+  /api/app/v1/memories:
     post:
       tags: [memories]
       summary: Create a memory
-      operationId: webCreateMemory
+      operationId: appCreateMemory
       requestBody:
         required: true
         content:
@@ -240,11 +239,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/memories/{memoryId}:
+  /api/app/v1/memories/{memoryId}:
     patch:
       tags: [memories]
       summary: Update a memory
-      operationId: webUpdateMemory
+      operationId: appUpdateMemory
       parameters:
         - $ref: '#/components/parameters/memoryId'
       requestBody:
@@ -270,7 +269,7 @@ paths:
     delete:
       tags: [memories]
       summary: Soft delete a memory
-      operationId: webDeleteMemory
+      operationId: appDeleteMemory
       parameters:
         - $ref: '#/components/parameters/memoryId'
       requestBody:
@@ -290,11 +289,11 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
 
-  /api/web/v1/memories/search:
+  /api/app/v1/memories/search:
     post:
       tags: [memories]
       summary: Hybrid search (BM25 + semantic)
-      operationId: webSearchMemories
+      operationId: appSearchMemories
       requestBody:
         required: true
         content:
@@ -313,11 +312,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/memories/similar:
+  /api/app/v1/memories/similar:
     post:
       tags: [memories]
       summary: Find similar memories by vector similarity
-      operationId: webFindSimilarMemories
+      operationId: appFindSimilarMemories
       requestBody:
         required: true
         content:
@@ -336,11 +335,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/memories/query:
+  /api/app/v1/memories/query:
     post:
       tags: [memories]
       summary: Semantic query (vector-only)
-      operationId: webQueryMemories
+      operationId: appQueryMemories
       requestBody:
         required: true
         content:
@@ -362,11 +361,11 @@ paths:
   # ============================================================
   # Relationships
   # ============================================================
-  /api/web/v1/relationships:
+  /api/app/v1/relationships:
     post:
       tags: [relationships]
       summary: Create a relationship between memories
-      operationId: webCreateRelationship
+      operationId: appCreateRelationship
       requestBody:
         required: true
         content:
@@ -385,11 +384,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/relationships/{relationshipId}:
+  /api/app/v1/relationships/{relationshipId}:
     patch:
       tags: [relationships]
       summary: Update a relationship
-      operationId: webUpdateRelationship
+      operationId: appUpdateRelationship
       parameters:
         - $ref: '#/components/parameters/relationshipId'
       requestBody:
@@ -415,7 +414,7 @@ paths:
     delete:
       tags: [relationships]
       summary: Delete a relationship
-      operationId: webDeleteRelationship
+      operationId: appDeleteRelationship
       parameters:
         - $ref: '#/components/parameters/relationshipId'
       responses:
@@ -430,11 +429,11 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
 
-  /api/web/v1/relationships/search:
+  /api/app/v1/relationships/search:
     post:
       tags: [relationships]
       summary: Search relationships
-      operationId: webSearchRelationships
+      operationId: appSearchRelationships
       requestBody:
         required: true
         content:
@@ -454,17 +453,16 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
   # ============================================================
-  # Spaces (confirmation-free — auto-confirmed internally)
+  # Spaces
   # ============================================================
-  /api/web/v1/spaces/publish:
+  /api/app/v1/spaces/publish:
     post:
       tags: [spaces]
-      summary: Publish a memory to shared spaces (auto-confirmed)
+      summary: Publish a memory to shared spaces
       description: |
-        Unlike the svc tier, this endpoint auto-confirms the publish action.
-        No confirmation token is returned — the memory is published immediately.
-        Equivalent to: svc publishToSpace → confirmAction (2 calls collapsed to 1).
-      operationId: webPublishToSpace
+        Publishes a memory to the specified shared spaces.
+        Returns a confirmation token that must be confirmed via the svc confirmations endpoint.
+      operationId: appPublishToSpace
       requestBody:
         required: true
         content:
@@ -483,13 +481,14 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/spaces/retract:
+  /api/app/v1/spaces/retract:
     post:
       tags: [spaces]
-      summary: Retract a memory from shared spaces (auto-confirmed)
+      summary: Retract a memory from shared spaces
       description: |
-        Auto-confirms the retract action. Memory is retracted immediately.
-      operationId: webRetractFromSpace
+        Retracts a memory from shared spaces.
+        Returns a confirmation token that must be confirmed via the svc confirmations endpoint.
+      operationId: appRetractFromSpace
       requestBody:
         required: true
         content:
@@ -508,13 +507,14 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/spaces/revise:
+  /api/app/v1/spaces/revise:
     post:
       tags: [spaces]
-      summary: Revise content in a space (auto-confirmed)
+      summary: Revise content in a space
       description: |
-        Auto-confirms the revision action.
-      operationId: webReviseInSpace
+        Revises content in a shared space.
+        Returns a confirmation token that must be confirmed via the svc confirmations endpoint.
+      operationId: appReviseInSpace
       requestBody:
         required: true
         content:
@@ -533,11 +533,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/spaces/moderate:
+  /api/app/v1/spaces/moderate:
     post:
       tags: [spaces]
       summary: Moderate content in a space or group
-      operationId: webModerateSpace
+      operationId: appModerateSpace
       requestBody:
         required: true
         content:
@@ -558,11 +558,11 @@ paths:
         '403':
           $ref: '#/components/responses/ForbiddenError'
 
-  /api/web/v1/spaces/search:
+  /api/app/v1/spaces/search:
     post:
       tags: [spaces]
       summary: Search shared spaces
-      operationId: webSearchSpaces
+      operationId: appSearchSpaces
       requestBody:
         required: true
         content:
@@ -581,11 +581,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/spaces/query:
+  /api/app/v1/spaces/query:
     post:
       tags: [spaces]
       summary: Semantic query across shared spaces
-      operationId: webQuerySpaces
+      operationId: appQuerySpaces
       requestBody:
         required: true
         content:
@@ -607,11 +607,11 @@ paths:
   # ============================================================
   # Trust / Ghost Config
   # ============================================================
-  /api/web/v1/trust/ghost-config:
+  /api/app/v1/trust/ghost-config:
     get:
       tags: [trust]
       summary: Get ghost configuration
-      operationId: webGetGhostConfig
+      operationId: appGetGhostConfig
       responses:
         '200':
           description: Ghost configuration
@@ -625,7 +625,7 @@ paths:
     patch:
       tags: [trust]
       summary: Update ghost configuration
-      operationId: webUpdateGhostConfig
+      operationId: appUpdateGhostConfig
       requestBody:
         required: true
         content:
@@ -644,11 +644,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/trust/set-user-trust:
+  /api/app/v1/trust/set-user-trust:
     post:
       tags: [trust]
       summary: Set trust level for a specific user
-      operationId: webSetUserTrust
+      operationId: appSetUserTrust
       requestBody:
         required: true
         content:
@@ -675,11 +675,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/trust/remove-user-trust:
+  /api/app/v1/trust/remove-user-trust:
     post:
       tags: [trust]
       summary: Remove custom trust level (revert to default)
-      operationId: webRemoveUserTrust
+      operationId: appRemoveUserTrust
       requestBody:
         required: true
         content:
@@ -700,11 +700,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/trust/block-user:
+  /api/app/v1/trust/block-user:
     post:
       tags: [trust]
       summary: Block a user
-      operationId: webBlockUser
+      operationId: appBlockUser
       requestBody:
         required: true
         content:
@@ -725,11 +725,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/trust/unblock-user:
+  /api/app/v1/trust/unblock-user:
     post:
       tags: [trust]
       summary: Unblock a user
-      operationId: webUnblockUser
+      operationId: appUnblockUser
       requestBody:
         required: true
         content:
@@ -750,11 +750,11 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/trust/check-access:
+  /api/app/v1/trust/check-access:
     post:
       tags: [trust]
       summary: Check memory access for a user
-      operationId: webCheckAccess
+      operationId: appCheckAccess
       requestBody:
         required: true
         content:
@@ -777,7 +777,7 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /api/web/v1/trust/search-as-ghost:
+  /api/app/v1/trust/search-as-ghost:
     post:
       tags: [trust]
       summary: Search memories as ghost (compound operation)
@@ -786,7 +786,7 @@ paths:
         for the target user, builds a ghost_context, and executes a trust-filtered
         search — all in one call. The svc tier requires the caller to resolve
         ghost_context themselves and pass it to the search endpoint.
-      operationId: webSearchAsGhost
+      operationId: appSearchAsGhost
       requestBody:
         required: true
         content:
@@ -814,11 +814,11 @@ paths:
   # ============================================================
   # Preferences
   # ============================================================
-  /api/web/v1/preferences:
+  /api/app/v1/preferences:
     get:
       tags: [preferences]
       summary: Get user preferences
-      operationId: webGetPreferences
+      operationId: appGetPreferences
       responses:
         '200':
           description: User preferences
@@ -832,7 +832,7 @@ paths:
     patch:
       tags: [preferences]
       summary: Update user preferences
-      operationId: webUpdatePreferences
+      operationId: appUpdatePreferences
       requestBody:
         required: true
         content:
@@ -1703,7 +1703,7 @@ components:
           default: 10
 
     # ----------------------------------------------------------
-    # Space results (no confirmation tokens — auto-confirmed)
+    # Space results
     # ----------------------------------------------------------
     PublishResult:
       type: object

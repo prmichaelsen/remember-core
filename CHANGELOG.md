@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.16.0] - 2026-02-28
+
+### Added
+- **Client SDKs** — M9 complete (10 tasks), two new typed REST client SDKs:
+  - **Svc Client** (`@prmichaelsen/remember-core/clients/svc/v1`) — 1:1 mirror of `/api/svc/v1/` routes:
+    - `createSvcClient(config)` factory with 7 resource groups, 29 methods total
+    - `memories` (6): create, update, delete, search, similar, query
+    - `relationships` (4): create, update, delete, search
+    - `spaces` (6): publish, retract, revise, moderate, search, query
+    - `confirmations` (2): confirm, deny
+    - `preferences` (2): get, update
+    - `trust` (7): getGhostConfig, updateGhostConfig, setUserTrust, removeUserTrust, blockUser, unblockUser, checkAccess
+    - `health` (2): check, version
+  - **App Client** (`@prmichaelsen/remember-core/app`) — use-case compound operations:
+    - `createAppClient(config)` factory with 2 resource groups, 5 methods total
+    - `profiles` (4): createAndPublish, search, retract, updateAndRepublish
+    - `ghost` (1): searchAsGhost
+  - **Shared Infrastructure** (`src/clients/`):
+    - `HttpClient` — fetch-based transport with auth (either/or: serviceToken JWT or getAuthToken callback)
+    - `SdkResponse<T>` — Supabase-style `{ data, error }` with `.throwOnError()` chainable method
+    - `RememberError` — typed error with code, message, status, context
+    - `assertServerSide()` browser guard (prevents accidental secret bundling)
+  - **Type Generation** — `openapi-typescript` generates types from OpenAPI specs:
+    - `src/clients/svc/v1/types.generated.ts` from `docs/openapi.yaml`
+    - `src/app/types.generated.ts` from `docs/openapi-web.yaml`
+    - npm scripts: `generate:types:svc`, `generate:types:app`, `generate:types`
+  - `jsonwebtoken` as optional peer dependency (required only for `auth.serviceToken` pattern)
+  - 71 new tests across 8 suites (http, response, memories, spaces, trust, svc/index, app/profiles, app/index)
+
+### Changed
+- **BREAKING**: `./web` export removed — replaced by `./app` (REST wrapper, not direct service calls)
+- `docs/openapi-web.yaml` renamed from web tier to app tier (`/api/web/v1/` → `/api/app/v1/`)
+- Removed "confirmation-free" and "auto-confirm" language from app tier OpenAPI spec
+- 13 subpath exports (was 12): removed `./web`, added `./app` and `./clients/svc/v1`
+- 394 total tests across 26 suites (was 323 across 18 [v0.15.0 web tests still present])
+
 ## [0.15.0] - 2026-02-28
 
 ### Added

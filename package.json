@@ -1,6 +1,6 @@
 {
   "name": "@prmichaelsen/remember-core",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
   "type": "module",
   "main": "dist/index.js",
@@ -50,24 +50,53 @@
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.js"
     },
-    "./web": {
-      "types": "./dist/web/index.d.ts",
-      "import": "./dist/web/index.js"
+    "./app": {
+      "types": "./dist/app/index.d.ts",
+      "import": "./dist/app/index.js"
+    },
+    "./clients/svc/v1": {
+      "types": "./dist/clients/svc/v1/index.d.ts",
+      "import": "./dist/clients/svc/v1/index.js"
     }
   },
   "typesVersions": {
     "*": {
-      "types": ["dist/types/index.d.ts"],
-      "services": ["dist/services/index.d.ts"],
-      "collections": ["dist/collections/index.d.ts"],
-      "constants": ["dist/constants/index.d.ts"],
-      "config": ["dist/config/index.d.ts"],
-      "database/weaviate": ["dist/database/weaviate/index.d.ts"],
-      "database/firestore": ["dist/database/firestore/index.d.ts"],
-      "utils": ["dist/utils/index.d.ts"],
-      "errors": ["dist/errors/index.d.ts"],
-      "testing": ["dist/testing/index.d.ts"],
-      "web": ["dist/web/index.d.ts"]
+      "types": [
+        "dist/types/index.d.ts"
+      ],
+      "services": [
+        "dist/services/index.d.ts"
+      ],
+      "collections": [
+        "dist/collections/index.d.ts"
+      ],
+      "constants": [
+        "dist/constants/index.d.ts"
+      ],
+      "config": [
+        "dist/config/index.d.ts"
+      ],
+      "database/weaviate": [
+        "dist/database/weaviate/index.d.ts"
+      ],
+      "database/firestore": [
+        "dist/database/firestore/index.d.ts"
+      ],
+      "utils": [
+        "dist/utils/index.d.ts"
+      ],
+      "errors": [
+        "dist/errors/index.d.ts"
+      ],
+      "testing": [
+        "dist/testing/index.d.ts"
+      ],
+      "app": [
+        "dist/app/index.d.ts"
+      ],
+      "clients/svc/v1": [
+        "dist/clients/svc/v1/index.d.ts"
+      ]
     }
   },
   "files": [
@@ -80,6 +109,9 @@
     "test": "jest --config config/jest.config.js",
     "test:coverage": "jest --config config/jest.config.js --coverage",
     "test:e2e": "jest --config config/jest.e2e.config.js --runInBand",
+    "generate:types:svc": "openapi-typescript docs/openapi.yaml -o src/clients/svc/v1/types.generated.ts",
+    "generate:types:app": "openapi-typescript docs/openapi-web.yaml -o src/app/types.generated.ts",
+    "generate:types": "npm run generate:types:svc && npm run generate:types:app",
     "prepublishOnly": "npm run clean && npm run build && npm run test"
   },
   "keywords": [
@@ -95,10 +127,20 @@
     "@prmichaelsen/firebase-admin-sdk-v8": "^2.5.1",
     "weaviate-client": "^3.11.0"
   },
+  "peerDependencies": {
+    "jsonwebtoken": "^9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "jsonwebtoken": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.19.13",
     "jest": "^30.2.0",
+    "openapi-typescript": "^7.13.0",
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
   }

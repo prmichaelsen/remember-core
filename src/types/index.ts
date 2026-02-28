@@ -1,7 +1,7 @@
 // src/types/index.ts
 
 // Result type
-export type { Result, Ok, Err } from './result.types';
+export type { Result, Ok, Err } from './result.types.js';
 export {
   ok,
   err,
@@ -13,7 +13,7 @@ export {
   getOrElse,
   tryCatch,
   tryCatchAsync,
-} from './result.types';
+} from './result.types.js';
 
 // Generic utilities
 export type {
@@ -28,7 +28,7 @@ export type {
   Values,
   Constructor,
   Immutable,
-} from './utils.types';
+} from './utils.types.js';
 
 // Shared domain types
 export type {
@@ -40,7 +40,7 @@ export type {
   ListUsersInput,
   UserDTO,
   PaginatedResult,
-} from './shared.types';
+} from './shared.types.js';
 
 export {
   toUserId,
@@ -48,7 +48,7 @@ export {
   toTimestamp,
   toUserDTO,
   createPaginatedResult,
-} from './shared.types';
+} from './shared.types.js';
 
 // Context & location types (ported from remember-mcp)
 export type {
@@ -59,7 +59,7 @@ export type {
   Source,
   Environment,
   MemoryContext,
-} from './context.types';
+} from './context.types.js';
 
 // Core memory types (ported from remember-mcp)
 export type {
@@ -69,7 +69,7 @@ export type {
   MemoryDocument,
   MemoryUpdate,
   RelationshipUpdate,
-} from './memory.types';
+} from './memory.types.js';
 
 // Search types (ported from remember-mcp)
 export type {
@@ -77,7 +77,7 @@ export type {
   DeletedFilter,
   SearchOptions,
   SearchResult,
-} from './search.types';
+} from './search.types.js';
 
 // Auth types (ported from remember-mcp)
 export type {
@@ -87,7 +87,7 @@ export type {
   AuthContext,
   WriteMode,
   CredentialsProvider,
-} from './auth.types';
+} from './auth.types.js';
 
 // Preference types (ported from remember-mcp)
 export type {
@@ -99,7 +99,7 @@ export type {
   DisplayPreferences,
   UserPreferences,
   PreferenceCategory,
-} from './preferences.types';
+} from './preferences.types.js';
 
 export {
   DEFAULT_PREFERENCES,
@@ -107,7 +107,7 @@ export {
   PREFERENCE_DESCRIPTIONS,
   getPreferenceDescription,
   getPreferencesSchema,
-} from './preferences.types';
+} from './preferences.types.js';
 
 // Space types (ported from remember-mcp)
 export type {
@@ -115,9 +115,9 @@ export type {
   SpaceSearchOptions,
   SpaceSearchResult,
   SpaceId,
-} from './space.types';
+} from './space.types.js';
 
 export {
   SPACE_DISPLAY_NAMES,
   SUPPORTED_SPACES,
-} from './space.types';
+} from './space.types.js';

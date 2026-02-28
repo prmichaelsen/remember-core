@@ -1,7 +1,7 @@
 // src/errors/app-errors.ts
 // Pattern: Error Types (core-sdk.types-error.md)
 
-import { AppError } from './base.error';
+import { AppError } from './base.error.js';
 
 /**
  * Input validation failed — HTTP 400

@@ -9,6 +9,6 @@ export {
   getContentTypesByCategory,
   isValidContentType,
   getContentTypeDescription,
-} from './content-types';
+} from './content-types.js';
 
-export type { ContentTypeMetadata } from './content-types';
+export type { ContentTypeMetadata } from './content-types.js';

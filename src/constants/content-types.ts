@@ -3,7 +3,7 @@
  * Ported from remember-mcp/src/constants/content-types.ts
  */
 
-import type { ContentType } from '../types/memory.types';
+import type { ContentType } from '../types/memory.types.js';
 
 /**
  * All available content types

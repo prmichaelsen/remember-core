@@ -1,0 +1,32 @@
+# Source (dist/ is published via files field)
+src/
+__tests__/
+
+# Test files
+*.spec.ts
+*.e2e.ts
+coverage/
+.nyc_output/
+
+# Development
+agent/
+config/
+.claude/
+.qodo/
+
+# Build config
+tsconfig.json
+jest.config.js
+esbuild.build.js
+esbuild.watch.js
+
+# Git
+.git/
+.gitignore
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log

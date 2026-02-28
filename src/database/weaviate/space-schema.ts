@@ -4,8 +4,8 @@
  */
 
 import type { WeaviateClient, Collection } from 'weaviate-client';
-import { SUPPORTED_SPACES, SPACE_DISPLAY_NAMES, type SpaceId } from '../../types/space.types';
-import { createSpaceCollectionSchema } from './v2-collections';
+import { SUPPORTED_SPACES, SPACE_DISPLAY_NAMES, type SpaceId } from '../../types/space.types.js';
+import { createSpaceCollectionSchema } from './v2-collections.js';
 
 /**
  * Unified public collection name for all public spaces (v2)

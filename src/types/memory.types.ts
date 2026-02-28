@@ -3,7 +3,7 @@
  * Ported from remember-mcp/src/types/memory.ts
  */
 
-import type { Location, MemoryContext } from './context.types';
+import type { Location, MemoryContext } from './context.types.js';
 
 /**
  * Content types for memories.

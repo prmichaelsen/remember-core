@@ -1,8 +1,8 @@
 // src/errors/index.ts
 // Pattern: Error Types (core-sdk.types-error.md)
 
-export { AppError } from './base.error';
-export type { ErrorKind, ErrorContext } from './base.error';
+export { AppError } from './base.error.js';
+export type { ErrorKind, ErrorContext } from './base.error.js';
 export {
   ValidationError,
   NotFoundError,
@@ -12,7 +12,7 @@ export {
   RateLimitError,
   ExternalError,
   InternalError,
-} from './app-errors';
+} from './app-errors.js';
 
 import {
   ValidationError,
@@ -23,7 +23,7 @@ import {
   RateLimitError,
   ExternalError,
   InternalError,
-} from './app-errors';
+} from './app-errors.js';
 
 /**
  * Union of all typed application errors.

@@ -3,8 +3,8 @@
  * Ported from remember-mcp/src/weaviate/schema.ts
  */
 
-import { getWeaviateClient } from './client';
-import { createUserCollectionSchema } from './v2-collections';
+import { getWeaviateClient } from './client.js';
+import { createUserCollectionSchema } from './v2-collections.js';
 
 /**
  * Create Memory collection schema for a user.

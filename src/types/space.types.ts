@@ -6,8 +6,8 @@
  * where they can be discovered by other users.
  */
 
-import type { Memory } from './memory.types';
-import type { SearchOptions, SearchResult } from './search.types';
+import type { Memory } from './memory.types.js';
+import type { SearchOptions, SearchResult } from './search.types.js';
 
 /**
  * Space memory - a memory published to a shared space.

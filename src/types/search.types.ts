@@ -3,8 +3,8 @@
  * Ported from remember-mcp/src/types/memory.ts
  */
 
-import type { GPSCoordinates } from './context.types';
-import type { ContentType, Memory, Relationship } from './memory.types';
+import type { GPSCoordinates } from './context.types.js';
+import type { ContentType, Memory, Relationship } from './memory.types.js';
 
 /**
  * Search filters

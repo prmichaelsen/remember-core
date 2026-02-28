@@ -1,16 +1,85 @@
 {
+  "name": "@prmichaelsen/remember-core",
+  "version": "0.1.0",
+  "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    },
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "import": "./dist/services/index.js"
+    },
+    "./collections": {
+      "types": "./dist/collections/index.d.ts",
+      "import": "./dist/collections/index.js"
+    },
+    "./constants": {
+      "types": "./dist/constants/index.d.ts",
+      "import": "./dist/constants/index.js"
+    },
+    "./config": {
+      "types": "./dist/config/index.d.ts",
+      "import": "./dist/config/index.js"
+    },
+    "./database/weaviate": {
+      "types": "./dist/database/weaviate/index.d.ts",
+      "import": "./dist/database/weaviate/index.js"
+    },
+    "./database/firestore": {
+      "types": "./dist/database/firestore/index.d.ts",
+      "import": "./dist/database/firestore/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest --config config/jest.config.js",
-    "test:coverage": "jest --config config/jest.config.js --coverage"
+    "test:coverage": "jest --config config/jest.config.js --coverage",
+    "prepublishOnly": "npm run clean && npm run build && npm run test"
   },
-  "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "jest": "^30.2.0",
-    "ts-jest": "^29.4.6",
-    "typescript": "^5.9.3"
-  },
+  "keywords": [
+    "remember",
+    "memory",
+    "core-sdk",
+    "weaviate",
+    "mcp"
+  ],
+  "author": "prmichaelsen",
+  "license": "MIT",
   "dependencies": {
     "@prmichaelsen/firebase-admin-sdk-v8": "^2.5.1",
     "weaviate-client": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.19.13",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "^5.9.3"
   }
 }

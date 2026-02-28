@@ -1,7 +1,7 @@
 // src/database/weaviate/index.ts
 
 // Client
-export type { WeaviateConfig } from './client';
+export type { WeaviateConfig } from './client.js';
 export {
   initWeaviateClient,
   getWeaviateClient,
@@ -14,7 +14,7 @@ export {
   fetchMemoryWithAllProperties,
   collectionExists,
   closeWeaviateClient,
-} from './client';
+} from './client.js';
 
 // Schema management
 export {
@@ -22,7 +22,7 @@ export {
   ensureMemoryCollection,
   getMemoryCollection,
   deleteMemoryCollection,
-} from './schema';
+} from './schema.js';
 
 // Space schema
 export {
@@ -33,7 +33,7 @@ export {
   isValidSpaceId,
   ensurePublicCollection,
   ensureSpaceCollection,
-} from './space-schema';
+} from './space-schema.js';
 
 // V2 collection definitions
 export {
@@ -48,4 +48,4 @@ export {
   validateV2CollectionName,
   getCollectionType,
   extractIdFromCollectionName,
-} from './v2-collections';
+} from './v2-collections.js';

@@ -90,12 +90,12 @@ milestones:
 
   - id: M7
     name: Web Client SDK
-    status: not_started
-    progress: 0
+    status: in_progress
+    progress: 10
     estimated_weeks: 1.5
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 10
-    started: null
+    started: 2026-02-28
     completed: null
     notes: |
       @prmichaelsen/remember-core/web subpath export.
@@ -415,12 +415,16 @@ tasks:
   milestone_7:
     - id: task-26
       name: Foundation — Result Type, WebSDKError, Browser Guard
-      status: pending
+      status: completed
+      completed_date: 2026-02-28
       file: agent/tasks/milestone-7-web-client-sdk/task-26-foundation-result-type-error-browser-guard.md
       estimated_hours: 2
       dependencies: []
       notes: |
-        Result<T, E> discriminated union, ok/err/tryCatch helpers, WebSDKError (8 error kinds), assertServerSide() guard.
+        ✅ Created src/web/result.ts — Result<T, E> with { ok, data/error }, ok/err/isOk/mapOk/tryCatch helpers.
+        ✅ Created src/web/errors.ts — WebSDKError interface, ErrorKind (re-exported from core), createError + 6 convenience factories.
+        ✅ Created src/web/guard.ts — assertServerSide() browser guard.
+        ✅ Build passes, dist/web/ outputs .js + .d.ts for all 3 files.
     - id: task-27
       name: WebSDKContext and Factory
       status: pending

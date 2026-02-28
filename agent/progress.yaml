@@ -93,7 +93,7 @@ milestones:
     status: in_progress
     progress: 10
     estimated_weeks: 1.5
-    tasks_completed: 2
+    tasks_completed: 3
     tasks_total: 10
     started: 2026-02-28
     completed: null
@@ -437,12 +437,15 @@ tasks:
         ✅ Factory calls assertServerSide(). All service imports typed. Build passes.
     - id: task-28
       name: Memory Use Cases
-      status: pending
+      status: completed
+      completed_date: 2026-02-28
       file: agent/tasks/milestone-7-web-client-sdk/task-28-memory-use-cases.md
       estimated_hours: 3
       dependencies: [task-27]
       notes: |
-        6 functions: createMemory, searchMemories, findSimilarMemories, queryMemories, updateMemory, deleteMemory.
+        ✅ Created src/web/memories.ts — 6 functions wrapping MemoryService with Result<T>.
+        ✅ Created src/web/types.ts — PaginatedResult, MemorySearchResult, SimilarMemory, RelevantMemory, etc.
+        ✅ Search inputs exclude ghost_context (resolved by searchAsGhost in Task 31). Build passes.
     - id: task-29
       name: Relationship Use Cases
       status: pending

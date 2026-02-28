@@ -93,7 +93,7 @@ milestones:
     status: in_progress
     progress: 10
     estimated_weeks: 1.5
-    tasks_completed: 4
+    tasks_completed: 5
     tasks_total: 10
     started: 2026-02-28
     completed: null
@@ -458,12 +458,14 @@ tasks:
         ✅ Graceful handling when RelationshipService not in context. Build passes.
     - id: task-30
       name: Space Use Cases (Collapsed Confirmations)
-      status: pending
+      status: completed
+      completed_date: 2026-02-28
       file: agent/tasks/milestone-7-web-client-sdk/task-30-space-use-cases.md
       estimated_hours: 3
       dependencies: [task-27]
       notes: |
-        7 functions. publish/retract/revise auto-confirm (collapse 2-phase flow). moderate, search, query.
+        ✅ Created src/web/spaces.ts — 7 functions. publish/retract/revise auto-confirm via token+confirm.
+        ✅ moderate, search (with hasMore), query. SpaceSearchResult mapping. Build passes.
     - id: task-31
       name: Ghost/Trust Use Cases + searchAsGhost
       status: pending

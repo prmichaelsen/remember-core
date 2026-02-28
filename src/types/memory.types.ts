@@ -132,6 +132,17 @@ export interface Memory {
   // Managed by remember_publish / remember_retract — do NOT modify directly
   space_ids?: string[]; // Spaces this memory has been published to
   group_ids?: string[]; // Groups this memory has been published to
+
+  // ACL Fields (nullable — null defaults to owner_only semantics)
+  write_mode?: string | null; // 'owner_only' | 'group_editors' | 'anyone'
+  overwrite_allowed_ids?: string[]; // Per-memory explicit overwrite grants (user IDs)
+  last_revised_by?: string | null; // User ID of last reviser (conflict detection)
+  owner_id?: string | null; // Supports ownership transfer (null → user_id)
+
+  // Moderation Fields (nullable — null treated as 'approved' for backward compat)
+  moderation_status?: string | null; // 'pending' | 'approved' | 'rejected' | 'removed'
+  moderated_by?: string | null; // User ID of last moderator action
+  moderated_at?: string | null; // ISO 8601 timestamp of last moderation action
 }
 
 /**

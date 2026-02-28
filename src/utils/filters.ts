@@ -163,6 +163,42 @@ export function hasFilters(filter: any): boolean {
   return filter !== undefined && filter !== null;
 }
 
+// ─── Moderation Filters ──────────────────────────────────────────────────
+
+/** Valid moderation statuses for published memories */
+export type ModerationStatus = 'pending' | 'approved' | 'rejected' | 'removed';
+
+/**
+ * Build filter for moderation_status on published memories.
+ *
+ * Default behavior (no status specified): show approved or null (backward compat).
+ * Moderator override: pass specific status to see pending/rejected/removed.
+ * Pass 'all' to skip the filter entirely (moderator view).
+ *
+ * @param collection - Weaviate collection instance
+ * @param status - Specific status to filter by, or 'all' for no filter
+ * @returns Filter for moderation_status, or null if no filter needed
+ */
+export function buildModerationStatusFilter(
+  collection: any,
+  status?: ModerationStatus | 'all',
+): any | null {
+  if (status === 'all') {
+    return null;
+  }
+
+  if (status) {
+    // Filter to specific status
+    return collection.filter.byProperty('moderation_status').equal(status);
+  }
+
+  // Default: approved or null (backward compat for pre-moderation memories)
+  return Filters.or(
+    collection.filter.byProperty('moderation_status').equal('approved'),
+    collection.filter.byProperty('moderation_status').isNull(true),
+  );
+}
+
 /**
  * Build filter for deleted_at field based on deleted_filter parameter.
  *

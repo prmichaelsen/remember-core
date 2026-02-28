@@ -18,6 +18,8 @@ export {
   combineFiltersWithAnd,
   hasFilters,
   buildDeletedFilter,
+  buildModerationStatusFilter,
+  type ModerationStatus,
 } from './filters.js';
 
 export { canModerate, canModerateAny } from './auth-helpers.js';

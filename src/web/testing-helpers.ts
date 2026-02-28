@@ -3,14 +3,14 @@
  * Creates mock WebSDKContext with in-memory services.
  */
 
-import { createMockCollection } from '../testing/weaviate-mock';
-import { MemoryService } from '../services/memory.service';
-import { RelationshipService } from '../services/relationship.service';
-import { SpaceService } from '../services/space.service';
-import { ConfirmationTokenService } from '../services/confirmation-token.service';
-import { StubGhostConfigProvider, InMemoryEscalationStore } from '../services/access-control.service';
-import type { WebSDKContext } from './context';
-import type { Logger } from '../utils/logger';
+import { createMockCollection } from '../testing/weaviate-mock.js';
+import { MemoryService } from '../services/memory.service.js';
+import { RelationshipService } from '../services/relationship.service.js';
+import { SpaceService } from '../services/space.service.js';
+import { ConfirmationTokenService } from '../services/confirmation-token.service.js';
+import { StubGhostConfigProvider, InMemoryEscalationStore } from '../services/access-control.service.js';
+import type { WebSDKContext } from './context.js';
+import type { Logger } from '../utils/logger.js';
 
 const noopLogger: Logger = {
   debug: () => {},

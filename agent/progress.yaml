@@ -93,7 +93,7 @@ milestones:
     status: in_progress
     progress: 10
     estimated_weeks: 1.5
-    tasks_completed: 3
+    tasks_completed: 4
     tasks_total: 10
     started: 2026-02-28
     completed: null
@@ -448,12 +448,14 @@ tasks:
         ✅ Search inputs exclude ghost_context (resolved by searchAsGhost in Task 31). Build passes.
     - id: task-29
       name: Relationship Use Cases
-      status: pending
+      status: completed
+      completed_date: 2026-02-28
       file: agent/tasks/milestone-7-web-client-sdk/task-29-relationship-use-cases.md
       estimated_hours: 2
       dependencies: [task-27]
       notes: |
-        4 functions: createRelationship, searchRelationships, updateRelationship, deleteRelationship.
+        ✅ Created src/web/relationships.ts — 4 functions wrapping RelationshipService with Result<T>.
+        ✅ Graceful handling when RelationshipService not in context. Build passes.
     - id: task-30
       name: Space Use Cases (Collapsed Confirmations)
       status: pending

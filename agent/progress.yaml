@@ -112,7 +112,7 @@ milestones:
     progress: 0
     estimated_weeks: 1
     tasks_completed: 0
-    tasks_total: 0
+    tasks_total: 1
     started: null
     completed: null
     notes: |
@@ -564,6 +564,16 @@ tasks:
         Moved out of remember-core — likely a Weaviate/infrastructure issue,
         not a library bug. Belongs in remember-rest-service or agentbase.me.
         Source: GitHub Issue #1 (agentbase.me)
+    - id: task-47
+      name: Fix Composite ID to Use Weaviate-Valid UUID v5
+      status: not_started
+      file: agent/tasks/milestone-8-bug-fixes/task-47-fix-composite-id-weaviate-uuid.md
+      estimated_hours: 3
+      completed_date: null
+      notes: |
+        Weaviate requires UUID v3/v4/v5 for object IDs. Current dot-delimited
+        composite IDs (e.g. user1.mem1) are rejected. Switch to deterministic
+        UUID v5 via generateUuid5() from weaviate-client.
 
   milestone_9:
     - id: task-37

@@ -7,24 +7,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [0.13.0] - 2026-02-28
 
 ### Added
-- Trust & Ghost System — M5 Tasks 16-18 (types, services, design docs):
+- **Trust & Ghost System** — M5 complete (6 tasks, 8 new source files, 150 new tests):
   - `src/types/ghost-config.types.ts` — GhostConfig, TrustEnforcementMode, DEFAULT_GHOST_CONFIG
   - `src/types/access-result.types.ts` — 6-variant AccessResult discriminated union
   - `src/services/trust-enforcement.service.ts` — 5-tier trust redaction, buildTrustFilter, formatMemoryForPrompt
   - `src/services/trust-validator.service.ts` — validateTrustAssignment, suggestTrustLevel
-  - `src/services/access-control.service.ts` — checkMemoryAccess (6-step flow), canRevise, canOverwrite
+  - `src/services/access-control.service.ts` — checkMemoryAccess (6-step flow), canRevise, canOverwrite, PublishedMemoryACL
   - `src/services/ghost-config.service.ts` — Firestore CRUD for GhostConfig, FirestoreGhostConfigProvider
   - `src/services/escalation.service.ts` — FirestoreEscalationStore (block/attempt tracking)
   - `src/services/ghost-config-handler.service.ts` — orchestration layer for ghost config operations
   - GhostModeContext on AuthContext for server-resolved ghost mode
-  - PublishedMemoryACL type and permission resolution (3 write modes)
+- **Schema updates** — 7 new nullable ACL/moderation fields on Memory type and PUBLISHED_MEMORY_PROPERTIES
+  - write_mode, overwrite_allowed_ids, last_revised_by, owner_id (ACL)
+  - moderation_status, moderated_by, moderated_at (moderation)
+- `buildModerationStatusFilter()` utility for published memory queries
+- 2 new content types: `ghost` (cross-user), `comment` (threaded)
+- 150 new unit tests across 6 suites (270 total, 12 suites)
 - Design documents: trust-enforcement, access-control-result, ghost-persona-system, memory-acl-schema
-- Milestone 5 planning: 6 task documents (Tasks 16-21)
+- Updated migration guide with trust & ghost system section
 
 ### Changed
 - `src/types/auth.types.ts` — added GhostModeContext, ghostMode on AuthContext
+- `src/types/memory.types.ts` — added 7 optional ACL/moderation fields
 - `src/types/index.ts` — barrel exports for ghost config and access result types
 - `src/services/index.ts` — 28 new exports for trust & ghost system services
+- `src/utils/index.ts` — added buildModerationStatusFilter, ModerationStatus exports
 
 ## [0.12.0] - 2026-02-28
 

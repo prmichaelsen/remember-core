@@ -60,12 +60,12 @@ milestones:
 
   - id: M5
     name: Trust & Ghost System
-    status: in_progress
-    progress: 67
+    status: completed
+    progress: 100
     started: 2026-02-28
-    completed: null
+    completed: 2026-02-28
     estimated_weeks: 1
-    tasks_completed: 4
+    tasks_completed: 6
     tasks_total: 6
     notes: |
       Extract trust enforcement, access control, and ghost/persona system from
@@ -294,23 +294,39 @@ tasks:
         Build passes, 120 tests pass.
     - id: task-20
       name: Unit Tests for Trust & Ghost System
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-5-trust-and-ghost-system/task-20-trust-ghost-unit-tests.md
       estimated_hours: 4
       actual_hours: null
-      completed_date: null
+      completed_date: 2026-02-28
       notes: |
-        ~80-100 tests across 6 suites: trust enforcement, trust validator, access control,
-        ghost config, escalation, access result types.
+        150 new tests across 6 suites (270 total, 12 suites):
+        - trust-enforcement.service.spec.ts: TRUST_THRESHOLDS, buildTrustFilter, formatMemoryForPrompt (5 tiers),
+          getTrustLevelLabel, getTrustInstructions, redactSensitiveFields, isTrustSufficient, resolveEnforcementMode
+        - trust-validator.service.spec.ts: validateTrustAssignment (valid/invalid/warning), suggestTrustLevel
+          (tags override, content type, case insensitive)
+        - access-control.service.spec.ts: checkMemoryAccess (6 resolution paths), handleInsufficientTrust,
+          resolveAccessorTrustLevel, formatAccessResultMessage, canRevise/canOverwrite (all 3 write modes),
+          InMemoryEscalationStore
+        - ghost-config.service.spec.ts: validateGhostConfigUpdate, StubGhostConfigProvider, DEFAULT_GHOST_CONFIG,
+          GhostConfigHandler validation (self-trust/self-block rejection)
+        - escalation.service.spec.ts: attempt tracking, escalation flow, isMemoryBlocked, resetBlock,
+          trust floor at 0, block management
+        - access-result.types.spec.ts: discriminated union narrowing, switch exhaustiveness,
+          AccessResultStatus, access levels
     - id: task-21
       name: Update Migration Guide
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-5-trust-and-ghost-system/task-21-update-migration-guide.md
       estimated_hours: 1.5
       actual_hours: null
-      completed_date: null
+      completed_date: 2026-02-28
       notes: |
-        Update docs/migration-guide.md, CHANGELOG.md, README.md with trust & ghost system coverage.
+        Updated docs/migration-guide.md: trust & ghost system section with import examples,
+        trust enforcement quick start, access control pattern, ghost config setup,
+        schema migration table, permission resolution, tool mapping, content type additions.
+        Updated CHANGELOG.md: comprehensive 0.13.0 entry covering all M5 changes.
+        Updated README.md: trust & ghost services section, test count (270), content type count (43).
 
 documentation:
   design_documents: 5
@@ -320,10 +336,31 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 86
-  overall: 86
+  implementation: 100
+  overall: 100
 
 recent_work:
+  - date: 2026-02-28
+    description: |
+      Task 21 — Update Migration Guide (M5 COMPLETE)
+    items:
+      - "Updated docs/migration-guide.md — trust & ghost system section with import examples, patterns, schema table"
+      - "Updated CHANGELOG.md — comprehensive 0.13.0 entry covering all M5 changes"
+      - "Updated README.md — trust & ghost services, 270 test count, 43 content types"
+      - "M5 Trust & Ghost System complete (6/6 tasks)"
+      - "All 5 milestones complete, 21 tasks done"
+      - "270 unit tests + 22 integration tests = 292 total, 12 suites, 0 failures"
+  - date: 2026-02-28
+    description: |
+      Task 20 — Unit Tests for Trust & Ghost System
+    items:
+      - "Created trust-enforcement.service.spec.ts — TRUST_THRESHOLDS, buildTrustFilter, formatMemoryForPrompt (5 tiers), redactSensitiveFields, isTrustSufficient, resolveEnforcementMode"
+      - "Created trust-validator.service.spec.ts — validateTrustAssignment, suggestTrustLevel with tag overrides"
+      - "Created access-control.service.spec.ts — checkMemoryAccess (6 paths), handleInsufficientTrust, canRevise/canOverwrite, InMemoryEscalationStore"
+      - "Created ghost-config.service.spec.ts — validateGhostConfigUpdate, StubGhostConfigProvider, DEFAULT_GHOST_CONFIG, GhostConfigHandler validation"
+      - "Created escalation.service.spec.ts — attempt tracking, escalation flow, isMemoryBlocked, resetBlock, trust floor"
+      - "Created access-result.types.spec.ts — discriminated union narrowing, switch exhaustiveness"
+      - "150 new tests, 270 total across 12 suites, 0 failures"
   - date: 2026-02-28
     description: |
       Task 19 — Update Schema, Content Types, and AuthContext
@@ -521,11 +558,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - "Task 20: Unit Tests for Trust & Ghost System"
-  - "Task 20: Unit Tests for Trust & Ghost System"
-  - "Task 21: Update Migration Guide"
   - Publish v0.13.0 to npm
   - Begin remember-mcp migration (consumer adoption)
+  - Begin remember-rest-server migration
 
 notes:
   - "Source: remember-mcp v3.8.0-v3.13.0 (prmichaelsen/remember-mcp)"

@@ -109,7 +109,179 @@ server.tool('create_memory', schema, async (params) => {
 | `import type { SearchFilters } from '../types'` | `import type { SearchFilters } from '@prmichaelsen/remember-core/types'` |
 | `import { generateCompositeId } from '../utils/composite-ids'` | `import { generateCompositeId } from '@prmichaelsen/remember-core/collections'` |
 
-## Step 4: Remove Duplicated Code
+## Step 4: Migrate Trust & Ghost System (v0.13.0+)
+
+### New Type Imports
+
+```typescript
+import type {
+  GhostConfig,
+  TrustEnforcementMode,
+  GhostModeContext,
+  AccessResult,
+  AccessGranted,
+  AccessInsufficientTrust,
+  AccessBlocked,
+  AccessResultStatus,
+  WriteMode,
+} from '@prmichaelsen/remember-core/types';
+```
+
+### New Service Imports
+
+```typescript
+import {
+  // Trust enforcement
+  TRUST_THRESHOLDS,
+  buildTrustFilter,
+  formatMemoryForPrompt,
+  isTrustSufficient,
+  getTrustLevelLabel,
+  resolveEnforcementMode,
+
+  // Trust validation
+  validateTrustAssignment,
+  suggestTrustLevel,
+
+  // Access control
+  checkMemoryAccess,
+  resolveAccessorTrustLevel,
+  formatAccessResultMessage,
+  canRevise,
+  canOverwrite,
+  TRUST_PENALTY,
+  MAX_ATTEMPTS_BEFORE_BLOCK,
+
+  // Ghost config
+  getGhostConfig,
+  setGhostConfigFields,
+  setUserTrust,
+  blockUser,
+  unblockUser,
+  validateGhostConfigUpdate,
+  FirestoreGhostConfigProvider,
+
+  // Ghost config handler (orchestration)
+  handleGetConfig,
+  handleUpdateConfig,
+  handleSetTrust,
+  handleBlockUser,
+
+  // Escalation
+  FirestoreEscalationStore,
+
+  // In-memory implementations (for testing)
+  StubGhostConfigProvider,
+  InMemoryEscalationStore,
+} from '@prmichaelsen/remember-core/services';
+```
+
+### Trust Enforcement Quick Start
+
+```typescript
+import { buildTrustFilter, formatMemoryForPrompt, TRUST_THRESHOLDS } from '@prmichaelsen/remember-core/services';
+
+// Query-level enforcement: filter memories by accessor's trust level
+const trustFilter = buildTrustFilter(collection, accessorTrustLevel);
+const results = await collection.query.hybrid('search query', { filters: trustFilter });
+
+// Prompt-level enforcement: format memory for LLM with trust-based redaction
+const formatted = formatMemoryForPrompt(memory, accessorTrustLevel);
+// formatted.trust_tier = 'Full Access' | 'Partial Access' | 'Summary Only' | 'Metadata Only' | 'Existence Only'
+// formatted.content = redacted content appropriate for the tier
+```
+
+### Access Control Pattern
+
+```typescript
+import { checkMemoryAccess, formatAccessResultMessage } from '@prmichaelsen/remember-core/services';
+
+const result = await checkMemoryAccess(accessorUserId, memory, ghostConfigProvider, escalationStore);
+
+switch (result.status) {
+  case 'granted':
+    // result.memory available, result.access_level = 'owner' | 'trusted'
+    break;
+  case 'insufficient_trust':
+    // result.required_trust, result.actual_trust, result.attempts_remaining
+    break;
+  case 'blocked':
+    // result.reason, result.blocked_at
+    break;
+  case 'no_permission':
+    // Ghost not enabled or user blocked
+    break;
+  case 'not_found':
+  case 'deleted':
+    // Memory doesn't exist
+    break;
+}
+
+// Or use the formatter for user-facing messages:
+const message = formatAccessResultMessage(result);
+```
+
+### Permission Resolution (Write ACL)
+
+```typescript
+import { canRevise, canOverwrite } from '@prmichaelsen/remember-core/services';
+
+// Check if user can edit a published memory
+const allowed = await canRevise(userId, publishedMemory, credentialsFetcher);
+
+// Check if user can overwrite (destructive edit)
+const canReplace = await canOverwrite(userId, publishedMemory, credentialsFetcher);
+
+// Write modes: 'owner_only' (default), 'group_editors', 'anyone'
+// overwrite_allowed_ids: per-memory explicit grants (independent of group permissions)
+```
+
+### Ghost Config Setup
+
+```typescript
+import { getGhostConfig, setGhostConfigFields, setUserTrust } from '@prmichaelsen/remember-core/services';
+
+// Get config (returns DEFAULT_GHOST_CONFIG if not set)
+const config = await getGhostConfig(userId);
+
+// Enable ghost mode
+await setGhostConfigFields(userId, { enabled: true, default_public_trust: 0.25 });
+
+// Set per-user trust override
+await setUserTrust(ownerId, accessorId, 0.75);
+```
+
+### Schema Migration
+
+7 new nullable fields on published memories (no backfill needed):
+
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `write_mode` | text | null → `"owner_only"` | Controls who can revise |
+| `overwrite_allowed_ids` | text[] | `[]` | Per-memory overwrite grants |
+| `last_revised_by` | text | null | Conflict detection |
+| `owner_id` | text | null → `author_id` | Ownership transfer |
+| `moderation_status` | text | null → `"approved"` | Moderation lifecycle |
+| `moderated_by` | text | null | Moderator attribution |
+| `moderated_at` | date | null | Moderation timestamp |
+
+### Tool Handler → Service Mapping (Trust & Ghost)
+
+| MCP Tool | Service | Method |
+|---|---|---|
+| `ghost_get_config` | `GhostConfigHandler` | `handleGetConfig()` |
+| `ghost_update_config` | `GhostConfigHandler` | `handleUpdateConfig()` |
+| `ghost_set_trust` | `GhostConfigHandler` | `handleSetTrust()` |
+| `ghost_block_user` | `GhostConfigHandler` | `handleBlockUser()` |
+| `ghost_unblock_user` | `GhostConfigHandler` | `handleUnblockUser()` |
+
+### Content Type Additions
+
+Two new content types added in v0.13.0:
+- `'ghost'` — Ghost conversation memory (category: `cross_user`)
+- `'comment'` — Threaded comments on shared memories (category: `cross_user`)
+
+## Step 5: Remove Duplicated Code
 
 After migrating all tool handlers, remove the following from remember-mcp:
 
@@ -120,6 +292,12 @@ After migrating all tool handlers, remove the following from remember-mcp:
 - `src/constants/content-types.ts` → now in `@prmichaelsen/remember-core/constants`
 - `src/services/confirmation-token.service.ts` → now in `@prmichaelsen/remember-core/services`
 - `src/services/preferences.service.ts` → now in `@prmichaelsen/remember-core/services`
+- `src/services/trust-enforcement.ts` → now in `@prmichaelsen/remember-core/services`
+- `src/services/trust-validator.ts` → now in `@prmichaelsen/remember-core/services`
+- `src/services/access-control.ts` → now in `@prmichaelsen/remember-core/services`
+- `src/services/ghost-config.service.ts` → now in `@prmichaelsen/remember-core/services`
+- `src/services/escalation.service.ts` → now in `@prmichaelsen/remember-core/services`
+- `src/tools/ghost-config.ts` (business logic) → now in `@prmichaelsen/remember-core/services`
 
 ## Step 5: Validate
 
@@ -141,6 +319,9 @@ npm test
 - [ ] Migrate relationship tools (create, search, update, delete)
 - [ ] Migrate space tools (publish, retract, revise, confirm, deny, moderate, search, query)
 - [ ] Migrate preferences tools (get, set)
+- [ ] Migrate ghost config tools (get, update, set_trust, block, unblock)
+- [ ] Set up AccessControlService with GhostConfigProvider and EscalationStore
+- [ ] Add trust enforcement to search queries (buildTrustFilter or formatMemoryForPrompt)
 - [ ] Remove duplicated source files
 - [ ] Verify build succeeds
 - [ ] Verify all tests pass

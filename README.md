@@ -41,7 +41,7 @@ const results = await memoryService.search({
 | `@prmichaelsen/remember-core/types` | All type definitions and interfaces |
 | `@prmichaelsen/remember-core/services` | Service classes and input/output types |
 | `@prmichaelsen/remember-core/collections` | Composite IDs, tracking arrays, dot notation |
-| `@prmichaelsen/remember-core/constants` | Content types (41 types across 8 categories) |
+| `@prmichaelsen/remember-core/constants` | Content types (43 types across 11 categories) |
 | `@prmichaelsen/remember-core/config` | Environment config, debug levels |
 | `@prmichaelsen/remember-core/database/weaviate` | Weaviate client, schema, space collections |
 | `@prmichaelsen/remember-core/database/firestore` | Firestore init, path helpers |
@@ -61,10 +61,20 @@ const results = await memoryService.search({
 
 **ConfirmationTokenService** — Time-limited one-use tokens for sensitive operations (5-minute expiry).
 
+### Trust & Ghost System
+
+**TrustEnforcementService** — 5-tier content redaction (Full Access → Existence Only), query-level and prompt-level enforcement modes.
+
+**AccessControlService** — Per-memory access checks with 6-step resolution (self → ghost → block → trust → grant), trust escalation prevention, `canRevise()`/`canOverwrite()` permission resolution.
+
+**GhostConfigService** — Firestore-backed ghost persona configuration CRUD (trust levels, blocked users, enforcement mode).
+
+**EscalationService** — Trust penalty tracking and automatic blocking after repeated unauthorized access attempts.
+
 ## Testing
 
 ```bash
-npm test           # Unit tests (120 tests)
+npm test           # Unit tests (270 tests)
 npm run test:e2e   # Integration tests (22 tests)
 npm run typecheck  # Type checking
 npm run build      # TypeScript compilation
@@ -85,7 +95,7 @@ remember-core (this package)
   ├── database/      Weaviate + Firestore initialization
   ├── collections/   Weaviate collection utilities
   ├── utils/         Logger, filters, auth helpers
-  ├── services/      Business logic (5 service classes)
+  ├── services/      Business logic (5 core + 4 trust/ghost service modules)
   └── testing/       Mock infrastructure for consumers
 
 remember-mcp-server (consumer)

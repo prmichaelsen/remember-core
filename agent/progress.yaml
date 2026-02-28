@@ -2,8 +2,8 @@ project:
   name: remember-core
   version: 0.12.0
   started: 2026-02-27
-  status: complete
-  current_milestone: complete
+  status: in_progress
+  current_milestone: M5
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -57,6 +57,19 @@ milestones:
     tasks_total: 4
     notes: |
       NPM packaging, public API design, integration tests, migration guides.
+
+  - id: M5
+    name: Trust & Ghost System
+    status: in_progress
+    progress: 50
+    started: 2026-02-28
+    completed: null
+    estimated_weeks: 1
+    tasks_completed: 3
+    tasks_total: 6
+    notes: |
+      Extract trust enforcement, access control, and ghost/persona system from
+      remember-mcp (v3.9.0-v3.13.0). New types, 6 services, schema updates, tests.
 
 tasks:
   milestone_1:
@@ -222,18 +235,112 @@ tasks:
         docs/migration-guide.md with before/after examples, 20-tool mapping table,
         import mapping, step-by-step checklist.
 
+  milestone_5:
+    - id: task-16
+      name: Port Ghost Config and Access Result Types
+      status: completed
+      file: agent/tasks/milestone-5-trust-and-ghost-system/task-16-ghost-config-access-result-types.md
+      estimated_hours: 2
+      actual_hours: null
+      completed_date: 2026-02-28
+      notes: |
+        Created ghost-config.types.ts (TrustEnforcementMode, GhostConfig, DEFAULT_GHOST_CONFIG).
+        Created access-result.types.ts (6 AccessResult variants, discriminated union).
+        Updated auth.types.ts with GhostModeContext on AuthContext.
+        Updated types/index.ts barrel with all new exports.
+    - id: task-17
+      name: Port Trust Enforcement and Trust Validator Services
+      status: completed
+      file: agent/tasks/milestone-5-trust-and-ghost-system/task-17-trust-enforcement-validator-services.md
+      estimated_hours: 3
+      actual_hours: null
+      completed_date: 2026-02-28
+      notes: |
+        Created trust-enforcement.service.ts (TRUST_THRESHOLDS, buildTrustFilter, formatMemoryForPrompt,
+        getTrustLevelLabel, getTrustInstructions, redactSensitiveFields, isTrustSufficient, resolveEnforcementMode).
+        Created trust-validator.service.ts (validateTrustAssignment, suggestTrustLevel).
+        Updated services/index.ts barrel with all new exports.
+    - id: task-18
+      name: Port Access Control, Ghost Config, and Escalation Services
+      status: completed
+      file: agent/tasks/milestone-5-trust-and-ghost-system/task-18-access-control-ghost-escalation-services.md
+      estimated_hours: 4
+      actual_hours: null
+      completed_date: 2026-02-28
+      notes: |
+        Created access-control.service.ts (checkMemoryAccess, handleInsufficientTrust, isMemoryBlocked,
+        resetBlock, resolveAccessorTrustLevel, formatAccessResultMessage, canRevise, canOverwrite,
+        PublishedMemoryACL type, StubGhostConfigProvider, InMemoryEscalationStore).
+        Created ghost-config.service.ts (getGhostConfig, setGhostConfigFields, setUserTrust,
+        removeUserTrust, blockUser, unblockUser, isGhostEnabled, validateGhostConfigUpdate,
+        FirestoreGhostConfigProvider).
+        Created escalation.service.ts (FirestoreEscalationStore — Firestore-backed escalation tracking).
+        Created ghost-config-handler.service.ts (handleGetConfig, handleUpdateConfig, handleSetTrust,
+        handleRemoveTrust, handleBlockUser, handleUnblockUser — orchestration layer).
+        Updated services/index.ts barrel with 28 new exports. Build passes, 120 tests pass.
+    - id: task-19
+      name: Update Schema, Content Types, and AuthContext
+      status: not_started
+      file: agent/tasks/milestone-5-trust-and-ghost-system/task-19-schema-content-types-auth-updates.md
+      estimated_hours: 2
+      actual_hours: null
+      completed_date: null
+      notes: |
+        7 new fields on PUBLISHED_MEMORY_PROPERTIES, ghost/comment content types,
+        can_moderate on GroupPermissions, moderation filter utilities.
+    - id: task-20
+      name: Unit Tests for Trust & Ghost System
+      status: not_started
+      file: agent/tasks/milestone-5-trust-and-ghost-system/task-20-trust-ghost-unit-tests.md
+      estimated_hours: 4
+      actual_hours: null
+      completed_date: null
+      notes: |
+        ~80-100 tests across 6 suites: trust enforcement, trust validator, access control,
+        ghost config, escalation, access result types.
+    - id: task-21
+      name: Update Migration Guide
+      status: not_started
+      file: agent/tasks/milestone-5-trust-and-ghost-system/task-21-update-migration-guide.md
+      estimated_hours: 1.5
+      actual_hours: null
+      completed_date: null
+      notes: |
+        Update docs/migration-guide.md, CHANGELOG.md, README.md with trust & ghost system coverage.
+
 documentation:
-  design_documents: 1
-  milestone_documents: 4
+  design_documents: 5
+  milestone_documents: 5
   pattern_documents: 25
-  task_documents: 15
+  task_documents: 21
 
 progress:
   planning: 100
-  implementation: 100
-  overall: 100
+  implementation: 81
+  overall: 81
 
 recent_work:
+  - date: 2026-02-28
+    description: |
+      Task 18 — Port Access Control, Ghost Config, and Escalation Services
+    items:
+      - "Created access-control.service.ts — checkMemoryAccess (6-step flow), escalation handling, trust resolution, formatAccessResultMessage"
+      - "Added canRevise/canOverwrite permission utilities with PublishedMemoryACL type (3 write modes: owner_only, group_editors, anyone)"
+      - "Created ghost-config.service.ts — Firestore CRUD for GhostConfig, FirestoreGhostConfigProvider"
+      - "Created escalation.service.ts — FirestoreEscalationStore (block/attempt tracking)"
+      - "Created ghost-config-handler.service.ts — orchestration layer (get/update config, set/remove trust, block/unblock)"
+      - "Updated services/index.ts barrel with 28 new exports"
+      - "Build passes, 120 tests pass, all exports verified at runtime"
+  - date: 2026-02-28
+    description: |
+      M5 Planning — Trust & Ghost System milestone, design docs, task documents
+    items:
+      - "Created milestone doc: agent/milestones/milestone-5-trust-and-ghost-system.md"
+      - "Created 6 task documents (Tasks 16-21) in agent/tasks/milestone-5-trust-and-ghost-system/"
+      - "Created 4 design documents: trust-enforcement.md, access-control-result.md, ghost-persona-system.md, memory-acl-schema.md"
+      - "Researched remember-mcp v3.9.0-v3.13.0 changes (6 new services, 3 new type files)"
+      - "Confirmed mcp-auth is separate transport layer, not needed in remember-core"
+      - "Updated progress.yaml with M5 milestone and tasks"
   - date: 2026-02-28
     description: |
       Post-completion cleanup — ESM import fixes, scaffold removal, build verification
@@ -401,11 +508,14 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Publish v0.1.0 to npm
+  - "Task 19: Update Schema, Content Types, and AuthContext"
+  - "Task 20: Unit Tests for Trust & Ghost System"
+  - "Task 21: Update Migration Guide"
+  - Publish v0.13.0 to npm
   - Begin remember-mcp migration (consumer adoption)
 
 notes:
-  - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"
+  - "Source: remember-mcp v3.8.0-v3.13.0 (prmichaelsen/remember-mcp)"
   - "Consumer: remember-mcp-server (prmichaelsen/remember-mcp-server)"
   - "Future consumer: remember-rest-server"
   - "20 MCP tools map to 5 core services + 2 existing services port directly"

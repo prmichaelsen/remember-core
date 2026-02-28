@@ -29,9 +29,21 @@ export interface UserCredentials {
   group_memberships: GroupMembership[];
 }
 
+/** Server-resolved ghost mode context for cross-user memory access */
+export interface GhostModeContext {
+  /** User ID of the ghost owner (whose memories are being accessed) */
+  owner_user_id: string;
+  /** User ID of the accessor (who is talking to the ghost) */
+  accessor_user_id: string;
+  /** Resolved trust level for this accessor (0-1) */
+  accessor_trust_level: number;
+}
+
 export interface AuthContext {
   accessToken: string | null;
   credentials: UserCredentials | null;
+  /** Ghost mode context — present when accessing another user's memories via ghost */
+  ghostMode?: GhostModeContext;
 }
 
 export type WriteMode = 'owner_only' | 'group_editors' | 'anyone';

@@ -85,3 +85,69 @@ export {
   parseRevisionHistory,
   buildRevisionHistory,
 } from './space.service.js';
+
+// Trust & ghost system services (ported from remember-mcp v3.11.0+)
+export {
+  TRUST_THRESHOLDS,
+  buildTrustFilter,
+  formatMemoryForPrompt,
+  getTrustLevelLabel,
+  getTrustInstructions,
+  redactSensitiveFields,
+  isTrustSufficient,
+  resolveEnforcementMode,
+  type FormattedMemory,
+} from './trust-enforcement.service.js';
+
+export {
+  validateTrustAssignment,
+  suggestTrustLevel,
+  type TrustValidationResult,
+} from './trust-validator.service.js';
+
+export {
+  checkMemoryAccess,
+  handleInsufficientTrust,
+  isMemoryBlocked,
+  resetBlock,
+  resolveAccessorTrustLevel,
+  formatAccessResultMessage,
+  canRevise,
+  canOverwrite,
+  TRUST_PENALTY,
+  MAX_ATTEMPTS_BEFORE_BLOCK,
+  type MemoryBlock,
+  type AttemptRecord,
+  type GhostConfigProvider,
+  type EscalationStore,
+  type PublishedMemoryACL,
+  StubGhostConfigProvider,
+  InMemoryEscalationStore,
+} from './access-control.service.js';
+
+export {
+  getGhostConfig,
+  setGhostConfigFields,
+  setUserTrust,
+  removeUserTrust,
+  blockUser,
+  unblockUser,
+  isGhostEnabled,
+  validateGhostConfigUpdate,
+  FirestoreGhostConfigProvider,
+} from './ghost-config.service.js';
+
+export {
+  FirestoreEscalationStore,
+} from './escalation.service.js';
+
+export {
+  handleGetConfig,
+  handleUpdateConfig,
+  handleSetTrust,
+  handleRemoveTrust,
+  handleBlockUser,
+  handleUnblockUser,
+  type GhostConfigResult,
+  type TrustResult,
+} from './ghost-config-handler.service.js';

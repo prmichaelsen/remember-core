@@ -84,10 +84,33 @@ export type {
   GroupPermissions,
   GroupMembership,
   UserCredentials,
+  GhostModeContext,
   AuthContext,
   WriteMode,
   CredentialsProvider,
 } from './auth.types.js';
+
+// Ghost config types (ported from remember-mcp v3.11.0+)
+export type {
+  TrustEnforcementMode,
+  GhostConfig,
+} from './ghost-config.types.js';
+
+export {
+  DEFAULT_GHOST_CONFIG,
+} from './ghost-config.types.js';
+
+// Access result types (ported from remember-mcp v3.11.0+)
+export type {
+  AccessGranted,
+  AccessInsufficientTrust,
+  AccessBlocked,
+  AccessNoPermission,
+  AccessNotFound,
+  AccessDeleted,
+  AccessResult,
+  AccessResultStatus,
+} from './access-result.types.js';
 
 // Preference types (ported from remember-mcp)
 export type {

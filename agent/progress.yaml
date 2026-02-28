@@ -2,8 +2,8 @@ project:
   name: remember-core
   version: 0.11.0
   started: 2026-02-27
-  status: in_progress
-  current_milestone: M3
+  status: complete
+  current_milestone: complete
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -48,12 +48,12 @@ milestones:
 
   - id: M4
     name: Integration & Packaging
-    status: in_progress
-    progress: 75
+    status: completed
+    progress: 100
     started: 2026-02-27
-    completed: null
+    completed: 2026-02-27
     estimated_weeks: 1
-    tasks_completed: 3
+    tasks_completed: 4
     tasks_total: 4
     notes: |
       NPM packaging, public API design, integration tests, migration guides.
@@ -212,12 +212,15 @@ tasks:
         Separate jest.e2e.config.js with 30s timeout. npm test:e2e script added.
     - id: task-15
       name: Migration Guide and Consumer Documentation
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-4-integration-and-packaging/task-15-migration-guide.md
       estimated_hours: 4
-      completed_date: null
+      actual_hours: 0.15
+      completed_date: 2026-02-27
       notes: |
-        remember-mcp migration, REST server bootstrap guide
+        README.md rewritten with installation, quick start, subpath imports, architecture.
+        docs/migration-guide.md with before/after examples, 20-tool mapping table,
+        import mapping, step-by-step checklist.
 
 documentation:
   design_documents: 1
@@ -227,10 +230,19 @@ documentation:
 
 progress:
   planning: 100
-  implementation: 93
-  overall: 93
+  implementation: 100
+  overall: 100
 
 recent_work:
+  - date: 2026-02-27
+    description: |
+      Task 15 — Migration Guide and Documentation (M4 COMPLETE, PROJECT COMPLETE)
+    items:
+      - "Rewrote README.md — installation, quick start, subpath imports table, architecture diagram"
+      - "Created docs/migration-guide.md — before/after examples, 20-tool mapping table, import mapping, checklist"
+      - "M4 Integration & Packaging complete (4/4 tasks)"
+      - "All 4 milestones complete, 15 tasks done"
+      - "142 total tests (120 unit + 22 integration), 9 suites, 0 failures"
   - date: 2026-02-27
     description: |
       Task 13 — Public API verified, Task 14 — Integration Tests
@@ -378,7 +390,8 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M4 Task 15 - Migration Guide and Consumer Documentation
+  - Publish v0.1.0 to npm
+  - Begin remember-mcp migration (consumer adoption)
 
 notes:
   - "Source: remember-mcp v3.8.0 (prmichaelsen/remember-mcp)"

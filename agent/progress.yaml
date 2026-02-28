@@ -2,7 +2,7 @@ project:
   name: remember-core
   version: 0.15.0
   started: 2026-02-27
-  status: in_progress
+  status: completed
   current_milestone: M7
   description: |
     Core SDK for Remember MCP and REST services.
@@ -103,6 +103,7 @@ milestones:
       31 functions across 6 modules (memories, relationships, spaces, ghost, profiles, preferences).
       Auto-confirmed space operations, searchAsGhost compound, profile compounds.
       Server-side only (browser guard). Framework-agnostic.
+      42 new tests across 6 suites (323 total, 18 suites).
       See: agent/milestones/milestone-7-web-client-sdk.md
 
 tasks:
@@ -776,6 +777,7 @@ recent_work:
 next_steps:
   - Publish v0.15.0 to npm
   - Migrate remaining 3 remember-mcp ghost tools
+  - Build remember-rest-server consumer
   - Migrate agentbase.me to web SDK (replace ProfileMemoryService with web SDK calls)
 
 notes:

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.16.5] - 2026-03-01
+
+### Fixed
+- Remove `deleted_at` filter from SpaceService search — space/group memories use retraction model (remove groupId from `group_ids`), not soft-delete
+
 ## [0.16.4] - 2026-03-01
 
 ### Fixed

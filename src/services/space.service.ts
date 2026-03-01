@@ -1050,8 +1050,8 @@ export class SpaceService {
   private buildBaseFilters(collection: any, input: SearchSpaceInput): any[] {
     const filterList: any[] = [];
 
-    // Exclude soft-deleted
-    filterList.push(collection.filter.byProperty('deleted_at').isNull(true));
+    // Note: space/group memories use the retract model (remove groupId from
+    // group_ids) rather than soft-delete (deleted_at). No deleted_at filter here.
 
     // Only memories
     filterList.push(collection.filter.byProperty('doc_type').equal('memory'));

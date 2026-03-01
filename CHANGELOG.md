@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.16.1] - 2026-03-01
+
+### Fixed
+- Schema migration for existing Weaviate collections — `ensureUserCollection`, `ensureSpacesCollection`, and `ensureGroupCollection` now reconcile missing properties on existing collections via `collection.config.addProperty()`
+- Collections created before soft-delete fields (`deleted_at`, `deleted_by`, `deletion_reason`) were added to the schema will now have those properties added automatically on next access
+
+### Added
+- `reconcileCollectionProperties()` exported utility for standalone schema migration use cases
+
 ## [0.16.0] - 2026-02-28
 
 ### Added

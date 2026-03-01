@@ -213,7 +213,34 @@ export function createGroupCollectionSchema(groupId: string) {
 }
 
 /**
- * Ensure a user collection exists (create if needed)
+ * Reconcile missing properties on an existing collection.
+ * Compares the expected properties against the collection's current schema
+ * and adds any that are missing via collection.config.addProperty().
+ *
+ * @returns The number of properties added.
+ */
+export async function reconcileCollectionProperties(
+  client: WeaviateClient,
+  collectionName: string,
+  expectedProperties: Array<{ name: string; dataType: string }>,
+): Promise<number> {
+  const collection = client.collections.get(collectionName);
+  const config = await collection.config.get();
+  const existingNames = new Set(config.properties.map((p) => p.name));
+
+  let added = 0;
+  for (const prop of expectedProperties) {
+    if (!existingNames.has(prop.name)) {
+      await collection.config.addProperty(prop as { name: string; dataType: 'text' });
+      added++;
+    }
+  }
+  return added;
+}
+
+/**
+ * Ensure a user collection exists (create if needed).
+ * If the collection already exists, reconciles any missing properties.
  */
 export async function ensureUserCollection(
   client: WeaviateClient,
@@ -222,7 +249,10 @@ export async function ensureUserCollection(
   const collectionName = `Memory_users_${userId}`;
 
   const exists = await client.collections.exists(collectionName);
-  if (exists) return false;
+  if (exists) {
+    await reconcileCollectionProperties(client, collectionName, COMMON_MEMORY_PROPERTIES);
+    return false;
+  }
 
   const schema = createUserCollectionSchema(userId);
   await client.collections.create(schema);
@@ -230,13 +260,21 @@ export async function ensureUserCollection(
 }
 
 /**
- * Ensure the spaces collection exists (create if needed)
+ * Ensure the spaces collection exists (create if needed).
+ * If the collection already exists, reconciles any missing properties.
  */
 export async function ensureSpacesCollection(client: WeaviateClient): Promise<boolean> {
   const collectionName = 'Memory_spaces_public';
 
   const exists = await client.collections.exists(collectionName);
-  if (exists) return false;
+  if (exists) {
+    await reconcileCollectionProperties(
+      client,
+      collectionName,
+      [...COMMON_MEMORY_PROPERTIES, ...PUBLISHED_MEMORY_PROPERTIES],
+    );
+    return false;
+  }
 
   const schema = createSpaceCollectionSchema();
   await client.collections.create(schema);
@@ -244,7 +282,8 @@ export async function ensureSpacesCollection(client: WeaviateClient): Promise<bo
 }
 
 /**
- * Ensure a group collection exists (create if needed)
+ * Ensure a group collection exists (create if needed).
+ * If the collection already exists, reconciles any missing properties.
  */
 export async function ensureGroupCollection(
   client: WeaviateClient,
@@ -253,7 +292,14 @@ export async function ensureGroupCollection(
   const collectionName = `Memory_groups_${groupId}`;
 
   const exists = await client.collections.exists(collectionName);
-  if (exists) return false;
+  if (exists) {
+    await reconcileCollectionProperties(
+      client,
+      collectionName,
+      [...COMMON_MEMORY_PROPERTIES, ...PUBLISHED_MEMORY_PROPERTIES],
+    );
+    return false;
+  }
 
   const schema = createGroupCollectionSchema(groupId);
   await client.collections.create(schema);

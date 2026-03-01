@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.16.3] - 2026-03-01
+
+### Fixed
+- Gracefully handle collections without `indexNullState` — retry search/similar/query without `deleted_at` filter when Weaviate returns "Nullstate must be indexed" error
+
 ## [0.16.2] - 2026-03-01
 
 ### Fixed

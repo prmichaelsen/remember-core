@@ -154,6 +154,23 @@ export class MemoryService {
     private logger: Logger,
   ) {}
 
+  /**
+   * Execute a search function, retrying without the deleted_at filter if
+   * the collection lacks indexNullState (created before soft-delete support).
+   */
+  private async retryWithoutDeletedFilter<T>(
+    fn: (useDeletedFilter: boolean) => Promise<T>,
+  ): Promise<T> {
+    try {
+      return await fn(true);
+    } catch (err: any) {
+      if (err?.message?.includes('Nullstate must be indexed')) {
+        return fn(false);
+      }
+      throw err;
+    }
+  }
+
   // ── Create ──────────────────────────────────────────────────────────
 
   async create(input: CreateMemoryInput): Promise<CreateMemoryResult> {
@@ -207,7 +224,6 @@ export class MemoryService {
     const limit = input.limit ?? 10;
     const offset = input.offset ?? 0;
 
-    const deletedFilter = buildDeletedFilter(this.collection, input.deleted_filter || 'exclude');
     const searchFilters = includeRelationships
       ? buildCombinedSearchFilters(this.collection, input.filters)
       : buildMemoryOnlyFilters(this.collection, input.filters);
@@ -221,23 +237,31 @@ export class MemoryService {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
 
-    const combinedFilters = combineFiltersWithAnd(
-      [deletedFilter, searchFilters, ...ghostFilters].filter((f) => f !== null),
-    );
-
-    const searchOptions: any = { limit: limit + offset };
-    if (combinedFilters) searchOptions.filters = combinedFilters;
-
     // Use BM25 for wildcard queries since vectorizing '*' is meaningless
     // and fails on collections without a vectorizer configured.
     const isWildcard = input.query === '*';
-    let results;
-    if (isWildcard) {
-      results = await this.collection.query.bm25(input.query, searchOptions);
-    } else {
-      searchOptions.alpha = alpha;
-      results = await this.collection.query.hybrid(input.query, searchOptions);
-    }
+
+    const executeSearch = async (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+
+      const combinedFilters = combineFiltersWithAnd(
+        [deletedFilter, searchFilters, ...ghostFilters].filter((f) => f !== null),
+      );
+
+      const searchOptions: any = { limit: limit + offset };
+      if (combinedFilters) searchOptions.filters = combinedFilters;
+
+      if (isWildcard) {
+        return this.collection.query.bm25(input.query, searchOptions);
+      } else {
+        searchOptions.alpha = alpha;
+        return this.collection.query.hybrid(input.query, searchOptions);
+      }
+    };
+
+    const results = await this.retryWithoutDeletedFilter(executeSearch);
     const paginated = results.objects.slice(offset);
 
     const memories: Record<string, unknown>[] = [];
@@ -266,9 +290,8 @@ export class MemoryService {
 
     const limit = input.limit ?? 10;
     const minSimilarity = input.min_similarity ?? 0.7;
-    const deletedFilter = buildDeletedFilter(this.collection, input.deleted_filter || 'exclude');
 
-    // Ghost/trust filtering — combine deleted + ghost filters
+    // Ghost/trust filtering
     const ghostFilters: any[] = [];
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
@@ -276,29 +299,37 @@ export class MemoryService {
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
-    const combinedFilter = combineFiltersWithAnd(
-      [deletedFilter, ...ghostFilters].filter((f) => f !== null),
-    );
 
-    let results: any;
-
+    let memoryObj: any = null;
     if (input.memory_id) {
-      const memory = await this.collection.query.fetchObjectById(input.memory_id, {
+      memoryObj = await this.collection.query.fetchObjectById(input.memory_id, {
         returnProperties: ['user_id', 'doc_type', 'content'],
       });
-      if (!memory) throw new Error(`Memory not found: ${input.memory_id}`);
-      if (memory.properties.user_id !== this.userId) throw new Error('Unauthorized');
-      if (memory.properties.doc_type !== 'memory') throw new Error('Can only find similar for memory documents');
-
-      const opts: any = { limit: limit + 1, distance: 1 - minSimilarity, returnMetadata: ['distance'] };
-      if (combinedFilter) opts.filters = combinedFilter;
-      results = await this.collection.query.nearObject(input.memory_id, opts);
-      results.objects = results.objects.filter((o: any) => o.uuid !== input.memory_id);
-    } else {
-      const opts: any = { limit, distance: 1 - minSimilarity, returnMetadata: ['distance'] };
-      if (combinedFilter) opts.filters = combinedFilter;
-      results = await this.collection.query.nearText(input.text!, opts);
+      if (!memoryObj) throw new Error(`Memory not found: ${input.memory_id}`);
+      if (memoryObj.properties.user_id !== this.userId) throw new Error('Unauthorized');
+      if (memoryObj.properties.doc_type !== 'memory') throw new Error('Can only find similar for memory documents');
     }
+
+    const results: any = await this.retryWithoutDeletedFilter(async (useDeletedFilter) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+      const combinedFilter = combineFiltersWithAnd(
+        [deletedFilter, ...ghostFilters].filter((f) => f !== null),
+      );
+
+      if (input.memory_id) {
+        const opts: any = { limit: limit + 1, distance: 1 - minSimilarity, returnMetadata: ['distance'] };
+        if (combinedFilter) opts.filters = combinedFilter;
+        const res = await this.collection.query.nearObject(input.memory_id, opts);
+        res.objects = res.objects.filter((o: any) => o.uuid !== input.memory_id);
+        return res;
+      } else {
+        const opts: any = { limit, distance: 1 - minSimilarity, returnMetadata: ['distance'] };
+        if (combinedFilter) opts.filters = combinedFilter;
+        return this.collection.query.nearText(input.text!, opts);
+      }
+    });
 
     if (!input.include_relationships) {
       results.objects = results.objects.filter((o: any) => o.properties.doc_type === 'memory');
@@ -324,7 +355,6 @@ export class MemoryService {
     const limit = input.limit ?? 5;
     const minRelevance = input.min_relevance ?? 0.6;
 
-    const deletedFilter = buildDeletedFilter(this.collection, input.deleted_filter || 'exclude');
     const searchFilters = buildCombinedSearchFilters(this.collection, input.filters);
 
     // Ghost/trust filtering
@@ -336,14 +366,20 @@ export class MemoryService {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
 
-    const combinedFilters = combineFiltersWithAnd(
-      [deletedFilter, searchFilters, ...ghostFilters].filter((f) => f !== null),
-    );
+    const results = await this.retryWithoutDeletedFilter(async (useDeletedFilter) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
 
-    const opts: any = { limit, distance: 1 - minRelevance, returnMetadata: ['distance'] };
-    if (combinedFilters) opts.filters = combinedFilters;
+      const combinedFilters = combineFiltersWithAnd(
+        [deletedFilter, searchFilters, ...ghostFilters].filter((f) => f !== null),
+      );
 
-    const results = await this.collection.query.nearText(input.query, opts);
+      const opts: any = { limit, distance: 1 - minRelevance, returnMetadata: ['distance'] };
+      if (combinedFilters) opts.filters = combinedFilters;
+
+      return this.collection.query.nearText(input.query, opts);
+    });
 
     const items: RelevantMemoryItem[] = results.objects
       .map((obj: any) => ({

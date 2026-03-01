@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.16.4] - 2026-03-01
+
+### Fixed
+- Use `fetchObjects()` instead of `bm25('*')` for wildcard search — BM25 treats `*` as a literal token, not a wildcard match-all
+
 ## [0.16.3] - 2026-03-01
 
 ### Fixed

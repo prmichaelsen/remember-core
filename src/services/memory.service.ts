@@ -254,7 +254,7 @@ export class MemoryService {
       if (combinedFilters) searchOptions.filters = combinedFilters;
 
       if (isWildcard) {
-        return this.collection.query.bm25(input.query, searchOptions);
+        return this.collection.query.fetchObjects(searchOptions);
       } else {
         searchOptions.alpha = alpha;
         return this.collection.query.hybrid(input.query, searchOptions);

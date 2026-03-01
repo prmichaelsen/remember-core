@@ -225,10 +225,19 @@ export class MemoryService {
       [deletedFilter, searchFilters, ...ghostFilters].filter((f) => f !== null),
     );
 
-    const searchOptions: any = { alpha, limit: limit + offset };
+    const searchOptions: any = { limit: limit + offset };
     if (combinedFilters) searchOptions.filters = combinedFilters;
 
-    const results = await this.collection.query.hybrid(input.query, searchOptions);
+    // Use BM25 for wildcard queries since vectorizing '*' is meaningless
+    // and fails on collections without a vectorizer configured.
+    const isWildcard = input.query === '*';
+    let results;
+    if (isWildcard) {
+      results = await this.collection.query.bm25(input.query, searchOptions);
+    } else {
+      searchOptions.alpha = alpha;
+      results = await this.collection.query.hybrid(input.query, searchOptions);
+    }
     const paginated = results.objects.slice(offset);
 
     const memories: Record<string, unknown>[] = [];

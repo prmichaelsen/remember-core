@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.16.2] - 2026-03-01
+
+### Fixed
+- Use BM25 search for wildcard `*` queries instead of hybrid — vectorizing `*` fails on collections without a vectorizer configured
+
 ## [0.16.1] - 2026-03-01
 
 ### Fixed

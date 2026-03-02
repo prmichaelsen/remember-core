@@ -12,3 +12,14 @@ export {
 export { listMemoryCollections } from './rem.collections.js';
 
 export { RemStateStore } from './rem.state.js';
+
+export {
+  type MemoryCandidate,
+  type Cluster,
+  type ClusterAction,
+  selectCandidates,
+  formClusters,
+  resolveClusterActions,
+  shouldSplit,
+  splitCluster,
+} from './rem.clustering.js';

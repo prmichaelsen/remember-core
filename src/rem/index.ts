@@ -31,3 +31,9 @@ export {
   createHaikuClient,
   createMockHaikuClient,
 } from './rem.haiku.js';
+
+export {
+  RemService,
+  type RemServiceDeps,
+  type RunCycleResult,
+} from './rem.service.js';

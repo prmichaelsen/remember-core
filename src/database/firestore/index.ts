@@ -34,4 +34,6 @@ export {
   getUserPermissionPath,
   getDefaultTemplatesPath,
   getDefaultTemplatePath,
+  getRemCursorPath,
+  getRemCollectionStatePath,
 } from './paths.js';

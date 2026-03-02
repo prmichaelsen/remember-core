@@ -117,3 +117,23 @@ export function getDefaultTemplatesPath(): string {
 export function getDefaultTemplatePath(templateId: string): string {
   return `${BASE}.templates/default/${templateId}`;
 }
+
+// ============================================================================
+// REM STATE COLLECTIONS
+// ============================================================================
+
+/**
+ * Get path to REM cursor state document.
+ * Pattern: {BASE}.rem_state (collection), cursor (docId)
+ */
+export function getRemCursorPath(): { collectionPath: string; docId: string } {
+  return { collectionPath: `${BASE}.rem_state`, docId: 'cursor' };
+}
+
+/**
+ * Get path to REM collection state document.
+ * Pattern: {BASE}.rem_state/collections (collection), {collectionId} (docId)
+ */
+export function getRemCollectionStatePath(collectionId: string): { collectionPath: string; docId: string } {
+  return { collectionPath: `${BASE}.rem_state/collections`, docId: collectionId };
+}

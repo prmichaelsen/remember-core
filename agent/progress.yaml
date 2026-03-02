@@ -770,11 +770,21 @@ tasks:
       completed_date: 2026-03-02
       dependencies: [task-54]
 
+  unassigned:
+    - id: task-56
+      name: Replace Weaviate listAll() with Firestore collection registry
+      status: not_started
+      file: agent/tasks/unassigned/task-56-rem-collection-registry.md
+      estimated_hours: 4
+      notes: |
+        Performance enhancement — listAll() doesn't scale to millions of collections.
+        Write to Firestore registry on collection creation, REM reads from registry.
+
 documentation:
   design_documents: 9
   milestone_documents: 10
   pattern_documents: 25
-  task_documents: 62
+  task_documents: 63
 
 progress:
   planning: 100

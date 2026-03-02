@@ -36,4 +36,5 @@ export {
   getDefaultTemplatePath,
   getRemCursorPath,
   getRemCollectionStatePath,
+  getCollectionRegistryPath,
 } from './paths.js';

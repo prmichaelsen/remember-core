@@ -13,7 +13,7 @@ import type { RemConfig } from './rem.types.js';
 import { DEFAULT_REM_CONFIG } from './rem.types.js';
 import type { RemStateStore } from './rem.state.js';
 import type { HaikuClient, HaikuValidationInput } from './rem.haiku.js';
-import { listMemoryCollections } from './rem.collections.js';
+import { getNextMemoryCollection } from './rem.collections.js';
 import {
   selectCandidates,
   formClusters,
@@ -68,22 +68,13 @@ export class RemService {
       duration_ms: 0,
     };
 
-    // 1. List collections
-    const collections = await listMemoryCollections(this.deps.weaviateClient);
-    if (collections.length === 0) {
+    // 1. Pick next collection via cursor
+    const cursor = await this.deps.stateStore.getCursor();
+    const collectionId = await getNextMemoryCollection(cursor?.last_collection_id ?? null);
+    if (!collectionId) {
       stats.duration_ms = Date.now() - start;
       return stats;
     }
-
-    // 2. Load cursor and pick next collection
-    const cursor = await this.deps.stateStore.getCursor();
-    let targetIndex = 0;
-    if (cursor?.last_collection_id) {
-      const lastIndex = collections.indexOf(cursor.last_collection_id);
-      targetIndex = lastIndex >= 0 ? (lastIndex + 1) % collections.length : 0;
-    }
-
-    const collectionId = collections[targetIndex];
     stats.collection_id = collectionId;
     this.logger.info?.('REM cycle starting', { collectionId });
 

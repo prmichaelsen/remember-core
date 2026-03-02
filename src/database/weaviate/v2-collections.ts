@@ -10,6 +10,7 @@
 
 import { configure } from 'weaviate-client';
 import type { WeaviateClient } from 'weaviate-client';
+import { registerCollection } from '../collection-registry.js';
 
 /**
  * Common properties shared across all memory collection types.
@@ -257,6 +258,12 @@ export async function ensureUserCollection(
 
   const schema = createUserCollectionSchema(userId);
   await client.collections.create(schema);
+  await registerCollection({
+    collection_name: collectionName,
+    collection_type: 'users',
+    owner_id: userId,
+    created_at: new Date().toISOString(),
+  });
   return true;
 }
 
@@ -279,6 +286,12 @@ export async function ensureSpacesCollection(client: WeaviateClient): Promise<bo
 
   const schema = createSpaceCollectionSchema();
   await client.collections.create(schema);
+  await registerCollection({
+    collection_name: 'Memory_spaces_public',
+    collection_type: 'spaces',
+    owner_id: null,
+    created_at: new Date().toISOString(),
+  });
   return true;
 }
 
@@ -304,6 +317,12 @@ export async function ensureGroupCollection(
 
   const schema = createGroupCollectionSchema(groupId);
   await client.collections.create(schema);
+  await registerCollection({
+    collection_name: collectionName,
+    collection_type: 'groups',
+    owner_id: groupId,
+    created_at: new Date().toISOString(),
+  });
   return true;
 }
 

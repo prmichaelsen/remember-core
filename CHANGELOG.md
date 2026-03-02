@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.18.0] - 2026-03-02
+
+### Added
+- **Firestore Collection Registry** — O(1) cursor-based collection lookup replacing Weaviate `listAll()`:
+  - New `src/database/collection-registry.ts` module with `registerCollection()`, `getNextRegisteredCollection()`, `unregisterCollection()`
+  - `getCollectionRegistryPath()` Firestore path helper
+  - `getNextMemoryCollection()` replaces `listMemoryCollections()` in REM pipeline
+  - `ensure*Collection()` functions now register collections in Firestore on creation
+  - 8 new collection registry unit tests (CRUD, cursor, wrap-around)
+  - Updated REM collections and service tests for registry-based lookups
+
+### Changed
+- **BREAKING**: `listMemoryCollections()` export removed from `./rem`, replaced by `getNextMemoryCollection(afterName)`
+- `RemService.runCycle()` simplified — single cursor query instead of load-all-then-indexOf
+
 ## [0.17.0] - 2026-03-02
 
 ### Added

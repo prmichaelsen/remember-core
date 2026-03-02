@@ -4,7 +4,7 @@ import { RemService } from './rem.service.js';
 import { RemStateStore } from './rem.state.js';
 import { createMockHaikuClient } from './rem.haiku.js';
 
-// Mock Firestore for RemStateStore
+// Mock Firestore for RemStateStore + collection registry
 jest.mock('../database/firestore/init.js', () => {
   const store = new Map<string, any>();
   return {
@@ -13,6 +13,41 @@ jest.mock('../database/firestore/init.js', () => {
     }),
     setDocument: jest.fn(async (collectionPath: string, docId: string, data: any) => {
       store.set(`${collectionPath}/${docId}`, data);
+    }),
+    deleteDocument: jest.fn(async (collectionPath: string, docId: string) => {
+      store.delete(`${collectionPath}/${docId}`);
+    }),
+    queryDocuments: jest.fn(async (collectionPath: string, options: any) => {
+      const entries = Array.from(store.entries())
+        .filter(([key]) => key.startsWith(collectionPath + '/'))
+        .map(([key, data]) => ({
+          id: key.split('/').pop()!,
+          data,
+        }));
+
+      // Sort by collection_name ascending
+      entries.sort((a: any, b: any) =>
+        ((a.data.collection_name as string) ?? a.id).localeCompare(
+          (b.data.collection_name as string) ?? b.id,
+        ),
+      );
+
+      // Apply startAfter cursor
+      let filtered = entries;
+      if (options?.startAfter?.length) {
+        const cursor = options.startAfter[0];
+        const idx = filtered.findIndex(
+          (e: any) => ((e.data.collection_name as string) ?? e.id) > cursor,
+        );
+        filtered = idx >= 0 ? filtered.slice(idx) : [];
+      }
+
+      // Apply limit
+      if (options?.limit) {
+        filtered = filtered.slice(0, options.limit);
+      }
+
+      return filtered;
     }),
     __store: store,
   };
@@ -28,8 +63,25 @@ describe('RemService', () => {
     return new RelationshipService(collection, uid, logger);
   }
 
+  /**
+   * Register a collection in the mock Firestore registry so
+   * getNextRegisteredCollection can find it.
+   */
+  function registerInRegistry(collectionName: string) {
+    const { __store } = require('../database/firestore/init.js');
+    const { getCollectionRegistryPath } = require('../database/firestore/paths.js');
+    const registryPath = getCollectionRegistryPath();
+    __store.set(`${registryPath}/${collectionName}`, {
+      collection_name: collectionName,
+      collection_type: 'users',
+      owner_id: null,
+      created_at: new Date().toISOString(),
+    });
+  }
+
   async function insertMemories(collectionName: string, count: number) {
     const collection = mockClient.collections.get(collectionName);
+    registerInRegistry(collectionName);
     const ids: string[] = [];
     for (let i = 0; i < count; i++) {
       const id = await collection.data.insert({
@@ -161,7 +213,7 @@ describe('RemService', () => {
 
     // Set cursor to last collection
     const { setDocument } = require('../database/firestore/init.js');
-    const BASE = 'e0.remember-mcp';
+    const { BASE } = require('../database/firestore/paths.js');
     await setDocument(`${BASE}.rem_state`, 'cursor', {
       last_collection_id: 'Memory_users_bob',
       last_run_at: new Date().toISOString(),

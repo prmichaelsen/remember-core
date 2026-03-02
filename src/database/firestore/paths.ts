@@ -137,3 +137,18 @@ export function getRemCursorPath(): { collectionPath: string; docId: string } {
 export function getRemCollectionStatePath(collectionId: string): { collectionPath: string; docId: string } {
   return { collectionPath: `${BASE}.rem_state/collections`, docId: collectionId };
 }
+
+// ============================================================================
+// COLLECTION REGISTRY
+// ============================================================================
+
+/**
+ * Get path to the collection registry (Firestore collection).
+ * Pattern: {BASE}.collection_registry
+ *
+ * Stores lightweight entries for all Weaviate memory collections,
+ * enabling O(1) cursor-based lookups instead of listing all collections.
+ */
+export function getCollectionRegistryPath(): string {
+  return `${BASE}.collection_registry`;
+}

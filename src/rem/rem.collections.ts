@@ -1,25 +1,19 @@
 /**
  * REM collection enumeration.
  *
- * Lists all Weaviate memory collections (user, group, space)
- * for REM's round-robin processing.
+ * Uses the Firestore collection registry for O(1) cursor-based
+ * collection lookup instead of loading all Weaviate schemas.
  */
 
-import type { WeaviateClient } from 'weaviate-client';
-
-const MEMORY_COLLECTION_PATTERN = /^Memory_(users_|spaces_|groups_)/;
+import { getNextRegisteredCollection } from '../database/collection-registry.js';
 
 /**
- * List all Weaviate collections matching memory collection naming patterns.
- * Returns sorted collection names for stable cursor ordering.
+ * Get the next memory collection after the given cursor.
+ * Returns null if the registry is empty.
+ * Wraps around to the first collection when the cursor is past the last.
  */
-export async function listMemoryCollections(
-  client: WeaviateClient,
-): Promise<string[]> {
-  const all = await client.collections.listAll();
-  const names = all
-    .map((c: any) => c.name ?? c)
-    .filter((name: string) => MEMORY_COLLECTION_PATTERN.test(name));
-  names.sort();
-  return names;
+export async function getNextMemoryCollection(
+  afterName: string | null,
+): Promise<string | null> {
+  return getNextRegisteredCollection(afterName);
 }

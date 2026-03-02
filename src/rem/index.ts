@@ -9,7 +9,7 @@ export {
   DEFAULT_REM_CONFIG,
 } from './rem.types.js';
 
-export { listMemoryCollections } from './rem.collections.js';
+export { getNextMemoryCollection } from './rem.collections.js';
 
 export { RemStateStore } from './rem.state.js';
 

@@ -1,47 +1,46 @@
-import { createMockWeaviateClient } from '../testing/weaviate-mock.js';
-import { listMemoryCollections } from './rem.collections.js';
+import { getNextMemoryCollection } from './rem.collections.js';
+
+// Mock the collection registry
+jest.mock('../database/collection-registry.js', () => ({
+  getNextRegisteredCollection: jest.fn(),
+}));
+
+import { getNextRegisteredCollection } from '../database/collection-registry.js';
+
+const mockGetNext = getNextRegisteredCollection as jest.MockedFunction<
+  typeof getNextRegisteredCollection
+>;
 
 describe('REM Collections', () => {
-  describe('listMemoryCollections', () => {
-    it('filters to Memory_* collections', async () => {
-      const client = createMockWeaviateClient();
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-      // Create various collections
-      client.collections.get('Memory_users_alice');
-      client.collections.get('Memory_groups_team1');
-      client.collections.get('Memory_spaces_public');
-      client.collections.get('Template_alice');
-      client.collections.get('Audit_alice');
+  describe('getNextMemoryCollection', () => {
+    it('delegates to getNextRegisteredCollection with null cursor', async () => {
+      mockGetNext.mockResolvedValue('Memory_users_alice');
 
-      const result = await listMemoryCollections(client as any);
-      expect(result).toEqual([
-        'Memory_groups_team1',
-        'Memory_spaces_public',
-        'Memory_users_alice',
-      ]);
+      const result = await getNextMemoryCollection(null);
+
+      expect(result).toBe('Memory_users_alice');
+      expect(mockGetNext).toHaveBeenCalledWith(null);
     });
 
-    it('returns sorted list', async () => {
-      const client = createMockWeaviateClient();
-      client.collections.get('Memory_users_charlie');
-      client.collections.get('Memory_users_alice');
-      client.collections.get('Memory_users_bob');
+    it('delegates to getNextRegisteredCollection with cursor', async () => {
+      mockGetNext.mockResolvedValue('Memory_users_bob');
 
-      const result = await listMemoryCollections(client as any);
-      expect(result).toEqual([
-        'Memory_users_alice',
-        'Memory_users_bob',
-        'Memory_users_charlie',
-      ]);
+      const result = await getNextMemoryCollection('Memory_users_alice');
+
+      expect(result).toBe('Memory_users_bob');
+      expect(mockGetNext).toHaveBeenCalledWith('Memory_users_alice');
     });
 
-    it('excludes non-memory collections', async () => {
-      const client = createMockWeaviateClient();
-      client.collections.get('Other_collection');
-      client.collections.get('NotMemory');
+    it('returns null when registry is empty', async () => {
+      mockGetNext.mockResolvedValue(null);
 
-      const result = await listMemoryCollections(client as any);
-      expect(result).toEqual([]);
+      const result = await getNextMemoryCollection(null);
+
+      expect(result).toBeNull();
     });
   });
 });

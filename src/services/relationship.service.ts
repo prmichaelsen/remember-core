@@ -28,6 +28,7 @@ export interface CreateRelationshipInput {
   tags?: string[];
   context_summary?: string;
   context_conversation_id?: string;
+  source?: 'user' | 'rem' | 'rule';
 }
 
 export interface CreateRelationshipResult {
@@ -123,6 +124,7 @@ export class RelationshipService {
       observation: input.observation,
       strength: input.strength ?? 0.5,
       confidence: input.confidence ?? 0.8,
+      source: input.source ?? 'user',
       created_at: now,
       updated_at: now,
       version: 1,

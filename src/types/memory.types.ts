@@ -6,6 +6,14 @@
 import type { Location, MemoryContext } from './context.types.js';
 
 /**
+ * Source of a relationship — who/what created it.
+ * - 'user': manually created by user
+ * - 'rem': auto-discovered by REM background engine
+ * - 'rule': created by a rule/automation
+ */
+export type RelationshipSource = 'user' | 'rem' | 'rule';
+
+/**
  * Content types for memories.
  * Based on remember-mcp content-types-expansion design.
  */
@@ -166,6 +174,9 @@ export interface Relationship {
 
   // Context
   context: MemoryContext;
+
+  // Source
+  source: RelationshipSource;
 
   // Metadata
   created_at: string;

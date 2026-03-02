@@ -77,6 +77,7 @@ const COMMON_MEMORY_PROPERTIES = [
   { name: 'relationship_type', dataType: configure.dataType.TEXT },
   { name: 'related_memory_ids', dataType: configure.dataType.TEXT_ARRAY },
   { name: 'observation', dataType: configure.dataType.TEXT },
+  { name: 'source', dataType: configure.dataType.TEXT },
   // Relationships (v1 compat)
   { name: 'relationships', dataType: configure.dataType.TEXT_ARRAY },
   { name: 'memory_ids', dataType: configure.dataType.TEXT_ARRAY },

@@ -64,6 +64,7 @@ export type {
 // Core memory types (ported from remember-mcp)
 export type {
   ContentType,
+  RelationshipSource,
   Memory,
   Relationship,
   MemoryDocument,

@@ -83,16 +83,18 @@ export interface SpaceSearchResult extends Omit<SearchResult, 'memories' | 'rela
 /**
  * Supported space IDs
  */
-export type SpaceId = 'the_void';
+export type SpaceId = 'the_void' | 'profiles' | 'spaces';
 
 /**
  * Space display names mapped to IDs
  */
 export const SPACE_DISPLAY_NAMES: Record<SpaceId, string> = {
   the_void: 'The Void',
+  profiles: 'Profiles',
+  spaces: 'Spaces',
 };
 
 /**
  * Supported spaces constant
  */
-export const SUPPORTED_SPACES: SpaceId[] = ['the_void'];
+export const SUPPORTED_SPACES: SpaceId[] = ['the_void', 'profiles', 'spaces'];

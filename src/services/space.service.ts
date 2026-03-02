@@ -15,6 +15,7 @@ import type { AuthContext } from '../types/auth.types.js';
 import type { ConfirmationTokenService, ConfirmationRequest } from './confirmation-token.service.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import { ensurePublicCollection, isValidSpaceId } from '../database/weaviate/space-schema.js';
+import { ensureGroupCollection } from '../database/weaviate/v2-collections.js';
 import { CollectionType, getCollectionName } from '../collections/dot-notation.js';
 import { generateCompositeId, compositeIdToUuid } from '../collections/composite-ids.js';
 import { getSpaceConfig } from './space-config.service.js';
@@ -532,6 +533,7 @@ export class SpaceService {
 
     // Search spaces collection (when spaces specified or neither spaces nor groups)
     if (spaces.length > 0 || groups.length === 0) {
+      await ensurePublicCollection(this.weaviateClient);
       const spacesCollectionName = getCollectionName(CollectionType.SPACES);
       const spacesCollection = this.weaviateClient.collections.get(spacesCollectionName);
       const filterList = this.buildBaseFilters(spacesCollection, input);
@@ -768,6 +770,7 @@ export class SpaceService {
     for (const groupId of groups) {
       const groupCollectionName = getCollectionName(CollectionType.GROUPS, groupId);
       try {
+        await ensureGroupCollection(this.weaviateClient, groupId);
         const groupCollection = this.weaviateClient.collections.get(groupCollectionName);
         let existingGroupMemory = null;
         try {

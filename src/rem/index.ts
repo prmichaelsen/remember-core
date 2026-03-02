@@ -23,3 +23,11 @@ export {
   shouldSplit,
   splitCluster,
 } from './rem.clustering.js';
+
+export {
+  type HaikuValidationInput,
+  type HaikuValidationResult,
+  type HaikuClient,
+  createHaikuClient,
+  createMockHaikuClient,
+} from './rem.haiku.js';

@@ -25,12 +25,13 @@ describe('createSvcClient', () => {
     expect(client.health).toBeDefined();
   });
 
-  it('memories has all 6 methods', () => {
+  it('memories has all 7 methods', () => {
     const client = createSvcClient({
       baseUrl: 'https://api.example.com',
       getAuthToken: async () => 'token',
     });
 
+    expect(typeof client.memories.get).toBe('function');
     expect(typeof client.memories.create).toBe('function');
     expect(typeof client.memories.update).toBe('function');
     expect(typeof client.memories.delete).toBe('function');
@@ -110,7 +111,7 @@ describe('createSvcClient', () => {
     expect(typeof client.health.version).toBe('function');
   });
 
-  it('total method count is 29', () => {
+  it('total method count is 30', () => {
     const client = createSvcClient({
       baseUrl: 'https://api.example.com',
       getAuthToken: async () => 'token',
@@ -125,6 +126,6 @@ describe('createSvcClient', () => {
       Object.keys(client.trust).length +
       Object.keys(client.health).length;
 
-    expect(methodCount).toBe(29);
+    expect(methodCount).toBe(30);
   });
 });

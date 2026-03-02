@@ -132,6 +132,10 @@ export interface DeleteMemoryInput {
   reason?: string;
 }
 
+export interface GetMemoryResult {
+  memory: Record<string, unknown>;
+}
+
 export interface DeleteMemoryResult {
   memory_id: string;
   deleted_at: string;
@@ -169,6 +173,15 @@ export class MemoryService {
       }
       throw err;
     }
+  }
+
+  // ── Get by ID ────────────────────────────────────────────────────────
+
+  async getById(memoryId: string): Promise<GetMemoryResult> {
+    const existing = await fetchMemoryWithAllProperties(this.collection, memoryId);
+    if (!existing?.properties) throw new Error(`Memory not found: ${memoryId}`);
+    if (existing.properties.user_id !== this.userId) throw new Error('Unauthorized');
+    return { memory: { id: existing.uuid, ...existing.properties } };
   }
 
   // ── Create ──────────────────────────────────────────────────────────

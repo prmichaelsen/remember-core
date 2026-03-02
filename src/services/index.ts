@@ -33,6 +33,7 @@ export {
   MemoryService,
   type CreateMemoryInput,
   type CreateMemoryResult,
+  type GetMemoryResult,
   type SearchMemoryInput,
   type SearchMemoryResult,
   type FindSimilarInput,

@@ -1,6 +1,6 @@
 {
   "name": "@prmichaelsen/remember-core",
-  "version": "0.16.9",
+  "version": "0.16.10",
   "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
   "type": "module",
   "main": "dist/index.js",

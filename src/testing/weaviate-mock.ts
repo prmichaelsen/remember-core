@@ -148,6 +148,9 @@ export function createMockCollection() {
           notEqual(value: any) {
             return { _type: 'notEqual', field: name, value };
           },
+          greaterThan(value: any) {
+            return { _type: 'gt', field: name, value };
+          },
           greaterOrEqual(value: any) {
             return { _type: 'gte', field: name, value };
           },
@@ -164,6 +167,12 @@ export function createMockCollection() {
             return { _type: 'isNull', field: name, value };
           },
         };
+      },
+    },
+
+    aggregate: {
+      async overAll() {
+        return { totalCount: store.size };
       },
     },
   };
@@ -195,6 +204,10 @@ export function createMockWeaviateClient() {
 
       async create(_schema: any): Promise<void> {
         // no-op in mock
+      },
+
+      async listAll(): Promise<{ name: string }[]> {
+        return Array.from(collections.keys()).map((name) => ({ name }));
       },
     },
   };
@@ -245,6 +258,8 @@ function applyFilter(objects: MockWeaviateObject[], filter: MockFilter): MockWea
       return objects.filter((obj) => obj.properties[filter.field!] === filter.value);
     case 'notEqual':
       return objects.filter((obj) => obj.properties[filter.field!] !== filter.value);
+    case 'gt':
+      return objects.filter((obj) => obj.properties[filter.field!] > filter.value);
     case 'gte':
       return objects.filter((obj) => obj.properties[filter.field!] >= filter.value);
     case 'lte':

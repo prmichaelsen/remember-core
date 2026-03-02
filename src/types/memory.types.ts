@@ -70,7 +70,9 @@ export type ContentType =
   | 'history'
   // Cross-user & Threading
   | 'ghost'
-  | 'comment';
+  | 'comment'
+  // Profile
+  | 'profile';
 
 /**
  * Core Memory interface.

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.0] - 2026-03-02
+
+### Added
+- New `'profile'` content type for user profiles published to the profiles space
+- `profile` metadata entry in `CONTENT_TYPE_METADATA`
+- 18 new space IDs: ghosts, poems, recipes, quotes, dreams, travel, music, pets, books, funny, ideas, art, fitness, how_to, movies, nature, journal
+- `SPACE_CONTENT_TYPE_RESTRICTIONS` — per-space content type restrictions (profiles → profile, ghosts → ghost)
+- `SPACE_DESCRIPTIONS` — human-readable descriptions for all spaces (for GUI discovery)
+- Display names for all new spaces in `SPACE_DISPLAY_NAMES`
+
 ## [0.18.0] - 2026-03-02
 
 ### Added

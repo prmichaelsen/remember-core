@@ -62,6 +62,8 @@ export const CONTENT_TYPES: readonly ContentType[] = [
   // Cross-user & Threading
   'ghost',
   'comment',
+  // Profile
+  'profile',
 ] as const;
 
 /**
@@ -395,6 +397,13 @@ export const CONTENT_TYPE_METADATA: Record<ContentType, ContentTypeMetadata> = {
     examples: ['Comments on shared memories', 'Discussion replies', 'Feedback'],
     common_fields: ['parent_id', 'thread_root_id'],
   },
+  // Profile
+  profile: {
+    name: 'profile',
+    category: 'cross_user',
+    description: 'User profile published to the profiles space for people discovery',
+    examples: ['User bio', 'About me', 'Profile introduction'],
+  },
 };
 
 /**
@@ -411,7 +420,7 @@ export const CONTENT_TYPE_CATEGORIES = {
   organizational: ['bookmark', 'form', 'location'],
   business: ['invoice', 'contract'],
   system: ['system', 'action', 'audit', 'history'],
-  cross_user: ['ghost', 'comment'],
+  cross_user: ['ghost', 'comment', 'profile'],
 } as const;
 
 /**

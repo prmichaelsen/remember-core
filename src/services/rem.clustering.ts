@@ -6,8 +6,8 @@
  */
 
 import type { RemConfig } from './rem.types.js';
-import type { RelationshipService } from '../services/relationship.service.js';
-import { computeOverlap } from '../services/relationship.service.js';
+import type { RelationshipService } from './relationship.service.js';
+import { computeOverlap } from './relationship.service.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 import { createMockWeaviateClient, createMockLogger } from '../testing/weaviate-mock.js';
-import { RelationshipService } from '../services/relationship.service.js';
+import { RelationshipService } from './relationship.service.js';
 import { RemService } from './rem.service.js';
 import { RemStateStore } from './rem.state.js';
 import { createMockHaikuClient } from './rem.haiku.js';

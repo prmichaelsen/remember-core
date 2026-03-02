@@ -1,5 +1,6 @@
 /**
  * REM (Relationship Engine for Memories) barrel exports.
+ * Thin re-export barrel — actual sources live in src/services/rem.*.ts
  */
 
 export {
@@ -7,11 +8,11 @@ export {
   type RemCursorState,
   type RemCollectionState,
   DEFAULT_REM_CONFIG,
-} from './rem.types.js';
+} from '../services/rem.types.js';
 
-export { getNextMemoryCollection } from './rem.collections.js';
+export { getNextMemoryCollection } from '../services/rem.collections.js';
 
-export { RemStateStore } from './rem.state.js';
+export { RemStateStore } from '../services/rem.state.js';
 
 export {
   type MemoryCandidate,
@@ -22,7 +23,7 @@ export {
   resolveClusterActions,
   shouldSplit,
   splitCluster,
-} from './rem.clustering.js';
+} from '../services/rem.clustering.js';
 
 export {
   type HaikuValidationInput,
@@ -30,10 +31,10 @@ export {
   type HaikuClient,
   createHaikuClient,
   createMockHaikuClient,
-} from './rem.haiku.js';
+} from '../services/rem.haiku.js';
 
 export {
   RemService,
   type RemServiceDeps,
   type RunCycleResult,
-} from './rem.service.js';
+} from '../services/rem.service.js';

@@ -8,7 +8,7 @@ import {
   splitCluster,
   type Cluster,
 } from './rem.clustering.js';
-import { RelationshipService, computeOverlap } from '../services/relationship.service.js';
+import { RelationshipService, computeOverlap } from './relationship.service.js';
 import { createMockLogger } from '../testing/weaviate-mock.js';
 
 describe('REM Clustering', () => {

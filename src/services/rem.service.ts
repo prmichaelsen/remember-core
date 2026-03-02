@@ -8,7 +8,7 @@
 
 import type { WeaviateClient } from 'weaviate-client';
 import type { Logger } from '../utils/logger.js';
-import type { RelationshipService } from '../services/relationship.service.js';
+import type { RelationshipService } from './relationship.service.js';
 import type { RemConfig } from './rem.types.js';
 import { DEFAULT_REM_CONFIG } from './rem.types.js';
 import type { RemStateStore } from './rem.state.js';

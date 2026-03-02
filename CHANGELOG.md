@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.2] - 2026-03-02
+
+### Changed
+- Move REM source files from `src/rem/` into `src/services/` (flat) — REM files are services and belong alongside other services
+- Rewrite `src/rem/index.ts` as thin re-export barrel pointing to `src/services/rem.*.ts`
+- Add REM exports to `src/services/index.ts` so REM is also available through main entry point
+
 ## [0.19.1] - 2026-03-02
 
 ### Fixed

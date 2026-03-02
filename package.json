@@ -1,6 +1,6 @@
 {
   "name": "@prmichaelsen/remember-core",
-  "version": "0.16.13",
+  "version": "0.17.0",
   "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
   "type": "module",
   "main": "dist/index.js",
@@ -50,6 +50,10 @@
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.js"
     },
+    "./rem": {
+      "types": "./dist/rem/index.d.ts",
+      "import": "./dist/rem/index.js"
+    },
     "./app": {
       "types": "./dist/app/index.d.ts",
       "import": "./dist/app/index.js"
@@ -90,6 +94,9 @@
       ],
       "testing": [
         "dist/testing/index.d.ts"
+      ],
+      "rem": [
+        "dist/rem/index.d.ts"
       ],
       "app": [
         "dist/app/index.d.ts"

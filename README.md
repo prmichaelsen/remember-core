@@ -49,13 +49,14 @@ const results = await memoryService.search({
 | `@prmichaelsen/remember-core/utils` | Logger, filters, auth helpers, debug |
 | `@prmichaelsen/remember-core/testing` | Weaviate mock, test data generator |
 | `@prmichaelsen/remember-core/app` | App client — use-case REST wrapper (profiles, ghost) |
+| `@prmichaelsen/remember-core/rem` | REM engine — background relationship discovery |
 | `@prmichaelsen/remember-core/clients/svc/v1` | Svc client — 1:1 REST route mirror (29 methods) |
 
 ## Core Services
 
 **MemoryService** — 6 operations: create, search (hybrid), findSimilar (vector), query (semantic), update, delete (soft).
 
-**RelationshipService** — 4 operations: create, search, update, delete relationships between memories.
+**RelationshipService** — 5 operations: create, search, update, delete, findByMemoryIds. Relationships have a `source` field (`'user' | 'rem' | 'rule'`) indicating origin.
 
 **SpaceService** — 8 operations: publish, retract, revise, confirm, deny, moderate, search, query across shared spaces. Two-phase confirmation flow.
 
@@ -72,6 +73,16 @@ const results = await memoryService.search({
 **GhostConfigService** — Firestore-backed ghost persona configuration CRUD (trust levels, blocked users, enforcement mode).
 
 **EscalationService** — Trust penalty tracking and automatic blocking after repeated unauthorized access attempts.
+
+### REM (Relationship Engine for Memories)
+
+**RemService** — Background engine that auto-discovers relationships between memories using embedding similarity and Haiku LLM validation. Processes one collection per hourly run via cursor-based round-robin.
+
+- Greedy agglomerative clustering with 0.75 cosine similarity threshold
+- Haiku validation gate to filter weak clusters
+- Deduplication: merges into existing relationships at >60% memory overlap
+- Splits relationships exceeding 50 members
+- Firestore state persistence for cursor tracking
 
 ### Client SDKs
 
@@ -111,7 +122,7 @@ const ghost = await client.ghost.searchAsGhost('user1', { owner_user_id: 'user2'
 ## Testing
 
 ```bash
-npm test           # Unit tests (394 tests)
+npm test           # Unit tests (431 tests)
 npm run test:e2e   # Integration tests (22 tests)
 npm run typecheck  # Type checking
 npm run build      # TypeScript compilation
@@ -133,6 +144,7 @@ remember-core (this package)
   ├── collections/   Weaviate collection utilities
   ├── utils/         Logger, filters, auth helpers
   ├── services/      Business logic (5 core + 4 trust/ghost service modules)
+  ├── rem/           REM engine (background relationship discovery)
   ├── clients/       Shared HTTP transport, SdkResponse, browser guard
   │   └── svc/v1/   Svc client (1:1 REST route mirror, 29 methods)
   ├── app/           App client (compound use-case operations, 5 methods)

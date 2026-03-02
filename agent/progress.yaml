@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.16.0
+  version: 0.17.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M10
@@ -139,13 +139,13 @@ milestones:
 
   - id: M10
     name: REM Background Relationships
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 2
-    tasks_completed: 0
+    tasks_completed: 8
     tasks_total: 8
-    started: null
-    completed: null
+    started: 2026-03-02
+    completed: 2026-03-02
     notes: |
       REM (Relationship Engine for Memories) — background service that
       auto-discovers and creates relationships using embedding similarity
@@ -715,65 +715,86 @@ tasks:
   milestone_10:
     - id: task-48
       name: Schema — Add source field to Relationship type and Weaviate schema
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-10-rem-background-relationships/task-48-schema-source-field.md
       estimated_hours: 2
+      completed_date: 2026-03-02
       dependencies: []
     - id: task-49
       name: RelationshipService extension — findByMemoryIds
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-10-rem-background-relationships/task-49-relationship-service-find-by-memory-ids.md
       estimated_hours: 3
+      completed_date: 2026-03-02
       dependencies: [task-48]
     - id: task-50
       name: Collection enumeration and Firestore REM state
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-10-rem-background-relationships/task-50-collection-enumeration-firestore-state.md
       estimated_hours: 3
+      completed_date: 2026-03-02
       dependencies: []
     - id: task-51
       name: REM types and clustering algorithm
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-10-rem-background-relationships/task-51-rem-types-clustering.md
       estimated_hours: 4
+      completed_date: 2026-03-02
       dependencies: [task-49, task-50]
     - id: task-52
       name: Haiku validation client
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-10-rem-background-relationships/task-52-haiku-validation.md
       estimated_hours: 3
+      completed_date: 2026-03-02
       dependencies: [task-51]
     - id: task-53
       name: RemService — runCycle orchestration
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-10-rem-background-relationships/task-53-rem-service-run-cycle.md
       estimated_hours: 4
+      completed_date: 2026-03-02
       dependencies: [task-51, task-52]
     - id: task-54
       name: Unit tests for REM modules
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-10-rem-background-relationships/task-54-rem-unit-tests.md
       estimated_hours: 4
+      completed_date: 2026-03-02
       dependencies: [task-53]
     - id: task-55
       name: Documentation — CHANGELOG, README
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-10-rem-background-relationships/task-55-documentation.md
       estimated_hours: 2
+      completed_date: 2026-03-02
       dependencies: [task-54]
 
 documentation:
-  design_documents: 8
+  design_documents: 9
   milestone_documents: 10
   pattern_documents: 25
-  task_documents: 54
+  task_documents: 62
 
 progress:
   planning: 100
-  implementation: 97
-  overall: 97
+  implementation: 100
+  overall: 100
 
 recent_work:
+  - date: 2026-03-02
+    description: |
+      M10 REM Background Relationships — COMPLETE (8 tasks)
+    items:
+      - "Task 48: Added source field ('user'|'rem'|'rule') to Relationship type, Weaviate schema, ALL_MEMORY_PROPERTIES"
+      - "Task 49: Added findByMemoryIds() and computeOverlap() to RelationshipService, 9 new tests"
+      - "Task 50: Created src/rem/ module — rem.types.ts (RemConfig, state types), rem.collections.ts (listMemoryCollections), rem.state.ts (RemStateStore Firestore CRUD)"
+      - "Task 51: Implemented clustering algorithm — selectCandidates, formClusters, resolveClusterActions, shouldSplit, splitCluster"
+      - "Task 52: Created Haiku validation client (createHaikuClient, createMockHaikuClient)"
+      - "Task 53: Created RemService.runCycle() orchestration — full pipeline from collection selection through relationship CRUD"
+      - "Task 54: 24 new REM unit tests (clustering 15, collections 3, service 6), mock enhancements (aggregate, listAll, greaterThan)"
+      - "Task 55: CHANGELOG v0.17.0, README updated (REM section, 431 tests), ./rem subpath export, version bump"
+      - "431 passing tests, 29 suites (1 pre-existing failure in svc client method count)"
   - date: 2026-02-28
     description: |
       Task 47 — Fix Composite ID to Use Weaviate-Valid UUID v5 (M8 COMPLETE)
@@ -1043,11 +1064,12 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Publish v0.16.0 to npm
+  - Publish v0.17.0 to npm
+  - Deploy REM Cloud Run handler (thin wrapper around RemService.runCycle)
+  - Configure Cloud Scheduler for hourly REM runs
+  - Fix pre-existing svc client method count test (29 → 30)
   - Migrate agentbase.me from hand-written fetch to app client
-  - Remove old src/web/ directory (cleanup)
   - Implement /api/app/v1/ routes on remember-rest-service
-  - Investigate memory search indexing bug in remember-rest-service or agentbase.me (moved from M8)
 
 notes:
   - "Source: remember-mcp v3.8.0-v3.13.0 (prmichaelsen/remember-mcp)"

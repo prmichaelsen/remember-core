@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.17.0] - 2026-03-02
+
+### Added
+- **REM (Relationship Engine for Memories)** — M10 complete (8 tasks), background relationship discovery engine:
+  - New `source` field on `Relationship` type (`'user' | 'rem' | 'rule'`)
+  - `RelationshipService.findByMemoryIds()` method for overlap detection
+  - `computeOverlap()` utility for deduplication ratio calculation
+  - New `src/rem/` module with full REM pipeline:
+    - `RemService.runCycle()` — orchestrates collection selection, clustering, validation, and relationship CRUD
+    - `selectCandidates()` — memory selection from newest/unprocessed/random thirds
+    - `formClusters()` — greedy agglomerative clustering via vector similarity
+    - `resolveClusterActions()` — dedup against existing relationships (merge vs create)
+    - `shouldSplit()` / `splitCluster()` — oversized relationship splitting
+    - `listMemoryCollections()` — Weaviate collection enumeration
+    - `RemStateStore` — Firestore cursor and per-collection state persistence
+    - `createHaikuClient()` / `createMockHaikuClient()` — Haiku LLM validation gate
+  - `RemConfig` and `DEFAULT_REM_CONFIG` configuration
+  - `./rem` subpath export for Cloud Run consumer
+  - Firestore path helpers: `getRemCursorPath()`, `getRemCollectionStatePath()`
+  - 24 new REM unit tests (clustering, collections, service orchestration)
+  - 9 new RelationshipService tests (findByMemoryIds, computeOverlap)
+  - Weaviate mock enhancements: `aggregate.overAll()`, `collections.listAll()`, `greaterThan` filter
+
 ## [0.16.5] - 2026-03-01
 
 ### Fixed

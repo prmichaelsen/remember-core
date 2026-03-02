@@ -145,4 +145,6 @@ export type {
 export {
   SPACE_DISPLAY_NAMES,
   SUPPORTED_SPACES,
+  SPACE_CONTENT_TYPE_RESTRICTIONS,
+  SPACE_DESCRIPTIONS,
 } from './space.types.js';

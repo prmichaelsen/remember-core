@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.1] - 2026-03-02
+
+### Fixed
+- Export `SPACE_CONTENT_TYPE_RESTRICTIONS` and `SPACE_DESCRIPTIONS` from types barrel
+- Enforce content_type restrictions in `SpaceService.publish()` — restricted spaces now reject memories with wrong content_type
+
 ## [0.19.0] - 2026-03-02
 
 ### Added

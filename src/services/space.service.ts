@@ -15,6 +15,7 @@ import type { AuthContext } from '../types/auth.types.js';
 import type { ConfirmationTokenService, ConfirmationRequest } from './confirmation-token.service.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import { ensurePublicCollection, isValidSpaceId } from '../database/weaviate/space-schema.js';
+import { SPACE_CONTENT_TYPE_RESTRICTIONS, type SpaceId } from '../types/space.types.js';
 import { ensureGroupCollection } from '../database/weaviate/v2-collections.js';
 import { CollectionType, getCollectionName } from '../collections/dot-notation.js';
 import { generateCompositeId, compositeIdToUuid } from '../collections/composite-ids.js';
@@ -262,6 +263,17 @@ export class SpaceService {
     if (!memory) throw new Error(`Memory not found: ${input.memory_id}`);
     if (memory.properties.user_id !== this.userId) throw new Error('Permission denied: not memory owner');
     if (memory.properties.doc_type !== 'memory') throw new Error('Only memories can be published');
+
+    // Validate content_type restrictions for restricted spaces
+    const memoryContentType = memory.properties.content_type as string | undefined;
+    for (const spaceId of spaces) {
+      const requiredType = SPACE_CONTENT_TYPE_RESTRICTIONS[spaceId as SpaceId];
+      if (requiredType && memoryContentType !== requiredType) {
+        throw new Error(
+          `Space '${spaceId}' only accepts content_type '${requiredType}', got '${memoryContentType ?? 'undefined'}'`,
+        );
+      }
+    }
 
     // Generate confirmation token
     const { token } = await this.confirmationTokenService.createRequest(

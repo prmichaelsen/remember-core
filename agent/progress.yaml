@@ -3,7 +3,7 @@ project:
   version: 0.16.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M9
+  current_milestone: M10
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -136,6 +136,23 @@ milestones:
       Supabase-style { data, error } + .throwOnError().
       Both server-side only. No auto-confirm.
       See: agent/milestones/milestone-9-client-sdks.md
+
+  - id: M10
+    name: REM Background Relationships
+    status: not_started
+    progress: 0
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 8
+    started: null
+    completed: null
+    notes: |
+      REM (Relationship Engine for Memories) — background service that
+      auto-discovers and creates relationships using embedding similarity
+      and Haiku validation. Runs hourly, one collection per cycle.
+      Schema: source field on Relationship type.
+      RemService with runCycle() — pure BL, thin Cloud Run wrapper.
+      See: agent/milestones/milestone-10-rem-background-relationships.md
 
 tasks:
   milestone_1:
@@ -695,11 +712,61 @@ tasks:
         ✅ Migration guide — Step 7 client SDK section with before/after, auth patterns, error handling.
         ✅ Version bump 0.15.0→0.16.0.
 
+  milestone_10:
+    - id: task-48
+      name: Schema — Add source field to Relationship type and Weaviate schema
+      status: not_started
+      file: agent/tasks/milestone-10-rem-background-relationships/task-48-schema-source-field.md
+      estimated_hours: 2
+      dependencies: []
+    - id: task-49
+      name: RelationshipService extension — findByMemoryIds
+      status: not_started
+      file: agent/tasks/milestone-10-rem-background-relationships/task-49-relationship-service-find-by-memory-ids.md
+      estimated_hours: 3
+      dependencies: [task-48]
+    - id: task-50
+      name: Collection enumeration and Firestore REM state
+      status: not_started
+      file: agent/tasks/milestone-10-rem-background-relationships/task-50-collection-enumeration-firestore-state.md
+      estimated_hours: 3
+      dependencies: []
+    - id: task-51
+      name: REM types and clustering algorithm
+      status: not_started
+      file: agent/tasks/milestone-10-rem-background-relationships/task-51-rem-types-clustering.md
+      estimated_hours: 4
+      dependencies: [task-49, task-50]
+    - id: task-52
+      name: Haiku validation client
+      status: not_started
+      file: agent/tasks/milestone-10-rem-background-relationships/task-52-haiku-validation.md
+      estimated_hours: 3
+      dependencies: [task-51]
+    - id: task-53
+      name: RemService — runCycle orchestration
+      status: not_started
+      file: agent/tasks/milestone-10-rem-background-relationships/task-53-rem-service-run-cycle.md
+      estimated_hours: 4
+      dependencies: [task-51, task-52]
+    - id: task-54
+      name: Unit tests for REM modules
+      status: not_started
+      file: agent/tasks/milestone-10-rem-background-relationships/task-54-rem-unit-tests.md
+      estimated_hours: 4
+      dependencies: [task-53]
+    - id: task-55
+      name: Documentation — CHANGELOG, README
+      status: not_started
+      file: agent/tasks/milestone-10-rem-background-relationships/task-55-documentation.md
+      estimated_hours: 2
+      dependencies: [task-54]
+
 documentation:
-  design_documents: 7
-  milestone_documents: 9
+  design_documents: 8
+  milestone_documents: 10
   pattern_documents: 25
-  task_documents: 46
+  task_documents: 54
 
 progress:
   planning: 100

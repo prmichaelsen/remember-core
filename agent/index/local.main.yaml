@@ -1,0 +1,106 @@
+# agent/index/local.main.yaml
+# Key file index for project-local files
+# See: agent/design/local.key-file-index-system.md
+#
+# Naming convention: {namespace}.{qualifier}.yaml
+#   - namespace: "local" for project files, package name for packages
+#   - qualifier: "main" is the default, can use others for categorization
+#
+# Recommended limits:
+#   - Per-namespace: 5-10 entries maximum
+#   - Total across namespaces: 15-20 entries maximum
+#   - High-weight files (>= 0.8): 3-5 per namespace
+#
+# Implicit key files (NOT listed here):
+#   - AGENT.md (always read by @acp.init)
+#   - agent/progress.yaml (always read by @acp.init)
+
+local:
+  index:
+    - path: agent/design/core-sdk.architecture.md
+      weight: 0.9
+      kind: design
+      description: |
+        Core architecture document defining the service/adapter layering pattern.
+        Describes how business logic is shared across MCP, REST, and client targets.
+      rationale: |
+        Foundational architecture — all services, adapters, and clients follow
+        this pattern. Must be understood before modifying any service layer code.
+      applies: acp.init, acp.proceed, acp.task-create
+
+    - path: agent/design/local.client-sdk-architecture.md
+      weight: 0.8
+      kind: design
+      description: |
+        Client SDK architecture decisions for svc client (1:1 REST mirror)
+        and app client (use-case compounds). Covers auth, error handling, types.
+      rationale: |
+        Active architecture for M9 client SDKs. Required context for any
+        work on src/clients/ or src/app/ modules.
+      applies: acp.init, acp.proceed
+
+    - path: agent/design/local.rem-background-relationships.md
+      weight: 0.8
+      kind: design
+      description: |
+        REM (Relationship Engine for Memories) design — background cron job
+        that auto-discovers and creates relationships using embeddings + Haiku.
+      rationale: |
+        Next planned feature. Describes clustering, dedup, Haiku validation,
+        schema migration (source field), and Firestore state tracking.
+      applies: acp.init, acp.proceed, acp.task-create
+
+    - path: agent/design/ghost-persona-system.md
+      weight: 0.7
+      kind: design
+      description: |
+        Ghost persona and trust system architecture. Defines trust tiers,
+        access control flow, ghost config, escalation, and redaction.
+      rationale: |
+        Foundational to M5/M6 trust services still in active use.
+        Required context for ghost-related features or bug fixes.
+      applies: acp.proceed, acp.task-create
+
+    - path: agent/design/local.web-client-sdk.md
+      weight: 0.6
+      kind: design
+      description: |
+        Original web SDK design (M7) — use-case-oriented server-side functions.
+        Partially superseded by client SDK (M9) but still context for src/web/.
+      rationale: |
+        Historical context for the web SDK. src/web/ still exists in codebase
+        and is referenced by app client architecture.
+      applies: acp.proceed
+
+    - path: agent/patterns/core-sdk.testing-unit.md
+      weight: 0.7
+      kind: pattern
+      description: |
+        Unit testing conventions — colocated .spec.ts files, mock patterns,
+        test structure, and coverage expectations.
+      rationale: |
+        Critical for maintaining the colocated test file convention.
+        Prevents agents from creating __tests__/ directories.
+      applies: acp.proceed, acp.task-create
+
+    - path: agent/patterns/core-sdk.service-base.md
+      weight: 0.6
+      kind: pattern
+      description: |
+        Service pattern — dependency injection via constructor params,
+        Logger parameter, barrel exports, error handling conventions.
+      rationale: |
+        All services follow this pattern. Required context when creating
+        or modifying any service in src/services/.
+      applies: acp.proceed, acp.task-create
+
+    - path: agent/patterns/core-sdk.types-result.md
+      weight: 0.6
+      kind: pattern
+      description: |
+        Result type pattern — Result<T, E> discriminated union with ok/err
+        helpers, used by web SDK and app client.
+      rationale: |
+        Establishes the error handling convention for SDK-facing code.
+        Required when adding new use-case functions.
+      applies: acp.proceed, acp.task-create

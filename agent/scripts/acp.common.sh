@@ -2,6 +2,16 @@
 # Common utilities for ACP scripts
 # POSIX-compliant for maximum portability
 
+# Portable in-place sed (works on both GNU and BSD/macOS sed)
+# Usage: _sed_i "expression" "file"
+_sed_i() {
+    if [ "$(uname)" = "Darwin" ]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
 # Initialize colors using tput (more reliable than ANSI codes)
 init_colors() {
     if command -v tput >/dev/null 2>&1 && [ -t 1 ]; then
@@ -30,7 +40,13 @@ calculate_checksum() {
         echo "Error: File not found: $file" >&2
         return 1
     fi
-    sha256sum "$file" 2>/dev/null | cut -d' ' -f1
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$file" 2>/dev/null | cut -d' ' -f1
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$file" 2>/dev/null | cut -d' ' -f1
+    else
+        echo "unknown"
+    fi
 }
 
 # Get current timestamp in ISO 8601 format (UTC)
@@ -143,7 +159,7 @@ update_manifest_timestamp() {
     timestamp=$(get_timestamp)
     
     # Update timestamp using sed
-    sed -i "s/^last_updated: .*/last_updated: $timestamp/" "$manifest"
+    _sed_i "s/^last_updated: .*/last_updated: $timestamp/" "$manifest"
 }
 
 # Check if package exists in manifest
@@ -192,7 +208,6 @@ init_global_manifest() {
     fi
     
     # Create ~/.acp directory if needed
-    mkdir -p "$HOME/.acp/packages"
     mkdir -p "$HOME/.acp/projects"
     
     # Create manifest
@@ -240,7 +255,7 @@ update_global_manifest_timestamp() {
     # Update timestamp using sed
     local timestamp
     timestamp=$(get_timestamp)
-    sed -i "s/^updated: .*/updated: $timestamp/" "$manifest_path"
+    _sed_i "s/^updated: .*/updated: $timestamp/" "$manifest_path"
 }
 
 # Check if package exists in global manifest
@@ -296,7 +311,22 @@ init_global_acp() {
     
     # Create ~/.acp directory
     mkdir -p "$global_dir"
-    
+
+    # Create .gitignore for global ACP directory
+    if [ ! -f "$global_dir/.gitignore" ]; then
+        cat > "$global_dir/.gitignore" << 'GITIGNORE'
+# Project repos have their own git
+projects/
+
+# Claude Code session data
+.claude/
+
+# Common noise
+*.log
+node_modules/
+GITIGNORE
+    fi
+
     # Get the directory where this script is located
     local script_dir
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -528,7 +558,7 @@ add_package_to_manifest() {
     # Check if package already exists
     if grep -q "^  ${package_name}:" "$manifest" 2>/dev/null; then
         # Update existing package
-        sed -i "/^  ${package_name}:/,/^  [a-z]/ {
+        _sed_i "/^  ${package_name}:/,/^  [a-z]/ {
             s|source: .*|source: $source_url|
             s|package_version: .*|package_version: $package_version|
             s|commit: .*|commit: $commit_hash|
@@ -557,6 +587,7 @@ add_package_to_manifest() {
                 print "      designs: []"
                 print "      scripts: []"
                 print "      files: []"
+                print "      indices: []"
                 next
             }
             { print }
@@ -605,7 +636,7 @@ add_file_to_manifest() {
     fi
     
     # Convert empty arrays [] to proper format first (workaround for parser limitation)
-    sed -i "s/^      ${file_type}: \\[\\]$/      ${file_type}:/" "$manifest"
+    _sed_i "s/^      ${file_type}: \\[\\]$/      ${file_type}:/" "$manifest"
     
     # Parse manifest
     yaml_parse "$manifest"
@@ -704,8 +735,13 @@ is_file_modified() {
     fi
     
     # Calculate current checksum
+    # Map manifest key to filesystem directory (they differ for some types)
+    local file_dir="$file_type"
+    case "$file_type" in
+        indices) file_dir="index" ;;
+    esac
     local current_checksum
-    current_checksum=$(calculate_checksum "agent/${file_type}/${file_name}")
+    current_checksum=$(calculate_checksum "agent/${file_dir}/${file_name}")
     
     if [ "$stored_checksum" != "$current_checksum" ]; then
         return 0  # Modified
@@ -1600,14 +1636,41 @@ last_updated: ${timestamp}
 EOF
 }
 
+# Get git remote origin URL for a directory
+# Usage: origin=$(get_git_origin "/path/to/repo")
+# Returns: Git remote origin URL, or empty string if not a git repo or no origin
+get_git_origin() {
+    local dir="${1:-.}"
+    if [ -d "$dir/.git" ] || git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+        git -C "$dir" remote get-url origin 2>/dev/null || echo ""
+    else
+        echo ""
+    fi
+}
+
+# Get current git branch for a directory
+# Usage: branch=$(get_git_branch "/path/to/repo")
+# Returns: Current branch name, or empty string if not a git repo
+get_git_branch() {
+    local dir="${1:-.}"
+    if [ -d "$dir/.git" ] || git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+        git -C "$dir" branch --show-current 2>/dev/null || echo ""
+    else
+        echo ""
+    fi
+}
+
 # Register project in registry
-# Usage: register_project "project-name" "/path/to/project" "project-type" "description"
+# Usage: register_project "project-name" "/path/to/project" "project-type" "description" ["git_origin"] ["git_branch"]
 # NOTE: Caller must source acp.yaml-parser.sh before calling this function
+# git_origin and git_branch are optional; if omitted, auto-detected from project path
 register_project() {
     local project_name="$1"
     local project_path="$2"
     local project_type="$3"
     local project_description="$4"
+    local git_origin="${5:-}"
+    local git_branch="${6:-}"
     local registry_path
     registry_path=$(get_projects_registry_path)
     
@@ -1634,7 +1697,24 @@ register_project() {
     yaml_set "projects.${project_name}.last_modified" "$timestamp"
     yaml_set "projects.${project_name}.last_accessed" "$timestamp"
     yaml_set "projects.${project_name}.status" "active"
-    
+
+    # Auto-detect git origin/branch if not provided
+    local expanded_path="${project_path/#\~/$HOME}"
+    if [ -z "$git_origin" ] && [ -d "$expanded_path" ]; then
+        git_origin=$(get_git_origin "$expanded_path")
+    fi
+    if [ -z "$git_branch" ] && [ -d "$expanded_path" ]; then
+        git_branch=$(get_git_branch "$expanded_path")
+    fi
+
+    # Set git fields if available
+    if [ -n "$git_origin" ]; then
+        yaml_set "projects.${project_name}.git_origin" "$git_origin"
+    fi
+    if [ -n "$git_branch" ]; then
+        yaml_set "projects.${project_name}.git_branch" "$git_branch"
+    fi
+
     # Set as current project if first project
     local current
     current=$(yaml_get "$registry_path" "current_project" 2>/dev/null || echo "")

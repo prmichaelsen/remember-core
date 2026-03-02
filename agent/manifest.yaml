@@ -2,26 +2,17 @@
 # Tracks installed packages and their versions
 
 packages:
-  core-sdk:
-    source: https://github.com/prmichaelsen/acp-core-sdk.git
-    package_version: 1.22.0
-    commit: d01d8922dc5db281e7c972bd05af6a42111b32df
-    installed_at: 2026-02-27T07:14:16Z
-    updated_at: 2026-02-27T07:32:07Z
-    files:
-      patterns: []
-      commands: []
-      designs: []
   acp-core:
     source: https://github.com/prmichaelsen/agent-context-protocol.git
-    package_version: 5.0.0
-    installed_at: 2026-02-27T06:51:32Z
-    updated_at: 2026-02-28T15:21:53Z
+    package_version: 5.11.0
+    installed_at: 2026-03-02T17:34:14Z
+    updated_at: 2026-03-02T17:34:14Z
     files:
       commands:
         - name: acp.clarification-create.md
         - name: acp.command-create.md
         - name: acp.design-create.md
+        - name: acp.index.md
         - name: acp.init.md
         - name: acp.package-create.md
         - name: acp.package-info.md
@@ -41,8 +32,11 @@ packages:
         - name: acp.project-remove.md
         - name: acp.project-set.md
         - name: acp.project-update.md
+        - name: acp.projects-restore.md
+        - name: acp.projects-sync.md
         - name: acp.report.md
         - name: acp.resume.md
+        - name: acp.sessions.md
         - name: acp.status.md
         - name: acp.sync.md
         - name: acp.task-create.md
@@ -61,4 +55,4 @@ packages:
         - name: requirements.template.md
 
 manifest_version: 1.0.0
-last_updated: 2026-02-28T15:21:53Z
+last_updated: 2026-03-02T17:34:14Z

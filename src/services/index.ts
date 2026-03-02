@@ -50,12 +50,15 @@ export {
 
 export {
   RelationshipService,
+  computeOverlap,
   type CreateRelationshipInput,
   type CreateRelationshipResult,
   type UpdateRelationshipInput,
   type UpdateRelationshipResult,
   type SearchRelationshipInput,
   type SearchRelationshipResult,
+  type FindByMemoryIdsInput,
+  type FindByMemoryIdsResult,
   type DeleteRelationshipInput,
   type DeleteRelationshipResult,
 } from './relationship.service.js';

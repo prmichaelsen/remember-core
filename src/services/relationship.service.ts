@@ -71,6 +71,17 @@ export interface SearchRelationshipResult {
   limit: number;
 }
 
+export interface FindByMemoryIdsInput {
+  memory_ids: string[];
+  source_filter?: 'user' | 'rem' | 'rule';
+  limit?: number;
+}
+
+export interface FindByMemoryIdsResult {
+  relationships: Record<string, unknown>[];
+  total: number;
+}
+
 export interface DeleteRelationshipInput {
   relationship_id: string;
 }
@@ -78,6 +89,19 @@ export interface DeleteRelationshipInput {
 export interface DeleteRelationshipResult {
   relationship_id: string;
   memories_updated: number;
+}
+
+// ─── Utilities ───────────────────────────────────────────────────────────
+
+/**
+ * Compute overlap ratio: |intersection| / |candidate|.
+ * Returns 0 if candidate is empty.
+ */
+export function computeOverlap(existing: string[], candidate: string[]): number {
+  if (candidate.length === 0) return 0;
+  const existingSet = new Set(existing);
+  const intersection = candidate.filter((id) => existingSet.has(id));
+  return intersection.length / candidate.length;
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────
@@ -243,6 +267,42 @@ export class RelationshipService {
     }));
 
     return { relationships, total: results.objects.length, offset, limit };
+  }
+
+  // ── Find by Memory IDs ──────────────────────────────────────────────
+
+  async findByMemoryIds(input: FindByMemoryIdsInput): Promise<FindByMemoryIdsResult> {
+    if (input.memory_ids.length === 0) {
+      return { relationships: [], total: 0 };
+    }
+
+    const limit = input.limit ?? 100;
+    const filterList: any[] = [
+      this.collection.filter.byProperty('doc_type').equal('relationship'),
+      this.collection.filter.byProperty('related_memory_ids').containsAny(input.memory_ids),
+    ];
+
+    if (input.source_filter) {
+      filterList.push(this.collection.filter.byProperty('source').equal(input.source_filter));
+    }
+
+    const combinedFilters = combineFiltersWithAnd(filterList);
+    const results = await this.collection.query.fetchObjects({
+      filters: combinedFilters,
+      limit,
+      returnProperties: [
+        'user_id', 'doc_type', 'related_memory_ids', 'memory_ids',
+        'relationship_type', 'observation', 'strength', 'confidence',
+        'source', 'tags', 'created_at', 'updated_at', 'version',
+      ],
+    });
+
+    const relationships = results.objects.map((obj: any) => ({
+      id: obj.uuid,
+      ...obj.properties,
+    }));
+
+    return { relationships, total: relationships.length };
   }
 
   // ── Delete ──────────────────────────────────────────────────────────

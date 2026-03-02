@@ -1,4 +1,4 @@
-import { RelationshipService } from '../relationship.service.js';
+import { RelationshipService, computeOverlap } from '../relationship.service.js';
 import { createMockCollection, createMockLogger } from '../../testing/weaviate-mock.js';
 
 describe('RelationshipService', () => {
@@ -264,6 +264,93 @@ describe('RelationshipService', () => {
         properties: { user_id: 'other-user', doc_type: 'relationship', related_memory_ids: [] },
       });
       await expect(service.delete({ relationship_id: otherId })).rejects.toThrow('Unauthorized');
+    });
+  });
+
+  describe('findByMemoryIds', () => {
+    it('returns relationships that share memory IDs with input', async () => {
+      const mem1 = await insertMemory();
+      const mem2 = await insertMemory();
+      const mem3 = await insertMemory();
+
+      const createResult = await service.create({
+        memory_ids: [mem1, mem2],
+        relationship_type: 'related_to',
+        observation: 'test',
+      });
+
+      const result = await service.findByMemoryIds({ memory_ids: [mem1] });
+      expect(result.total).toBe(1);
+      expect(result.relationships[0].id).toBe(createResult.relationship_id);
+    });
+
+    it('returns empty when no matches', async () => {
+      const mem1 = await insertMemory();
+      const mem2 = await insertMemory();
+
+      await service.create({
+        memory_ids: [mem1, mem2],
+        relationship_type: 'related_to',
+        observation: 'test',
+      });
+
+      const result = await service.findByMemoryIds({ memory_ids: ['nonexistent-id'] });
+      expect(result.total).toBe(0);
+      expect(result.relationships).toEqual([]);
+    });
+
+    it('filters by source when source_filter provided', async () => {
+      const mem1 = await insertMemory();
+      const mem2 = await insertMemory();
+
+      await service.create({
+        memory_ids: [mem1, mem2],
+        relationship_type: 'related_to',
+        observation: 'user-created',
+        source: 'user',
+      });
+
+      await service.create({
+        memory_ids: [mem1, mem2],
+        relationship_type: 'topical',
+        observation: 'rem-created',
+        source: 'rem',
+      });
+
+      const remOnly = await service.findByMemoryIds({
+        memory_ids: [mem1],
+        source_filter: 'rem',
+      });
+      expect(remOnly.total).toBe(1);
+      expect(remOnly.relationships[0].source).toBe('rem');
+    });
+
+    it('returns empty for empty memory_ids input', async () => {
+      const result = await service.findByMemoryIds({ memory_ids: [] });
+      expect(result.total).toBe(0);
+      expect(result.relationships).toEqual([]);
+    });
+  });
+
+  describe('computeOverlap', () => {
+    it('computes correct ratio for partial overlap', () => {
+      expect(computeOverlap(['a', 'b', 'c'], ['a', 'b', 'd'])).toBeCloseTo(2 / 3);
+    });
+
+    it('returns 1 for complete overlap', () => {
+      expect(computeOverlap(['a', 'b', 'c'], ['a', 'b'])).toBe(1);
+    });
+
+    it('returns 0 for no overlap', () => {
+      expect(computeOverlap(['a', 'b'], ['c', 'd'])).toBe(0);
+    });
+
+    it('returns 0 for empty candidate', () => {
+      expect(computeOverlap(['a', 'b'], [])).toBe(0);
+    });
+
+    it('handles empty existing set', () => {
+      expect(computeOverlap([], ['a', 'b'])).toBe(0);
     });
   });
 });

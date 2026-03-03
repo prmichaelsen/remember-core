@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.20.2] - 2026-03-03
+
+### Changed
+- **Enhanced Haiku validation prompt** with additional relationship patterns:
+  - Added "hub-and-spoke" relationships (main topic + related activities/tools/resources)
+  - Added "creative format" recognition (poems, lyrics, quotes by structure/rhythm/style)
+  - New examples: Airbnb hosting + house photography + booking tools
+  - New examples: Creative content iterations (poem/lyric variations)
+  - Expanded "be generous" guidance to accept implicit connections and supporting activities
+  - Clarified that 1-2 tangential memories in an otherwise related cluster is acceptable
+
 ## [0.20.1] - 2026-03-03
 
 ### Fixed

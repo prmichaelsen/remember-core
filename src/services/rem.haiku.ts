@@ -52,18 +52,24 @@ Memories:
 ${memoryList}
 
 A VALID relationship exists when memories share:
-- **Common topic/theme** (e.g., all about dogs, comedy, coding, travel)
-- **Common entities** (people, places, events, projects)
+- **Common topic/theme** (e.g., all about dogs, comedy, coding, travel, Airbnb)
+- **Common entities** (people, places, events, projects, businesses)
 - **Common timeframe or location**
 - **Common activity or experience**
+- **Hub-and-spoke** (main topic + related activities, tools, or resources)
 - **Cause and effect** (related sequence of events)
+- **Creative format** (poems, lyrics, quotes - recognize by structure, rhythm, artistic style)
 
 Examples of VALID relationships:
 ✓ Multiple memories about the same event (comedy shows at same venue)
-✓ Memories documenting progress on a project
+✓ Memories documenting progress on a project (song revisions, code iterations)
 ✓ Photos and notes about the same subject (dog photos + "went to dog park")
-✓ Related technical issues and solutions
+✓ Hub-and-spoke topic (Airbnb hosting + booking tools + house photography + host reflections)
+✓ Related technical issues and solutions (admin filters, settings, configurations)
 ✓ Memories from the same trip or timeframe
+✓ Resources and activities for a shared goal (even if not explicitly named in each memory)
+✓ Creative content iterations (poem/lyric variations, draft revisions, artistic explorations)
+✓ Quotes, lyrics, or poetic phrases (recognize structure, rhythm, repetition)
 
 Examples of INVALID relationships:
 ✗ Completely unrelated topics mixed together
@@ -78,7 +84,12 @@ If INVALID, respond with ONLY this JSON:
 {"valid":false,"reason":"<why not>"}
 
 Relationship types: topical, temporal, locational, event, project, activity, or descriptive type.
-Be generous - if memories clearly share a common thread, mark as valid.`;
+
+**Be generous**:
+- Accept if memories share a clear common thread (even if implicit)
+- Accept supporting activities for a main topic (photography for Airbnb, testing for development)
+- Accept if most memories relate, even if 1-2 are tangential
+- Focus on meaningful connections, not perfect semantic overlap`;
 }
 
 function buildExtractionPrompt(content: string): string {

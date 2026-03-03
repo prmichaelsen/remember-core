@@ -78,11 +78,11 @@ describe('TrustResource', () => {
 
   it('checkAccess calls POST /api/svc/v1/trust/check-access', async () => {
     const trust = createTrustResource(http);
-    await trust.checkAccess('user1', { memory_id: 'mem-1', accessor_id: 'user2' });
+    await trust.checkAccess('user1', { memory_id: 'mem-1', accessor_user_id: 'user2' });
 
     expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/trust/check-access', {
       userId: 'user1',
-      body: { memory_id: 'mem-1', accessor_id: 'user2' },
+      body: { memory_id: 'mem-1', accessor_user_id: 'user2' },
     });
   });
 });

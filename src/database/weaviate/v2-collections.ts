@@ -82,6 +82,7 @@ const COMMON_MEMORY_PROPERTIES = [
   // Relationships (v1 compat)
   { name: 'relationships', dataType: configure.dataType.TEXT_ARRAY },
   { name: 'memory_ids', dataType: configure.dataType.TEXT_ARRAY },
+  { name: 'relationship_count', dataType: configure.dataType.INT },
 
   // Access tracking
   { name: 'access_count', dataType: configure.dataType.NUMBER },

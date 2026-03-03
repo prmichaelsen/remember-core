@@ -103,6 +103,7 @@ export interface Memory {
 
   // Relationships
   relationships: string[]; // IDs of relationship documents
+  relationship_count: number; // Denormalized count for sorting
 
   // Access Tracking (for weight calculation)
   access_count: number;

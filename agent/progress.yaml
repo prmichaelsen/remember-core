@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.22.0
+  version: 0.22.1
   started: 2026-02-27
   status: in_progress
   current_milestone: M11
@@ -157,9 +157,9 @@ milestones:
   - id: M11
     name: Basic Sort Modes (MVP)
     status: in_progress
-    progress: 20
+    progress: 40
     estimated_weeks: 1
-    tasks_completed: 1
+    tasks_completed: 2
     tasks_total: 5
     started: 2026-03-03
     completed: null
@@ -801,14 +801,16 @@ tasks:
         Supports ascending/descending. Completes Time mode from Phase 1 MVP.
     - id: task-37
       name: Add relationship_count property to Memory schema
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-11-basic-sort-modes/task-37-add-relationship-count-property.md
       estimated_hours: 0.25
-      completed_date: null
+      completed_date: 2026-03-03
       dependencies: []
       notes: |
         Denormalized property mirroring relationships.length for efficient density sorting.
         Required because Weaviate cannot sort by array length natively.
+        Added to Memory interface, Weaviate schema, and MemoryService.create().
+        All 449 tests passing.
     - id: task-38
       name: Backfill relationship_count for existing memories
       status: not_started
@@ -871,6 +873,16 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-03-03
+    description: |
+      Task 37 — Add relationship_count property to Memory schema
+    items:
+      - "Added relationship_count: number to Memory interface (memory.types.ts)"
+      - "Added relationship_count INT property to Weaviate schema (COMMON_MEMORY_PROPERTIES)"
+      - "Initialized relationship_count: 0 in MemoryService.create()"
+      - "Fixed test helpers in trust-enforcement and access-control service specs"
+      - "All 449 tests passing (31 suites)"
+      - "M11 Basic Sort Modes (MVP): 2/5 tasks complete (40%)"
   - date: 2026-03-03
     description: |
       Task 36 — Add byTime sort mode to MemoryService (M11 begins)

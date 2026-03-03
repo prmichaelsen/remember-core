@@ -220,6 +220,7 @@ export class MemoryService {
       context_summary: input.context_summary || 'Memory created',
       context_conversation_id: input.context_conversation_id,
       relationship_ids: [],
+      relationship_count: 0,
       access_count: 0,
       last_accessed_at: now,
       created_at: now,

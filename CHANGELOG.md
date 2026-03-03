@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.22.1] - 2026-03-03
+
+### Added
+- **Memory.relationship_count** - Denormalized property for efficient density sorting
+  - Added to Memory interface in memory.types.ts
+  - Added to Weaviate schema (COMMON_MEMORY_PROPERTIES) as INT type
+  - Initialized to 0 for all new memories in MemoryService.create()
+  - Will be maintained by RelationshipService (Task 39)
+  - Enables server-side sorting by relationship density
+
+### Fixed
+- Updated test helpers to include relationship_count property
+  - Fixed createTestMemory() in trust-enforcement.service.spec.ts
+  - Fixed createTestMemory() in access-control.service.spec.ts
+
+Completed Task 37: Add relationship_count property to Memory schema
+Milestone: M11 - Basic Sort Modes (MVP) (2/5 tasks, 40%)
+Version: 0.22.0 → 0.22.1
+
 ## [0.22.0] - 2026-03-03
 
 ### Added

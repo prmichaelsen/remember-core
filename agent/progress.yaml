@@ -920,6 +920,15 @@ tasks:
         Add comprehensive cursor and collection logging for better REM observability.
         Log cursor position, collection selection, wrap-around detection, memory selection,
         clustering progress, and Haiku validation results.
+    - id: task-62
+      name: Type TrustResource methods with generated OpenAPI types
+      status: completed
+      file: agent/tasks/unassigned/task-62-type-trust-resource-methods.md
+      estimated_hours: 1-2
+      notes: |
+        Bug fix — TrustResource uses SdkResponse<unknown> and Record<string, unknown>
+        instead of generated GhostConfigResult / UpdateGhostConfigInput types.
+        Caused agentbase.me bug where raw SdkResponse was returned as config.
 
 documentation:
   design_documents: 9

@@ -141,30 +141,69 @@ export function createMockCollection() {
 
     filter: {
       byProperty(name: string) {
+        const createChainableFilter = (filterObj: any) => {
+          return {
+            ...filterObj,
+            and() {
+              return {
+                byProperty(nextName: string) {
+                  const nextFilter = createChainableFilter;
+                  return {
+                    equal(value: any) {
+                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'equal', field: nextName, value }] });
+                    },
+                    notEqual(value: any) {
+                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'notEqual', field: nextName, value }] });
+                    },
+                    greaterThan(value: any) {
+                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'gt', field: nextName, value }] });
+                    },
+                    greaterOrEqual(value: any) {
+                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'gte', field: nextName, value }] });
+                    },
+                    lessOrEqual(value: any) {
+                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'lte', field: nextName, value }] });
+                    },
+                    lessThanOrEqual(value: any) {
+                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'lte', field: nextName, value }] });
+                    },
+                    containsAny(values: any[]) {
+                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'containsAny', field: nextName, values }] });
+                    },
+                    isNull(value: boolean) {
+                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'isNull', field: nextName, value }] });
+                    },
+                  };
+                },
+              };
+            },
+          };
+        };
+
         return {
           equal(value: any) {
-            return { _type: 'equal', field: name, value };
+            return createChainableFilter({ _type: 'equal', field: name, value });
           },
           notEqual(value: any) {
-            return { _type: 'notEqual', field: name, value };
+            return createChainableFilter({ _type: 'notEqual', field: name, value });
           },
           greaterThan(value: any) {
-            return { _type: 'gt', field: name, value };
+            return createChainableFilter({ _type: 'gt', field: name, value });
           },
           greaterOrEqual(value: any) {
-            return { _type: 'gte', field: name, value };
+            return createChainableFilter({ _type: 'gte', field: name, value });
           },
           lessOrEqual(value: any) {
-            return { _type: 'lte', field: name, value };
+            return createChainableFilter({ _type: 'lte', field: name, value });
           },
           lessThanOrEqual(value: any) {
-            return { _type: 'lte', field: name, value };
+            return createChainableFilter({ _type: 'lte', field: name, value });
           },
           containsAny(values: any[]) {
-            return { _type: 'containsAny', field: name, values };
+            return createChainableFilter({ _type: 'containsAny', field: name, values });
           },
           isNull(value: boolean) {
-            return { _type: 'isNull', field: name, value };
+            return createChainableFilter({ _type: 'isNull', field: name, value });
           },
         };
       },

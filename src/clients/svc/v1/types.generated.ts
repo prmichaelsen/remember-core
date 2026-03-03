@@ -124,6 +124,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/by-time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fetch memories sorted by creation time */
+        post: operations["memoriesByTime"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/memories/by-density": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fetch memories sorted by relationship count */
+        post: operations["memoriesByDensity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/memories/by-time-slice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search memories with chronological ordering via parallel time-bucketed searches
+         * @description Combines text search with chronological ordering. Partitions the time axis
+         *     into 14 buckets, runs parallel searches per bucket, and concatenates results
+         *     in chronological order. Desc uses exponentially-graded buckets anchored at now;
+         *     asc uses equal-width buckets spanning from oldest memory to now.
+         */
+        post: operations["memoriesByTimeSlice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/relationships": {
         parameters: {
             query?: never;
@@ -590,6 +647,63 @@ export interface components {
             } & {
                 [key: string]: unknown;
             })[];
+            total: number;
+        };
+        TimeModeRequest: {
+            /** @default 10 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            /**
+             * @default desc
+             * @enum {string}
+             */
+            direction: "asc" | "desc";
+            filters?: components["schemas"]["SearchFilters"];
+            deleted_filter?: components["schemas"]["DeletedFilter"];
+            ghost_context?: components["schemas"]["GhostSearchContext"];
+        };
+        TimeModeResult: {
+            memories: {
+                [key: string]: unknown;
+            }[];
+            total: number;
+            offset: number;
+            limit: number;
+        };
+        DensityModeRequest: {
+            /** @default 10 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            /** @default 0 */
+            min_relationship_count: number;
+            filters?: components["schemas"]["SearchFilters"];
+            deleted_filter?: components["schemas"]["DeletedFilter"];
+            ghost_context?: components["schemas"]["GhostSearchContext"];
+        };
+        DensityModeResult: {
+            memories: {
+                [key: string]: unknown;
+            }[];
+            total: number;
+            offset: number;
+            limit: number;
+        };
+        TimeSliceSearchInput: {
+            query: string;
+            /** @default 10 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            /** @enum {string} */
+            direction: "asc" | "desc";
+            filters?: components["schemas"]["SearchFilters"];
+        };
+        TimeSliceSearchResult: {
+            memories: {
+                [key: string]: unknown;
+            }[];
             total: number;
         };
         UpdateMemoryResult: {
@@ -1169,6 +1283,82 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QueryMemoryResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesByTime: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Chronologically sorted memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesByDensity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DensityModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Density-sorted memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DensityModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesByTimeSlice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeSliceSearchInput"];
+            };
+        };
+        responses: {
+            /** @description Chronologically-ordered search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeSliceSearchResult"];
                 };
             };
             400: components["responses"]["ValidationError"];

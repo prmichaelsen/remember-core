@@ -230,6 +230,76 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/by-time:
+    post:
+      tags: [memories]
+      summary: Fetch memories sorted by creation time
+      operationId: memoriesByTime
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeModeRequest'
+      responses:
+        '200':
+          description: Chronologically sorted memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeModeResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/memories/by-density:
+    post:
+      tags: [memories]
+      summary: Fetch memories sorted by relationship count
+      operationId: memoriesByDensity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DensityModeRequest'
+      responses:
+        '200':
+          description: Density-sorted memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DensityModeResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/memories/by-time-slice:
+    post:
+      tags: [memories]
+      summary: Search memories with chronological ordering via parallel time-bucketed searches
+      description: |
+        Combines text search with chronological ordering. Partitions the time axis
+        into 14 buckets, runs parallel searches per bucket, and concatenates results
+        in chronological order. Desc uses exponentially-graded buckets anchored at now;
+        asc uses equal-width buckets spanning from oldest memory to now.
+      operationId: memoriesByTimeSlice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeSliceSearchInput'
+      responses:
+        '200':
+          description: Chronologically-ordered search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSliceSearchResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   # ============================================================
   # Relationships
   # ============================================================
@@ -1202,6 +1272,120 @@ components:
                 type: string
               relevance:
                 type: number
+            additionalProperties: true
+        total:
+          type: integer
+
+    # ----------------------------------------------------------
+    # Sort mode inputs/results
+    # ----------------------------------------------------------
+    TimeModeRequest:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        direction:
+          type: string
+          enum: [asc, desc]
+          default: desc
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    TimeModeResult:
+      type: object
+      required: [memories, total, offset, limit]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    DensityModeRequest:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        min_relationship_count:
+          type: integer
+          minimum: 0
+          default: 0
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    DensityModeResult:
+      type: object
+      required: [memories, total, offset, limit]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    TimeSliceSearchInput:
+      type: object
+      required: [query, direction]
+      properties:
+        query:
+          type: string
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        direction:
+          type: string
+          enum: [asc, desc]
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+
+    TimeSliceSearchResult:
+      type: object
+      required: [memories, total]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
             additionalProperties: true
         total:
           type: integer

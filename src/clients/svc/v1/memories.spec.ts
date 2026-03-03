@@ -103,4 +103,14 @@ describe('MemoriesResource', () => {
       body: { limit: 20, min_relationship_count: 5 },
     });
   });
+
+  it('byTimeSlice calls POST /api/svc/v1/memories/by-time-slice', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byTimeSlice('user1', { query: 'vacation', limit: 10, direction: 'desc' });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-time-slice', {
+      userId: 'user1',
+      body: { query: 'vacation', limit: 10, direction: 'desc' },
+    });
+  });
 });

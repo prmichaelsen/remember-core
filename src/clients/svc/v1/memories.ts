@@ -24,6 +24,7 @@ export interface MemoriesResource {
   query(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byTime(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byDensity(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byTimeSlice(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
 }
 
 export function createMemoriesResource(http: HttpClient): MemoriesResource {
@@ -60,6 +61,9 @@ export function createMemoriesResource(http: HttpClient): MemoriesResource {
     },
     byDensity(userId, input) {
       return http.request('POST', '/api/svc/v1/memories/by-density', { userId, body: input });
+    },
+    byTimeSlice(userId, input) {
+      return http.request('POST', '/api/svc/v1/memories/by-time-slice', { userId, body: input });
     },
   };
 }

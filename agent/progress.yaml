@@ -3,7 +3,7 @@ project:
   version: 0.22.4
   started: 2026-02-27
   status: in_progress
-  current_milestone: M11
+  current_milestone: M12
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -171,6 +171,22 @@ milestones:
       property (denormalized from relationships.length for query performance).
       See: agent/milestones/milestone-11-basic-sort-modes.md
       See: agent/design/memory-sorting-algorithms.md
+
+  - id: M12
+    name: Time-Slice Search
+    status: not_started
+    progress: 0
+    estimated_weeks: 0.5
+    tasks_completed: 0
+    tasks_total: 3
+    started: null
+    notes: |
+      Consumer-side utility combining text search with chronological ordering
+      via parallel time-bucketed searches. New src/search/ module with
+      remember-core/search subpath export. Direction-aware bucketing:
+      graded (desc) vs even (asc). No Weaviate schema changes needed.
+      See: agent/milestones/milestone-12-time-slice-search.md
+      See: agent/design/local.by-time-slice-search.md
 
 tasks:
   milestone_1:
@@ -855,6 +871,35 @@ tasks:
         but weaviate-client SDK expects a Sorting instance with .sorts property.
         Crashes with TypeError: Cannot read properties of undefined (reading 'map').
         Fix: use collection.sort.byProperty() instead of raw objects.
+
+  milestone_12:
+    - id: task-59
+      name: Time-slice bucket builders
+      status: not_started
+      file: agent/tasks/milestone-12-time-slice-search/task-59-time-slice-bucket-builders.md
+      estimated_hours: 1
+      dependencies: []
+      notes: |
+        buildGradedSlices (14 exponential buckets for desc) and
+        buildEvenSlices (N equal-width buckets for asc). Pure functions, unit tests.
+    - id: task-60
+      name: searchByTimeSlice orchestration function
+      status: not_started
+      file: agent/tasks/milestone-12-time-slice-search/task-60-search-by-time-slice.md
+      estimated_hours: 2
+      dependencies: [task-59]
+      notes: |
+        Orchestration function calling svc client methods. Branches on direction
+        for graded vs even bucketing. Parallel Promise.all searches, aggregation.
+    - id: task-61
+      name: Subpath export and documentation
+      status: not_started
+      file: agent/tasks/milestone-12-time-slice-search/task-61-subpath-export-docs.md
+      estimated_hours: 1
+      dependencies: [task-60]
+      notes: |
+        remember-core/search subpath export. Package.json, typesVersions,
+        CHANGELOG, README, version bump.
 
   unassigned:
     - id: task-56

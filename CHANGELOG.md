@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.13] - 2026-03-03
+
+### Added
+- **Enhanced candidate selection logging** — add INFO-level logs showing query results from each source:
+  - Log requested limit for each source (newest, unprocessed, random)
+  - Log actual count returned from each Weaviate query
+  - Show deduplication results (deduped_from count)
+  - Helps diagnose when batch size isn't respected (e.g., requesting 500 but getting 23)
+
 ## [0.19.12] - 2026-03-03
 
 ### Changed

@@ -52,16 +52,17 @@ export async function selectCandidates(
   logger?.debug?.('Selecting candidates', { target: count, per_source: third });
 
   // 1/3 newest
-  logger?.debug?.('Fetching newest memories');
+  logger?.info?.('Fetching newest memories', { limit: third });
   const newestResult = await collection.query.fetchObjects({
     filters: memoryFilter,
     sort: { sorts: [{ property: 'created_at', order: 'desc' }] },
     limit: third,
     returnProperties: returnProps,
   });
+  logger?.info?.('Newest memories fetched', { count: newestResult.objects?.length ?? 0 });
 
   // 1/3 unprocessed (created_at > cursor)
-  logger?.debug?.('Fetching unprocessed memories', { cursor: memoryCursor || '(none)' });
+  logger?.info?.('Fetching unprocessed memories', { cursor: memoryCursor || '(none)', limit: third });
   let unprocessedResult = { objects: [] as any[] };
   if (memoryCursor) {
     // Combine both filters: doc_type='memory' AND created_at > cursor
@@ -75,17 +76,21 @@ export async function selectCandidates(
       limit: third,
       returnProperties: returnProps,
     });
+    logger?.info?.('Unprocessed memories fetched', { count: unprocessedResult.objects?.length ?? 0 });
+  } else {
+    logger?.info?.('Skipping unprocessed fetch (no cursor)');
   }
 
   // 1/3 random: use offset with a pseudo-random skip
-  logger?.debug?.('Fetching random memories');
   const randomOffset = Math.floor(Math.random() * 50);
+  logger?.info?.('Fetching random memories', { limit: third, offset: randomOffset });
   const randomResult = await collection.query.fetchObjects({
     filters: memoryFilter,
     limit: third,
     offset: randomOffset,
     returnProperties: returnProps,
   });
+  logger?.info?.('Random memories fetched', { count: randomResult.objects?.length ?? 0 });
 
   // Combine and deduplicate
   const seen = new Set<string>();
@@ -107,9 +112,10 @@ export async function selectCandidates(
   }
 
   const final = candidates.slice(0, count);
-  logger?.debug?.('Candidates selected', {
+  logger?.info?.('Candidate selection complete', {
     requested: count,
     selected: final.length,
+    deduped_from: candidates.length,
     sources: {
       newest: newestResult.objects?.length ?? 0,
       unprocessed: unprocessedResult.objects?.length ?? 0,

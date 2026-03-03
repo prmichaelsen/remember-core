@@ -12,6 +12,6 @@ export {
 export {
   type TimeSliceSearchOptions,
   type TimeSliceSearchResult,
-  type TimeSliceSearchClient,
+  type TimeSliceMemoryService,
   searchByTimeSlice,
 } from './search-by-time-slice.js';

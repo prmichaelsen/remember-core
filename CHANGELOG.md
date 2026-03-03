@@ -8,10 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 - **`remember-core/search` subpath export** — time-slice search utilities for combining text search with chronological ordering
-  - `searchByTimeSlice()` — orchestrates parallel time-bucketed searches via svc client
+  - `searchByTimeSlice()` — orchestrates parallel time-bucketed searches via MemoryService (Weaviate-direct)
   - `buildGradedSlices()` — 14 exponentially-spaced buckets anchored at now (newest-first)
   - `buildEvenSlices()` — 14 equal-width buckets from oldest memory to now (oldest-first)
-  - `TimeSlice`, `TimeSliceSearchOptions`, `TimeSliceSearchResult`, `TimeSliceSearchClient` interfaces
+  - `TimeSlice`, `TimeSliceSearchOptions`, `TimeSliceSearchResult`, `TimeSliceMemoryService` interfaces
   - `GRADED_OFFSETS_MS`, `BUCKET_COUNT` constants
   - 24 new tests across 2 suites (bucket math + orchestration)
 

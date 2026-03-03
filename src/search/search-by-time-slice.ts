@@ -1,15 +1,21 @@
 // src/search/search-by-time-slice.ts
 // Orchestration function: combines text search with chronological ordering
-// via parallel time-bucketed searches.
+// via parallel time-bucketed searches against MemoryService (Weaviate-direct).
 
-import type { MemoriesResource } from '../clients/svc/v1/memories.js';
+import type { SearchFilters } from '../types/search.types.js';
+import type {
+  SearchMemoryInput,
+  SearchMemoryResult,
+  TimeModeRequest,
+  TimeModeResult,
+} from '../services/memory.service.js';
 import { buildGradedSlices, buildEvenSlices } from './time-slices.js';
 
 export interface TimeSliceSearchOptions {
   limit: number;
   offset: number;
   direction: 'asc' | 'desc';
-  filters?: Record<string, unknown>;
+  filters?: SearchFilters;
 }
 
 export interface TimeSliceSearchResult {
@@ -17,20 +23,26 @@ export interface TimeSliceSearchResult {
   total: number;
 }
 
-export interface TimeSliceSearchClient {
-  memories: Pick<MemoriesResource, 'search' | 'byTime'>;
+/**
+ * Minimal interface for the MemoryService methods used by searchByTimeSlice.
+ * Accepts MemoryService directly — calls go to Weaviate, not through REST.
+ */
+export interface TimeSliceMemoryService {
+  search(input: SearchMemoryInput): Promise<SearchMemoryResult>;
+  byTime(input: TimeModeRequest): Promise<TimeModeResult>;
 }
 
 /**
  * Search memories with chronological ordering by partitioning the time axis
  * into buckets and running parallel searches per bucket.
  *
+ * Calls MemoryService directly (14 Weaviate queries, not 14 REST calls).
+ *
  * - **desc**: Builds graded (exponential) slices anchored at now, fires 14 parallel searches.
  * - **asc**: Fetches oldest memory via byTime(limit:1), builds even slices, fires 14 parallel searches.
  */
 export async function searchByTimeSlice(
-  svc: TimeSliceSearchClient,
-  userId: string,
+  memoryService: TimeSliceMemoryService,
   query: string,
   options: TimeSliceSearchOptions,
 ): Promise<TimeSliceSearchResult> {
@@ -43,12 +55,11 @@ export async function searchByTimeSlice(
     slices = buildGradedSlices(now);
   } else {
     // Oldest first: fetch oldest memory to anchor the even buckets
-    const oldestRes = await svc.memories.byTime(userId, {
+    const oldest = await memoryService.byTime({
       direction: 'asc',
       limit: 1,
     });
-    const oldest = oldestRes.throwOnError() as { memories?: Array<{ created_at?: string }> };
-    const oldestDate = oldest.memories?.[0]?.created_at;
+    const oldestDate = (oldest.memories[0] as Record<string, unknown> | undefined)?.created_at as string | undefined;
     if (!oldestDate) {
       return { memories: [], total: 0 };
     }
@@ -58,19 +69,23 @@ export async function searchByTimeSlice(
   // Fire all searches in parallel
   const bucketResults = await Promise.all(
     slices.map(async (slice) => {
-      const res = await svc.memories.search(userId, {
+      const filters: SearchFilters = {
+        ...options.filters,
+        ...(slice.from && { date_from: slice.from }),
+        date_to: slice.to,
+      };
+
+      const result = await memoryService.search({
         query,
         limit: perBucketLimit,
         offset: 0,
         include_relationships: true,
-        ...(slice.from && { date_from: slice.from }),
-        date_to: slice.to,
-        ...(options.filters ?? {}),
+        filters,
       });
-      const data = res.throwOnError() as { memories?: Record<string, unknown>[]; total?: number };
+
       return {
-        memories: data.memories ?? [],
-        total: data.total ?? 0,
+        memories: result.memories,
+        total: result.total,
       };
     })
   );

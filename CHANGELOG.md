@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.21.0] - 2026-03-03
+
+### Changed
+- **BREAKING**: Default validation model upgraded from Haiku 4.5 to Sonnet 4.6
+  - Haiku 4.5 was too conservative, rejecting obviously related memories (comedy events, dog photos, song revisions)
+  - Sonnet 4.6 has better reasoning for relationship detection
+  - Can override with `model: 'claude-haiku-4-5-20251001'` in HaikuClient options for cost savings
+
+### Added
+- **Auto-approve high-similarity clusters** - bypass LLM validation for obviously related memories
+  - New config: `auto_approve_similarity` (default 0.9 = 90%+ similarity)
+  - Clusters above threshold are automatically approved without Haiku validation
+  - Reduces false negatives from conservative LLM
+  - Tagged with `['auto-approved', 'high-similarity']` for tracking
+  - Logs similarity score and threshold for transparency
+
+### Fixed
+- Log avg_similarity in cluster evaluation messages for better debugging
+
 ## [0.20.2] - 2026-03-03
 
 ### Changed

@@ -17,6 +17,8 @@ export interface RemConfig {
   // Multi-strategy candidate selection
   seed_count: number;                    // Number of random seeds for LLM-enhanced strategies
   candidates_per_seed_strategy: number;  // Results per nearText search (keywords/topics/themes/summary)
+  // Haiku validation bypass
+  auto_approve_similarity: number;       // Auto-approve clusters above this similarity (0.9 = 90%+, bypasses Haiku)
 }
 
 export const DEFAULT_REM_CONFIG: RemConfig = {
@@ -29,6 +31,8 @@ export const DEFAULT_REM_CONFIG: RemConfig = {
   // Multi-strategy defaults
   seed_count: 2,
   candidates_per_seed_strategy: 5,
+  // Auto-approve highly similar clusters (bypasses conservative Haiku)
+  auto_approve_similarity: 0.9,
 };
 
 // ─── State Tracking ──────────────────────────────────────────────────────

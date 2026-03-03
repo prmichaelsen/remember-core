@@ -124,7 +124,10 @@ export function createHaikuClient(options: {
   apiKey: string;
   model?: string;
 }): HaikuClient {
-  const model = options.model ?? 'claude-haiku-4-5-20251001';
+  // Default to Sonnet for better relationship reasoning
+  // Haiku is too conservative and rejects obvious relationships
+  // Can override with 'claude-haiku-4-5-20251001' for cost savings if needed
+  const model = options.model ?? 'claude-sonnet-4-6-20241210';
 
   async function callApi(prompt: string): Promise<any> {
     const response = await fetch('https://api.anthropic.com/v1/messages', {

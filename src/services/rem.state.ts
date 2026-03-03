@@ -10,14 +10,13 @@ import { BASE } from '../database/firestore/paths.js';
 import type { RemCursorState, RemCollectionState } from './rem.types.js';
 
 const REM_STATE_COLLECTION = `${BASE}.rem_state`;
-const REM_COLLECTION_STATE_COLLECTION = `${BASE}.rem_state_collections`;
 
 function getCursorPath() {
   return { collectionPath: REM_STATE_COLLECTION, docId: 'cursor' };
 }
 
 function getCollectionStatePath(collectionId: string) {
-  return { collectionPath: REM_COLLECTION_STATE_COLLECTION, docId: collectionId };
+  return { collectionPath: REM_STATE_COLLECTION, docId: collectionId };
 }
 
 export class RemStateStore {

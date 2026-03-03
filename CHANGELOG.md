@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [0.19.4] - 2026-03-03
 
 ### Fixed
-- **CRITICAL**: Fix Firestore path construction in RemStateStore — change collection state path from subcollection `{BASE}.rem_state/collections` to flat collection `{BASE}.rem_state_collections` to avoid "odd number of path components" error
+- **CRITICAL**: Fix Firestore path construction in RemStateStore — use flat structure in `{BASE}.rem_state` collection (both cursor and collection state documents in same collection) instead of invalid `/collections` subcollection path to avoid "odd number of path components" error
 
 ## [0.19.3] - 2026-03-02
 

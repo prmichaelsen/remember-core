@@ -132,10 +132,13 @@ export function getRemCursorPath(): { collectionPath: string; docId: string } {
 
 /**
  * Get path to REM collection state document.
- * Pattern: {BASE}.rem_state/collections (collection), {collectionId} (docId)
+ * Pattern: {BASE}.rem_state_collections (collection), {collectionId} (docId)
+ *
+ * Note: Uses flat collection instead of subcollection to avoid Firestore
+ * path component count issues (subcollections require parent documents).
  */
 export function getRemCollectionStatePath(collectionId: string): { collectionPath: string; docId: string } {
-  return { collectionPath: `${BASE}.rem_state/collections`, docId: collectionId };
+  return { collectionPath: `${BASE}.rem_state_collections`, docId: collectionId };
 }
 
 // ============================================================================

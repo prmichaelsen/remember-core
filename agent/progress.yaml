@@ -779,12 +779,21 @@ tasks:
       notes: |
         Performance enhancement — listAll() doesn't scale to millions of collections.
         Write to Firestore registry on collection creation, REM reads from registry.
+    - id: task-57
+      name: Add Enhanced Logging to RemService
+      status: not_started
+      file: agent/tasks/unassigned/task-57-rem-service-enhanced-logging.md
+      estimated_hours: 2-3
+      notes: |
+        Add comprehensive cursor and collection logging for better REM observability.
+        Log cursor position, collection selection, wrap-around detection, memory selection,
+        clustering progress, and Haiku validation results.
 
 documentation:
   design_documents: 9
   milestone_documents: 10
   pattern_documents: 25
-  task_documents: 63
+  task_documents: 64
 
 progress:
   planning: 100

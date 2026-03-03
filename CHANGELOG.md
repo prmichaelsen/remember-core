@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.4] - 2026-03-03
+
+### Fixed
+- **CRITICAL**: Fix Firestore path construction in RemStateStore — change collection state path from subcollection `{BASE}.rem_state/collections` to flat collection `{BASE}.rem_state_collections` to avoid "odd number of path components" error
+
 ## [0.19.3] - 2026-03-02
 
 ### Fixed

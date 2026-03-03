@@ -14,6 +14,9 @@ export interface RemConfig {
   max_similar_per_candidate: number;
   overlap_merge_threshold: number;
   max_relationship_members: number;
+  // Multi-strategy candidate selection
+  seed_count: number;                    // Number of random seeds for LLM-enhanced strategies
+  candidates_per_seed_strategy: number;  // Results per nearText search (keywords/topics/themes/summary)
 }
 
 export const DEFAULT_REM_CONFIG: RemConfig = {
@@ -23,6 +26,9 @@ export const DEFAULT_REM_CONFIG: RemConfig = {
   max_similar_per_candidate: 20,
   overlap_merge_threshold: 0.60,
   max_relationship_members: 50,
+  // Multi-strategy defaults
+  seed_count: 2,
+  candidates_per_seed_strategy: 5,
 };
 
 // ─── State Tracking ──────────────────────────────────────────────────────

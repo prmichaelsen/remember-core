@@ -286,7 +286,7 @@ describe('RemService', () => {
       collection_id: 'Memory_users_frank',
       duration_seconds: expect.any(Number),
     }));
-    expect(loggerSpy.info).toHaveBeenCalledWith('Candidate selection complete', expect.any(Object));
+    expect(loggerSpy.info).toHaveBeenCalledWith('Multi-strategy candidate selection complete', expect.any(Object));
     expect(loggerSpy.debug).toHaveBeenCalledWith('Cursor advanced', expect.any(Object));
   });
 });

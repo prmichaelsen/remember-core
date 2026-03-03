@@ -9,6 +9,7 @@ import { Filters } from 'weaviate-client';
 import type { RemConfig } from './rem.types.js';
 import type { RelationshipService } from './relationship.service.js';
 import type { Logger } from '../utils/logger.js';
+import type { HaikuClient } from './rem.haiku.js';
 import { computeOverlap } from './relationship.service.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
@@ -37,90 +38,192 @@ export interface ClusterAction {
 // ─── Memory Selection ────────────────────────────────────────────────────
 
 /**
- * Select candidate memories from three sources: newest, unprocessed, and random.
- * Deduplicates across sources. Filters to doc_type='memory' only.
+ * Multi-Strategy Candidate Selection Architecture
+ *
+ * Combines multiple strategies to find diverse, relevant memory candidates for clustering:
+ *
+ * 1. **Recency-based** (1/3 of batch):
+ *    - Newest memories by created_at timestamp
+ *    - Ensures recent activity is processed
+ *
+ * 2. **Cursor-based** (1/3 of batch):
+ *    - Unprocessed memories (created_at > cursor)
+ *    - Ensures systematic forward progress through collection
+ *
+ * 3. **Random sampling** (1/3 of batch):
+ *    - Random offset into collection
+ *    - Provides serendipitous coverage of older memories
+ *
+ * 4. **LLM-enhanced semantic search** (seed_count * 4 * candidates_per_seed_strategy):
+ *    - Pick N random seed memories
+ *    - For each seed, use Haiku to extract:
+ *      a) Keywords (specific terms, entities, concepts)
+ *      b) Topics (high-level subject areas)
+ *      c) Themes (abstract ideas, patterns)
+ *      d) Summary (1-2 sentence distillation)
+ *    - Perform nearText vector search for EACH extraction type
+ *    - Finds semantically related memories across different abstraction levels
+ *
+ * All strategies are deduplicated and capped at max_candidates_per_run.
+ */
+
+/**
+ * Select candidate memories using multi-strategy approach.
+ * Deduplicates across all strategies. Filters to doc_type='memory' only.
  */
 export async function selectCandidates(
   collection: any,
   memoryCursor: string,
   count: number,
+  config: RemConfig,
+  haikuClient: HaikuClient,
   logger?: Logger,
 ): Promise<MemoryCandidate[]> {
-  const third = Math.max(1, Math.ceil(count / 3));
+  const baseStrategyCount = Math.max(1, Math.floor(count / 6)); // Reduce base strategies to make room for LLM
   const returnProps = ['content', 'created_at', 'tags', 'doc_type'] as const;
   const memoryFilter = collection.filter.byProperty('doc_type').equal('memory');
 
-  logger?.debug?.('Selecting candidates', { target: count, per_source: third });
+  logger?.info?.('Starting multi-strategy candidate selection', {
+    target: count,
+    base_strategy_limit: baseStrategyCount,
+    seed_count: config.seed_count,
+    candidates_per_seed_strategy: config.candidates_per_seed_strategy,
+  });
 
-  // 1/3 newest
-  logger?.info?.('Fetching newest memories', { limit: third });
+  const seen = new Set<string>();
+  const candidates: MemoryCandidate[] = [];
+
+  function addCandidate(obj: any) {
+    const id = obj.uuid ?? obj.id;
+    if (seen.has(id)) return;
+    if (obj.properties.doc_type !== 'memory') return;
+    seen.add(id);
+    candidates.push({
+      id,
+      content: obj.properties.content ?? '',
+      created_at: obj.properties.created_at ?? '',
+      tags: obj.properties.tags ?? [],
+    });
+  }
+
+  // Strategy 1: Newest memories
+  logger?.info?.('Strategy: newest', { limit: baseStrategyCount });
   const newestResult = await collection.query.fetchObjects({
     filters: memoryFilter,
     sort: { sorts: [{ property: 'created_at', order: 'desc' }] },
-    limit: third,
+    limit: baseStrategyCount,
     returnProperties: returnProps,
   });
-  logger?.info?.('Newest memories fetched', { count: newestResult.objects?.length ?? 0 });
+  for (const obj of newestResult.objects ?? []) addCandidate(obj);
+  logger?.info?.('Strategy: newest complete', { found: newestResult.objects?.length ?? 0 });
 
-  // 1/3 unprocessed (created_at > cursor)
-  logger?.info?.('Fetching unprocessed memories', { cursor: memoryCursor || '(none)', limit: third });
-  let unprocessedResult = { objects: [] as any[] };
+  // Strategy 2: Unprocessed (created_at > cursor)
+  logger?.info?.('Strategy: unprocessed', { cursor: memoryCursor || '(none)', limit: baseStrategyCount });
   if (memoryCursor) {
-    // Combine both filters: doc_type='memory' AND created_at > cursor
     const unprocessedFilter = Filters.and(
       collection.filter.byProperty('doc_type').equal('memory'),
       collection.filter.byProperty('created_at').greaterThan(memoryCursor),
     );
-
-    unprocessedResult = await collection.query.fetchObjects({
+    const unprocessedResult = await collection.query.fetchObjects({
       filters: unprocessedFilter,
-      limit: third,
+      limit: baseStrategyCount,
       returnProperties: returnProps,
     });
-    logger?.info?.('Unprocessed memories fetched', { count: unprocessedResult.objects?.length ?? 0 });
+    for (const obj of unprocessedResult.objects ?? []) addCandidate(obj);
+    logger?.info?.('Strategy: unprocessed complete', { found: unprocessedResult.objects?.length ?? 0 });
   } else {
-    logger?.info?.('Skipping unprocessed fetch (no cursor)');
+    logger?.info?.('Strategy: unprocessed skipped (no cursor)');
   }
 
-  // 1/3 random: use offset with a pseudo-random skip
+  // Strategy 3: Random sampling
   const randomOffset = Math.floor(Math.random() * 50);
-  logger?.info?.('Fetching random memories', { limit: third, offset: randomOffset });
+  logger?.info?.('Strategy: random', { limit: baseStrategyCount, offset: randomOffset });
   const randomResult = await collection.query.fetchObjects({
     filters: memoryFilter,
-    limit: third,
+    limit: baseStrategyCount,
     offset: randomOffset,
     returnProperties: returnProps,
   });
-  logger?.info?.('Random memories fetched', { count: randomResult.objects?.length ?? 0 });
+  for (const obj of randomResult.objects ?? []) addCandidate(obj);
+  logger?.info?.('Strategy: random complete', { found: randomResult.objects?.length ?? 0 });
 
-  // Combine and deduplicate
-  const seen = new Set<string>();
-  const candidates: MemoryCandidate[] = [];
+  // Strategy 4: LLM-enhanced semantic search
+  logger?.info?.('Strategy: LLM-enhanced semantic search', { seeds: config.seed_count });
 
-  for (const resultSet of [newestResult, unprocessedResult, randomResult]) {
-    for (const obj of resultSet.objects ?? []) {
-      const id = obj.uuid ?? obj.id;
-      if (seen.has(id)) continue;
-      if (obj.properties.doc_type !== 'memory') continue;
-      seen.add(id);
-      candidates.push({
-        id,
-        content: obj.properties.content ?? '',
-        created_at: obj.properties.created_at ?? '',
-        tags: obj.properties.tags ?? [],
+  // Pick random seeds for LLM extraction
+  const seedOffset = Math.floor(Math.random() * 100);
+  const seedsResult = await collection.query.fetchObjects({
+    filters: memoryFilter,
+    limit: config.seed_count,
+    offset: seedOffset,
+    returnProperties: returnProps,
+  });
+
+  for (let i = 0; i < (seedsResult.objects ?? []).length; i++) {
+    const seed = seedsResult.objects[i];
+    const seedId = seed.uuid ?? seed.id;
+    const seedContent = seed.properties.content ?? '';
+
+    logger?.info?.(`Strategy: LLM seed ${i + 1}/${config.seed_count}`, { seed_id: seedId });
+
+    // Extract features using Haiku
+    const extraction = await haikuClient.extractFeatures(seedContent);
+
+    // nearText search for keywords
+    if (extraction.keywords.length > 0) {
+      const keywordQuery = extraction.keywords.slice(0, 5).join(' '); // Top 5 keywords
+      const keywordResult = await collection.query.nearText(keywordQuery, {
+        limit: config.candidates_per_seed_strategy,
+        filters: memoryFilter,
       });
+      for (const obj of keywordResult.objects ?? []) addCandidate(obj);
+      logger?.debug?.(`  nearText(keywords): ${keywordResult.objects?.length ?? 0} results`);
+    }
+
+    // nearText search for topics
+    if (extraction.topics.length > 0) {
+      const topicQuery = extraction.topics.join(' ');
+      const topicResult = await collection.query.nearText(topicQuery, {
+        limit: config.candidates_per_seed_strategy,
+        filters: memoryFilter,
+      });
+      for (const obj of topicResult.objects ?? []) addCandidate(obj);
+      logger?.debug?.(`  nearText(topics): ${topicResult.objects?.length ?? 0} results`);
+    }
+
+    // nearText search for themes
+    if (extraction.themes.length > 0) {
+      const themeQuery = extraction.themes.join(' ');
+      const themeResult = await collection.query.nearText(themeQuery, {
+        limit: config.candidates_per_seed_strategy,
+        filters: memoryFilter,
+      });
+      for (const obj of themeResult.objects ?? []) addCandidate(obj);
+      logger?.debug?.(`  nearText(themes): ${themeResult.objects?.length ?? 0} results`);
+    }
+
+    // nearText search for summary
+    if (extraction.summary) {
+      const summaryResult = await collection.query.nearText(extraction.summary, {
+        limit: config.candidates_per_seed_strategy,
+        filters: memoryFilter,
+      });
+      for (const obj of summaryResult.objects ?? []) addCandidate(obj);
+      logger?.debug?.(`  nearText(summary): ${summaryResult.objects?.length ?? 0} results`);
     }
   }
 
   const final = candidates.slice(0, count);
-  logger?.info?.('Candidate selection complete', {
+  logger?.info?.('Multi-strategy candidate selection complete', {
     requested: count,
     selected: final.length,
-    deduped_from: candidates.length,
-    sources: {
-      newest: newestResult.objects?.length ?? 0,
-      unprocessed: unprocessedResult.objects?.length ?? 0,
-      random: randomResult.objects?.length ?? 0,
+    unique_candidates: candidates.length,
+    strategies: {
+      newest: baseStrategyCount,
+      unprocessed: memoryCursor ? baseStrategyCount : 0,
+      random: baseStrategyCount,
+      llm_seeds: config.seed_count,
+      llm_queries_per_seed: 4,
     },
   });
   return final;

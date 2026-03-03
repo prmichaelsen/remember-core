@@ -115,11 +115,13 @@ export class RemService {
     const collectionState = await this.deps.stateStore.getCollectionState(collectionId);
     const memoryCursor = collectionState?.memory_cursor ?? '';
 
-    // 6. Select candidates
+    // 6. Select candidates using multi-strategy approach
     const candidates = await selectCandidates(
       collection,
       memoryCursor,
       this.config.max_candidates_per_run,
+      this.config,
+      this.deps.haikuClient,
       this.logger,
     );
     stats.memories_scanned = candidates.length;

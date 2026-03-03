@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.20.0] - 2026-03-03
+
+### Added
+- **Multi-strategy candidate selection** — "big soup of strategies" approach combining traditional and LLM-enhanced search:
+  - **Traditional strategies** (reduced from 1/3 to 1/6 each):
+    - Newest memories (sorted by created_at desc)
+    - Unprocessed memories (created_at > cursor)
+    - Random sampling (random offset)
+  - **LLM-enhanced semantic search** (NEW):
+    - Pick N random seed memories (configurable: `seed_count`, default 2)
+    - For each seed, use Haiku to extract: keywords, topics, themes, summary
+    - Perform separate nearText vector search for EACH extraction type (4 searches per seed)
+    - Finds semantically related memories across multiple abstraction levels
+  - New config: `seed_count` (default 2), `candidates_per_seed_strategy` (default 5)
+  - Architecture documented in rem.clustering.ts with detailed strategy breakdown
+
+### Changed
+- **HaikuClient interface extended** — added `extractFeatures()` method for memory feature extraction
+- **HaikuExtraction type** — defines structure for keywords, topics, themes, summary
+- **selectCandidates() signature** — now requires `config: RemConfig` and `haikuClient: HaikuClient` parameters
+- **Log message renamed** — "Candidate selection complete" → "Multi-strategy candidate selection complete" with expanded stats
+
+### Fixed
+- All tests updated for new selectCandidates() signature (441 tests passing)
+
 ## [0.19.14] - 2026-03-03
 
 ### Fixed

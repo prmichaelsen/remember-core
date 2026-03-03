@@ -10,6 +10,7 @@ import {
 } from './rem.clustering.js';
 import { RelationshipService, computeOverlap } from './relationship.service.js';
 import { createMockLogger } from '../testing/weaviate-mock.js';
+import { createMockHaikuClient } from './rem.haiku.js';
 
 describe('REM Clustering', () => {
   let collection: ReturnType<typeof createMockCollection>;
@@ -41,7 +42,7 @@ describe('REM Clustering', () => {
       await insertMemory('memory four', '2026-01-04T00:00:00Z');
       await insertMemory('memory five', '2026-01-05T00:00:00Z');
 
-      const candidates = await selectCandidates(collection as any, '', 6);
+      const candidates = await selectCandidates(collection as any, '', 6, DEFAULT_REM_CONFIG, createMockHaikuClient());
       expect(candidates.length).toBeGreaterThan(0);
       expect(candidates.length).toBeLessThanOrEqual(6);
 
@@ -54,7 +55,7 @@ describe('REM Clustering', () => {
       await insertMemory('old memory', '2025-01-01T00:00:00Z');
       await insertMemory('new memory', '2026-06-01T00:00:00Z');
 
-      const candidates = await selectCandidates(collection as any, '2026-01-01T00:00:00Z', 3);
+      const candidates = await selectCandidates(collection as any, '2026-01-01T00:00:00Z', 3, DEFAULT_REM_CONFIG, createMockHaikuClient());
       // Should still return candidates (from newest and random thirds)
       expect(candidates.length).toBeGreaterThan(0);
     });
@@ -65,7 +66,7 @@ describe('REM Clustering', () => {
         properties: { doc_type: 'relationship', content: 'not a memory', created_at: new Date().toISOString(), tags: [] },
       });
 
-      const candidates = await selectCandidates(collection as any, '', 10);
+      const candidates = await selectCandidates(collection as any, '', 10, DEFAULT_REM_CONFIG, createMockHaikuClient());
       for (const c of candidates) {
         // All should be memories, not relationships
         const stored = collection._store.get(c.id);

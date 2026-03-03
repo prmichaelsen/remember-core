@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api:*)",
+      "Bash(gh repo:*)",
+      "Bash(git add:*)",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(python3:*)",
+      "Bash(npx jest:*)",
+      "Bash(xargs basename -a)",
+      "Bash(wc:*)",
+      "Bash(npm run clean)",
+      "Bash(npm pack --dry-run)",
+      "Bash(npm pack)",
+      "Bash(npm install /home/prmichaelsen/.acp/projects/remember-core/prmichaelsen-remember-core-0.1.0.tgz)",
+      "Bash(npm install -D typescript)",
+      "Bash(npm run test:e2e)",
+      "Bash(git:*)",
+      "Bash(git check-ignore:*)",
+      "WebSearch",
+      "Bash(npx openapi-typescript:*)",
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "WebFetch(domain:weaviate.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:forum.weaviate.io)",
+      "WebFetch(domain:docs.weaviate.io)",
+      "Bash(node:*)",
+      "Bash(npm test:*)",
+      "Bash(test:*)",
+      "Bash(bash:*)",
+      "Bash(xargs cat:*)"
+    ]
+  }
+}

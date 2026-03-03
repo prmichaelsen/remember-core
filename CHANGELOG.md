@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.6] - 2026-03-03
+
+### Fixed
+- **CRITICAL**: Fix Weaviate sort parameter format in selectCandidates — use array format `[{ property, order }]` instead of object format `{ property, order }` to avoid "Cannot read properties of undefined (reading 'map')" error in Weaviate client v3.11.0
+
 ## [0.19.5] - 2026-03-03
 
 ### Added

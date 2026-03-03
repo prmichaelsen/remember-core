@@ -50,7 +50,7 @@ export async function selectCandidates(
   // 1/3 newest
   const newestResult = await collection.query.fetchObjects({
     filters: memoryFilter,
-    sort: { property: 'created_at', order: 'desc' },
+    sort: [{ property: 'created_at', order: 'desc' }],
     limit: third,
     returnProperties: returnProps,
   });

@@ -32,7 +32,10 @@
       "Bash(bash:*)",
       "Bash(xargs cat:*)",
       "Bash(./agent/scripts/acp.version-check-for-updates.sh:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(npm update:*)",
+      "Bash(npm version:*)",
+      "Bash(npm publish:*)"
     ]
   }
 }

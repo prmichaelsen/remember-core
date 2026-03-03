@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.24.0] - 2026-03-03
+
+### Added
+- **`searchByDensitySlice()`** — orchestrates parallel density-bucketed searches via MemoryService (Weaviate-direct), mirrors `searchByTimeSlice` but partitions by `relationship_count`
+  - `buildGradedDensitySlices()` — 9 fixed ranges for desc (most-connected first): `[50+, 20-49, 10-19, 7-9, 5-6, 3-4, 2, 1, 0]`
+  - `buildEvenDensitySlices()` — N equal-width integer buckets for asc (least-connected first)
+  - `DensitySlice`, `DensitySliceSearchOptions`, `DensitySliceSearchResult`, `DensitySliceMemoryService` interfaces
+  - `GRADED_DENSITY_BOUNDARIES`, `DENSITY_BUCKET_COUNT` constants
+  - 24 new tests across 2 suites (bucket math + orchestration)
+- `relationship_count_min` / `relationship_count_max` fields on `SearchFilters` (types + Weaviate filter builder)
+- OpenAPI: `POST /api/svc/v1/memories/by-density-slice` endpoint, `DensitySliceSearchInput`/`DensitySliceSearchResult` schemas, `relationship_count_min/max` on `SearchFilters`
+
+Version: 0.23.2 → 0.24.0
+
 ## [0.23.0] - 2026-03-03
 
 ### Added

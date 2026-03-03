@@ -102,6 +102,18 @@ function buildDocTypeFilters(
     );
   }
 
+  // Relationship count range
+  if (filters?.relationship_count_min !== undefined) {
+    filterList.push(
+      collection.filter.byProperty('relationship_count').greaterOrEqual(filters.relationship_count_min),
+    );
+  }
+  if (filters?.relationship_count_max !== undefined) {
+    filterList.push(
+      collection.filter.byProperty('relationship_count').lessOrEqual(filters.relationship_count_max),
+    );
+  }
+
   // Tags
   if (filters?.tags && filters.tags.length > 0) {
     filterList.push(

@@ -15,3 +15,18 @@ export {
   type TimeSliceMemoryService,
   searchByTimeSlice,
 } from './search-by-time-slice.js';
+
+export {
+  type DensitySlice,
+  GRADED_DENSITY_BOUNDARIES,
+  DENSITY_BUCKET_COUNT,
+  buildGradedDensitySlices,
+  buildEvenDensitySlices,
+} from './density-slices.js';
+
+export {
+  type DensitySliceSearchOptions,
+  type DensitySliceSearchResult,
+  type DensitySliceMemoryService,
+  searchByDensitySlice,
+} from './search-by-density-slice.js';

@@ -300,6 +300,35 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/by-density-slice:
+    post:
+      tags: [memories]
+      summary: Search memories with density ordering via parallel density-bucketed searches
+      description: |
+        Combines text search with relationship-density ordering. Partitions the
+        relationship_count axis into 9 buckets, runs parallel searches per bucket,
+        and concatenates results in density order. Desc uses graded buckets
+        (most-connected first); asc uses equal-width buckets spanning from 0 to
+        the max relationship_count in the collection.
+      operationId: memoriesByDensitySlice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DensitySliceSearchInput'
+      responses:
+        '200':
+          description: Density-ordered search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DensitySliceSearchResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   # ============================================================
   # Relationships
   # ============================================================
@@ -1015,6 +1044,14 @@ components:
           format: date-time
         has_relationships:
           type: boolean
+        relationship_count_min:
+          type: integer
+          minimum: 0
+          description: Inclusive lower bound on relationship_count
+        relationship_count_max:
+          type: integer
+          minimum: 0
+          description: Inclusive upper bound on relationship_count
 
     GhostSearchContext:
       type: object
@@ -1379,6 +1416,39 @@ components:
           $ref: '#/components/schemas/SearchFilters'
 
     TimeSliceSearchResult:
+      type: object
+      required: [memories, total]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+
+    DensitySliceSearchInput:
+      type: object
+      required: [query, direction]
+      properties:
+        query:
+          type: string
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        direction:
+          type: string
+          enum: [asc, desc]
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+
+    DensitySliceSearchResult:
       type: object
       required: [memories, total]
       properties:

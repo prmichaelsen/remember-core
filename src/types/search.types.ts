@@ -21,6 +21,8 @@ export interface SearchFilters {
   location_near?: GPSCoordinates;
   location_radius_meters?: number;
   has_relationships?: boolean;
+  relationship_count_min?: number;  // inclusive lower bound
+  relationship_count_max?: number;  // inclusive upper bound
 }
 
 /**

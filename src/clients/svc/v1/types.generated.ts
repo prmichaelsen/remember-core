@@ -181,6 +181,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/by-density-slice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search memories with density ordering via parallel density-bucketed searches
+         * @description Combines text search with relationship-density ordering. Partitions the
+         *     relationship_count axis into 9 buckets, runs parallel searches per bucket,
+         *     and concatenates results in density order. Desc uses graded buckets
+         *     (most-connected first); asc uses equal-width buckets spanning from 0 to
+         *     the max relationship_count in the collection.
+         */
+        post: operations["memoriesByDensitySlice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/relationships": {
         parameters: {
             query?: never;
@@ -532,6 +556,10 @@ export interface components {
             /** Format: date-time */
             date_to?: string;
             has_relationships?: boolean;
+            /** @description Inclusive lower bound on relationship_count */
+            relationship_count_min?: number;
+            /** @description Inclusive upper bound on relationship_count */
+            relationship_count_max?: number;
         };
         GhostSearchContext: {
             accessor_trust_level: number;
@@ -701,6 +729,22 @@ export interface components {
             filters?: components["schemas"]["SearchFilters"];
         };
         TimeSliceSearchResult: {
+            memories: {
+                [key: string]: unknown;
+            }[];
+            total: number;
+        };
+        DensitySliceSearchInput: {
+            query: string;
+            /** @default 10 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            /** @enum {string} */
+            direction: "asc" | "desc";
+            filters?: components["schemas"]["SearchFilters"];
+        };
+        DensitySliceSearchResult: {
             memories: {
                 [key: string]: unknown;
             }[];
@@ -1359,6 +1403,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TimeSliceSearchResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesByDensitySlice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DensitySliceSearchInput"];
+            };
+        };
+        responses: {
+            /** @description Density-ordered search results */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DensitySliceSearchResult"];
                 };
             };
             400: components["responses"]["ValidationError"];

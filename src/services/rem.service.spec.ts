@@ -280,12 +280,13 @@ describe('RemService', () => {
       advanced_from: expect.any(String),
       is_same_collection: expect.any(Boolean),
     }));
-    expect(loggerSpy.info).toHaveBeenCalledWith('Clusters formed', expect.any(Object));
+    expect(loggerSpy.info).toHaveBeenCalledWith('Starting cluster formation', expect.any(Object));
+    expect(loggerSpy.info).toHaveBeenCalledWith('Cluster formation complete', expect.any(Object));
     expect(loggerSpy.info).toHaveBeenCalledWith('REM cycle complete', expect.objectContaining({
       collection_id: 'Memory_users_frank',
       duration_seconds: expect.any(Number),
     }));
-    expect(loggerSpy.debug).toHaveBeenCalledWith('Memory candidates selected', expect.any(Object));
+    expect(loggerSpy.debug).toHaveBeenCalledWith('Candidates selected', expect.any(Object));
     expect(loggerSpy.debug).toHaveBeenCalledWith('Cursor advanced', expect.any(Object));
   });
 });

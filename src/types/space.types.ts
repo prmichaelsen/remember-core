@@ -86,24 +86,7 @@ export interface SpaceSearchResult extends Omit<SearchResult, 'memories' | 'rela
 export type SpaceId =
   | 'the_void'
   | 'profiles'
-  | 'spaces'
-  | 'ghosts'
-  | 'poems'
-  | 'recipes'
-  | 'quotes'
-  | 'dreams'
-  | 'travel'
-  | 'music'
-  | 'pets'
-  | 'books'
-  | 'funny'
-  | 'ideas'
-  | 'art'
-  | 'fitness'
-  | 'how_to'
-  | 'movies'
-  | 'nature'
-  | 'journal';
+  | 'ghosts';
 
 /**
  * Space display names mapped to IDs
@@ -111,24 +94,7 @@ export type SpaceId =
 export const SPACE_DISPLAY_NAMES: Record<SpaceId, string> = {
   the_void: 'The Void',
   profiles: 'Profiles',
-  spaces: 'Spaces',
   ghosts: 'Ghosts',
-  poems: 'Poems',
-  recipes: 'Recipes',
-  quotes: 'Quotes',
-  dreams: 'Dreams',
-  travel: 'Travel',
-  music: 'Music',
-  pets: 'Pets',
-  books: 'Books',
-  funny: 'Funny',
-  ideas: 'Ideas',
-  art: 'Art',
-  fitness: 'Fitness',
-  how_to: 'How To',
-  movies: 'Movies',
-  nature: 'Nature',
-  journal: 'Journal',
 };
 
 /**
@@ -137,24 +103,7 @@ export const SPACE_DISPLAY_NAMES: Record<SpaceId, string> = {
 export const SUPPORTED_SPACES: SpaceId[] = [
   'the_void',
   'profiles',
-  'spaces',
   'ghosts',
-  'poems',
-  'recipes',
-  'quotes',
-  'dreams',
-  'travel',
-  'music',
-  'pets',
-  'books',
-  'funny',
-  'ideas',
-  'art',
-  'fitness',
-  'how_to',
-  'movies',
-  'nature',
-  'journal',
 ];
 
 /**
@@ -175,22 +124,5 @@ export const SPACE_CONTENT_TYPE_RESTRICTIONS: Partial<Record<SpaceId, string>> =
 export const SPACE_DESCRIPTIONS: Record<SpaceId, string> = {
   the_void: 'The default public space. Share anything — thoughts, notes, ideas, and everything in between.',
   profiles: 'User profiles. Discover people and learn about members of the community.',
-  spaces: 'A directory of all available spaces. Browse here to find spaces to explore.',
   ghosts: 'Ghost personas. Discover AI-mediated personas for cross-user interactions.',
-  poems: 'Poetry and verse. Share and discover poems, haiku, sonnets, and free verse.',
-  recipes: 'Cooking recipes and meal ideas. Share your favorite dishes and discover new ones.',
-  quotes: 'Memorable quotes and excerpts. Collect and share words that inspire.',
-  dreams: 'Dream journals and nocturnal adventures. Share and explore the world of dreams.',
-  travel: 'Travel memories, destinations, and tips. Discover places through others\' experiences.',
-  music: 'Songs, playlists, albums, and musical discoveries. Share what you\'re listening to.',
-  pets: 'Pets and animals. Share stories, photos, and memories of your furry (or scaly) friends.',
-  books: 'Books, reviews, passages, and reading recommendations.',
-  funny: 'Funny moments, jokes, and things that made you laugh.',
-  ideas: 'Brainstorms, shower thoughts, inventions, and creative sparks.',
-  art: 'Art, sketches, visual inspiration, and creative expression.',
-  fitness: 'Workouts, fitness goals, routines, and health journeys.',
-  how_to: 'How-to guides, tips, tutorials, and practical knowledge.',
-  movies: 'Movies, shows, reviews, and screen recommendations.',
-  nature: 'Nature, outdoors, wildlife, and the natural world.',
-  journal: 'Journal entries, reflections, and personal writing.',
 };

@@ -64,17 +64,17 @@ export async function selectCandidates(
   logger?.debug?.('Fetching unprocessed memories', { cursor: memoryCursor || '(none)' });
   let unprocessedResult = { objects: [] as any[] };
   if (memoryCursor) {
-    const unprocessedFilter = collection.filter.byProperty('created_at').greaterThan(memoryCursor);
-    const combined = collection.filter.byProperty('doc_type').equal('memory');
+    // Combine both filters: doc_type='memory' AND created_at > cursor
+    const unprocessedFilter = collection.filter
+      .byProperty('doc_type').equal('memory')
+      .and()
+      .byProperty('created_at').greaterThan(memoryCursor);
+
     unprocessedResult = await collection.query.fetchObjects({
-      filters: combined,
+      filters: unprocessedFilter,
       limit: third,
       returnProperties: returnProps,
     });
-    // Further filter by cursor in case the mock doesn't support combined
-    unprocessedResult.objects = unprocessedResult.objects.filter(
-      (o: any) => o.properties.created_at > memoryCursor,
-    );
   }
 
   // 1/3 random: use offset with a pseudo-random skip

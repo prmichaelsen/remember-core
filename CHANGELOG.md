@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.11] - 2026-03-03
+
+### Fixed
+- **CRITICAL**: Fix candidate selection bug in `selectCandidates()` — properly combine doc_type and created_at filters for unprocessed query. Previously, the unprocessed query ignored the cursor filter and fetched duplicate memories, causing massive deduplication (e.g., requesting 500 candidates but only getting ~20 unique ones). Now properly filters for memories created after cursor, ensuring batch size is respected.
+
 ## [0.19.10] - 2026-03-03
 
 ### Added

@@ -132,6 +132,7 @@
   "license": "MIT",
   "dependencies": {
     "@prmichaelsen/firebase-admin-sdk-v8": "^2.5.1",
+    "uuid": "^11.0.0",
     "weaviate-client": "^3.11.0"
   },
   "peerDependencies": {

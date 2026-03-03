@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.22.1
+  version: 0.22.2
   started: 2026-02-27
   status: in_progress
   current_milestone: M11
@@ -157,9 +157,9 @@ milestones:
   - id: M11
     name: Basic Sort Modes (MVP)
     status: in_progress
-    progress: 40
+    progress: 60
     estimated_weeks: 1
-    tasks_completed: 2
+    tasks_completed: 3
     tasks_total: 5
     started: 2026-03-03
     completed: null
@@ -813,14 +813,15 @@ tasks:
         All 449 tests passing.
     - id: task-38
       name: Backfill relationship_count for existing memories
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-11-basic-sort-modes/task-38-backfill-relationship-count.md
       estimated_hours: 1
-      completed_date: null
+      completed_date: 2026-03-03
       dependencies: [task-37]
       notes: |
         Migration script to populate relationship_count for all existing memories across
         all user collections. Handles large collections (10k+ memories) with batch processing.
+        Uses Firestore collection registry. Idempotent, graceful error handling, progress logging.
     - id: task-39
       name: Update RelationshipService to maintain relationship_count
       status: not_started
@@ -873,6 +874,21 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-03-03
+    description: |
+      Task 38 — Backfill relationship_count for existing memories
+    items:
+      - "Created backfill migration script (scripts/migrations/backfill-relationship-count.ts)"
+      - "Uses Firestore collection registry for efficient collection enumeration"
+      - "Batch processing (100 memories per batch) for scalability"
+      - "Idempotent design - safe to re-run multiple times"
+      - "Graceful error handling - continues on individual failures"
+      - "Progress logging every 100 memories"
+      - "Added npm script: migrate:backfill-relationship-count"
+      - "Added relationship_count to ALL_MEMORY_PROPERTIES fetch list"
+      - "Created comprehensive migrations README with best practices"
+      - "All 449 tests passing (31 suites)"
+      - "M11 Basic Sort Modes (MVP): 3/5 tasks complete (60%)"
   - date: 2026-03-03
     description: |
       Task 37 — Add relationship_count property to Memory schema

@@ -1,6 +1,6 @@
 {
   "name": "@prmichaelsen/remember-core",
-  "version": "0.22.1",
+  "version": "0.22.2",
   "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
   "type": "module",
   "main": "dist/index.js",
@@ -121,6 +121,7 @@
     "generate:types": "npm run generate:types:svc && npm run generate:types:app",
     "duplicates:find": "tsx scripts/find-duplicates.ts",
     "duplicates:process": "tsx scripts/deduplicate.ts",
+    "migrate:backfill-relationship-count": "node --import tsx/esm scripts/migrations/backfill-relationship-count.ts",
     "prepublishOnly": "npm run clean && npm run build && npm run test"
   },
   "keywords": [

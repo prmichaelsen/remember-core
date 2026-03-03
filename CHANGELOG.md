@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.22.2] - 2026-03-03
+
+### Added
+- **Backfill migration script** - scripts/migrations/backfill-relationship-count.ts
+  - Populates relationship_count for all existing memories across all user collections
+  - Uses Firestore collection registry for O(1) collection enumeration
+  - Batch processing (100 memories per batch) for large collections
+  - Idempotent (safe to re-run)
+  - Progress logging (every 100 memories)
+  - Graceful error handling (continues on individual failures)
+- **Migration documentation** - scripts/migrations/README.md
+  - Usage instructions and requirements
+  - Common issues and solutions
+  - Migration best practices checklist
+- **npm script** - `migrate:backfill-relationship-count` for running the migration
+- **ALL_MEMORY_PROPERTIES** - Added relationship_count to property fetch list
+
+Completed Task 38: Backfill relationship_count for existing memories
+Milestone: M11 - Basic Sort Modes (MVP) (3/5 tasks, 60%)
+Version: 0.22.1 → 0.22.2
+
 ## [0.22.1] - 2026-03-03
 
 ### Added

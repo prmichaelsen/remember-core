@@ -1,6 +1,6 @@
 {
   "name": "@prmichaelsen/remember-core",
-  "version": "0.22.9",
+  "version": "0.23.0",
   "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
   "type": "module",
   "main": "dist/index.js",
@@ -61,6 +61,10 @@
     "./clients/svc/v1": {
       "types": "./dist/clients/svc/v1/index.d.ts",
       "import": "./dist/clients/svc/v1/index.js"
+    },
+    "./search": {
+      "types": "./dist/search/index.d.ts",
+      "import": "./dist/search/index.js"
     }
   },
   "typesVersions": {
@@ -103,6 +107,9 @@
       ],
       "clients/svc/v1": [
         "dist/clients/svc/v1/index.d.ts"
+      ],
+      "search": [
+        "dist/search/index.d.ts"
       ]
     }
   },
@@ -151,10 +158,11 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.19.13",
     "@types/uuid": "^10.0.0",
+    "dotenv": "^17.3.1",
     "jest": "^30.2.0",
     "openapi-typescript": "^7.13.0",
     "ts-jest": "^29.4.6",
-    "tsx": "^4.19.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }

@@ -3,7 +3,7 @@
 **Goal**: Add a `searchByTimeSlice` utility that combines text search with chronological ordering via parallel time-bucketed searches
 **Duration**: 1-2 days
 **Dependencies**: M11 (byTime sort mode must exist for asc oldest-memory lookup)
-**Status**: Not Started
+**Status**: Complete
 
 ---
 

@@ -51,6 +51,7 @@ const results = await memoryService.search({
 | `@prmichaelsen/remember-core/app` | App client — use-case REST wrapper (profiles, ghost) |
 | `@prmichaelsen/remember-core/rem` | REM engine — background relationship discovery |
 | `@prmichaelsen/remember-core/clients/svc/v1` | Svc client — 1:1 REST route mirror (29 methods) |
+| `@prmichaelsen/remember-core/search` | Time-slice search — chronological text search via parallel bucketed queries |
 
 ## Core Services
 
@@ -122,7 +123,7 @@ const ghost = await client.ghost.searchAsGhost('user1', { owner_user_id: 'user2'
 ## Testing
 
 ```bash
-npm test           # Unit tests (431 tests)
+npm test           # Unit tests (484 tests)
 npm run test:e2e   # Integration tests (22 tests)
 npm run typecheck  # Type checking
 npm run build      # TypeScript compilation

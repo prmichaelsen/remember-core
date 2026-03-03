@@ -174,12 +174,13 @@ milestones:
 
   - id: M12
     name: Time-Slice Search
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 0.5
-    tasks_completed: 0
+    tasks_completed: 3
     tasks_total: 3
-    started: null
+    started: 2026-03-03
+    completed: 2026-03-03
     notes: |
       Consumer-side utility combining text search with chronological ordering
       via parallel time-bucketed searches. New src/search/ module with
@@ -875,7 +876,7 @@ tasks:
   milestone_12:
     - id: task-59
       name: Time-slice bucket builders
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-12-time-slice-search/task-59-time-slice-bucket-builders.md
       estimated_hours: 1
       dependencies: []
@@ -884,7 +885,7 @@ tasks:
         buildEvenSlices (N equal-width buckets for asc). Pure functions, unit tests.
     - id: task-60
       name: searchByTimeSlice orchestration function
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-12-time-slice-search/task-60-search-by-time-slice.md
       estimated_hours: 2
       dependencies: [task-59]
@@ -893,7 +894,7 @@ tasks:
         for graded vs even bucketing. Parallel Promise.all searches, aggregation.
     - id: task-61
       name: Subpath export and documentation
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-12-time-slice-search/task-61-subpath-export-docs.md
       estimated_hours: 1
       dependencies: [task-60]

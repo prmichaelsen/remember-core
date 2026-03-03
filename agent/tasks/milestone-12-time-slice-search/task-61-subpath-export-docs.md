@@ -1,7 +1,7 @@
 # Task 61: Subpath Export and Documentation
 
 **Milestone**: M12 — Time-Slice Search
-**Status**: Not Started
+**Status**: Complete
 **Estimated Hours**: 1
 **Dependencies**: [Task 60](./task-60-search-by-time-slice.md)
 

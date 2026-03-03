@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.22.5] - 2026-03-03
+
+### Fixed
+- Export TimeModeRequest, TimeModeResult, DensityModeRequest, and DensityModeResult types from services barrel
+- Enables remember-rest-service to import and use sort mode types
+
+Version: 0.22.4 → 0.22.5
+
 ## [0.22.4] - 2026-03-03
 
 ### Added

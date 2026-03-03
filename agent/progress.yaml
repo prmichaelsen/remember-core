@@ -1,9 +1,9 @@
 project:
   name: remember-core
-  version: 0.17.0
+  version: 0.22.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M10
+  current_milestone: M11
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -153,6 +153,24 @@ milestones:
       Schema: source field on Relationship type.
       RemService with runCycle() — pure BL, thin Cloud Run wrapper.
       See: agent/milestones/milestone-10-rem-background-relationships.md
+
+  - id: M11
+    name: Basic Sort Modes (MVP)
+    status: in_progress
+    progress: 20
+    estimated_weeks: 1
+    tasks_completed: 1
+    tasks_total: 5
+    started: 2026-03-03
+    completed: null
+    notes: |
+      Implement basic server-side sort modes (Smart, Time, Density) using
+      existing Weaviate capabilities. Phase 1 MVP from memory-sorting-algorithms
+      design doc. Smart mode already works via hybrid search. Time mode uses
+      native Weaviate sort by created_at. Density mode requires relationship_count
+      property (denormalized from relationships.length for query performance).
+      See: agent/milestones/milestone-11-basic-sort-modes.md
+      See: agent/design/memory-sorting-algorithms.md
 
 tasks:
   milestone_1:
@@ -770,6 +788,58 @@ tasks:
       completed_date: 2026-03-02
       dependencies: [task-54]
 
+  milestone_11:
+    - id: task-36
+      name: Add byTime sort mode to MemoryService
+      status: completed
+      file: agent/tasks/milestone-11-basic-sort-modes/task-36-add-bytime-sort-mode.md
+      estimated_hours: 0.5
+      completed_date: 2026-03-03
+      dependencies: []
+      notes: |
+        Server-side chronological sorting using Weaviate's native sort by created_at.
+        Supports ascending/descending. Completes Time mode from Phase 1 MVP.
+    - id: task-37
+      name: Add relationship_count property to Memory schema
+      status: not_started
+      file: agent/tasks/milestone-11-basic-sort-modes/task-37-add-relationship-count-property.md
+      estimated_hours: 0.25
+      completed_date: null
+      dependencies: []
+      notes: |
+        Denormalized property mirroring relationships.length for efficient density sorting.
+        Required because Weaviate cannot sort by array length natively.
+    - id: task-38
+      name: Backfill relationship_count for existing memories
+      status: not_started
+      file: agent/tasks/milestone-11-basic-sort-modes/task-38-backfill-relationship-count.md
+      estimated_hours: 1
+      completed_date: null
+      dependencies: [task-37]
+      notes: |
+        Migration script to populate relationship_count for all existing memories across
+        all user collections. Handles large collections (10k+ memories) with batch processing.
+    - id: task-39
+      name: Update RelationshipService to maintain relationship_count
+      status: not_started
+      file: agent/tasks/milestone-11-basic-sort-modes/task-39-maintain-relationship-count.md
+      estimated_hours: 1
+      completed_date: null
+      dependencies: [task-37]
+      notes: |
+        Increment/decrement relationship_count when relationships are created/deleted.
+        Keeps denormalized property in sync with relationships array.
+    - id: task-40
+      name: Add byDensity sort mode to MemoryService
+      status: not_started
+      file: agent/tasks/milestone-11-basic-sort-modes/task-40-add-bydensity-sort-mode.md
+      estimated_hours: 0.5
+      completed_date: null
+      dependencies: [task-37, task-38, task-39]
+      notes: |
+        Sort by relationship_count DESC (highest first). Enables users to discover
+        highly-connected "hub" memories. Completes Density mode from Phase 1 MVP.
+
   unassigned:
     - id: task-56
       name: Replace Weaviate listAll() with Firestore collection registry
@@ -801,6 +871,18 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-03-03
+    description: |
+      Task 36 — Add byTime sort mode to MemoryService (M11 begins)
+    items:
+      - "Added MemoryService.byTime() method with server-side chronological sorting"
+      - "Added TimeModeRequest and TimeModeResult interfaces"
+      - "Supports ascending/descending sort by created_at property"
+      - "Uses Weaviate native sort parameter for optimal performance"
+      - "Added sort support to Weaviate mock (fetchObjects with sort parameter)"
+      - "Added 4 comprehensive test cases covering sort direction, pagination, filters"
+      - "39 passing tests in memory.service.spec.ts (4 new for byTime)"
+      - "M11 Basic Sort Modes (MVP): 1/5 tasks complete (20%)"
   - date: 2026-03-02
     description: |
       M10 REM Background Relationships — COMPLETE (8 tasks)

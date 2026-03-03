@@ -106,6 +106,22 @@ export interface QueryMemoryResult {
   total: number;
 }
 
+export interface TimeModeRequest {
+  limit?: number;
+  offset?: number;
+  direction?: 'asc' | 'desc';
+  filters?: SearchFilters;
+  deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
+}
+
+export interface TimeModeResult {
+  memories: Record<string, unknown>[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 export interface UpdateMemoryInput {
   memory_id: string;
   content?: string;
@@ -290,6 +306,70 @@ export class MemoryService {
       memories,
       relationships: includeRelationships ? relationships : undefined,
       total: memories.length + relationships.length,
+      offset,
+      limit,
+    };
+  }
+
+  // ── By Time (chronological sort) ───────────────────────────────────
+
+  async byTime(input: TimeModeRequest): Promise<TimeModeResult> {
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const direction = input.direction ?? 'desc';
+
+    // Build filters
+    const memoryFilters = buildMemoryOnlyFilters(this.collection, input.filters);
+
+    // Ghost/trust filtering
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+
+    const executeQuery = async (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+
+      const combinedFilters = combineFiltersWithAnd(
+        [deletedFilter, memoryFilters, ...ghostFilters].filter((f) => f !== null),
+      );
+
+      const queryOptions: any = {
+        limit: limit + offset,
+        sort: [
+          {
+            property: 'created_at',
+            order: direction,
+          },
+        ],
+      };
+
+      if (combinedFilters) {
+        queryOptions.filters = combinedFilters;
+      }
+
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    const results = await this.retryWithoutDeletedFilter(executeQuery);
+    const paginated = results.objects.slice(offset);
+
+    const memories: Record<string, unknown>[] = [];
+    for (const obj of paginated) {
+      const doc = { id: obj.uuid, ...obj.properties };
+      if (doc.doc_type === 'memory') {
+        memories.push(doc);
+      }
+    }
+
+    return {
+      memories,
+      total: memories.length,
       offset,
       limit,
     };

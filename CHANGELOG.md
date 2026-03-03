@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.22.0] - 2026-03-03
+
+### Added
+- **MemoryService.byTime()** - Server-side chronological sorting by created_at
+  - Sorts memories by creation date (ascending or descending)
+  - Uses Weaviate's native sort for optimal performance
+  - Supports pagination (limit/offset) and filters
+  - Includes 4 comprehensive test cases
+- **TimeModeRequest and TimeModeResult** interfaces for chronological sorting API
+- **Weaviate mock sort support** - fetchObjects now handles sort parameter for testing
+
+### Changed
+- Updated Weaviate mock to support sort parameter in fetchObjects method
+
+Completed Task 36: Add byTime sort mode to MemoryService
+Milestone: M11 - Basic Sort Modes (MVP) (1/5 tasks, 20%)
+Version: 0.21.1 → 0.22.0
+
 ## [0.21.1] - 2026-03-03
 
 ### Changed

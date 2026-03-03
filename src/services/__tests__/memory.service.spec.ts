@@ -406,4 +406,69 @@ describe('MemoryService', () => {
       expect(result.similar_memories.length).toBeGreaterThanOrEqual(1);
     });
   });
+
+  describe('byTime', () => {
+    beforeEach(async () => {
+      // Create memories with different timestamps
+      await service.create({ content: 'Old memory' }); // created first
+      await new Promise(resolve => setTimeout(resolve, 10));
+      await service.create({ content: 'Middle memory' });
+      await new Promise(resolve => setTimeout(resolve, 10));
+      await service.create({ content: 'Recent memory' }); // created last
+    });
+
+    it('sorts memories by created_at descending by default', async () => {
+      const result = await service.byTime({ limit: 10 });
+
+      expect(result.memories.length).toBe(3);
+      // Verify descending order
+      for (let i = 0; i < result.memories.length - 1; i++) {
+        const current = new Date(result.memories[i].created_at as string);
+        const next = new Date(result.memories[i + 1].created_at as string);
+        expect(current.getTime()).toBeGreaterThanOrEqual(next.getTime());
+      }
+    });
+
+    it('sorts memories by created_at ascending when specified', async () => {
+      const result = await service.byTime({
+        limit: 10,
+        direction: 'asc',
+      });
+
+      expect(result.memories.length).toBe(3);
+      // Verify ascending order
+      for (let i = 0; i < result.memories.length - 1; i++) {
+        const current = new Date(result.memories[i].created_at as string);
+        const next = new Date(result.memories[i + 1].created_at as string);
+        expect(current.getTime()).toBeLessThanOrEqual(next.getTime());
+      }
+    });
+
+    it('respects pagination', async () => {
+      const page1 = await service.byTime({ limit: 2, offset: 0 });
+      const page2 = await service.byTime({ limit: 2, offset: 2 });
+
+      expect(page1.memories.length).toBe(2);
+      expect(page2.memories.length).toBe(1);
+      expect(page1.memories[0].id).not.toBe(page2.memories[0].id);
+    });
+
+    it('applies filters correctly', async () => {
+      await service.create({ content: 'Important note', type: 'note', tags: ['important'] });
+
+      const result = await service.byTime({
+        limit: 10,
+        filters: {
+          types: ['note'],
+          tags: ['important'],
+        },
+      });
+
+      expect(result.memories.length).toBeGreaterThanOrEqual(1);
+      for (const memory of result.memories) {
+        expect(memory.content_type).toBe('note');
+        expect((memory.tags as string[]).includes('important')).toBe(true);
+      }
+    });
+  });
 });

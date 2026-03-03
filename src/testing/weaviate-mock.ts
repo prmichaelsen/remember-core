@@ -56,11 +56,28 @@ export function createMockCollection() {
       },
 
       async fetchObjects(
-        opts?: { filters?: any; limit?: number },
+        opts?: { filters?: any; limit?: number; sort?: Array<{ property: string; order: 'asc' | 'desc' }> },
       ): Promise<{ objects: MockWeaviateObject[] }> {
         let objects = Array.from(store.values());
         if (opts?.filters) {
           objects = applyFilter(objects, opts.filters);
+        }
+        if (opts?.sort && opts.sort.length > 0) {
+          const sortConfig = opts.sort[0]; // Only handle first sort for simplicity
+          objects.sort((a, b) => {
+            const aVal = a.properties[sortConfig.property];
+            const bVal = b.properties[sortConfig.property];
+
+            // Handle string comparisons (like ISO dates)
+            let comparison = 0;
+            if (typeof aVal === 'string' && typeof bVal === 'string') {
+              comparison = aVal.localeCompare(bVal);
+            } else if (typeof aVal === 'number' && typeof bVal === 'number') {
+              comparison = aVal - bVal;
+            }
+
+            return sortConfig.order === 'desc' ? -comparison : comparison;
+          });
         }
         if (opts?.limit) {
           objects = objects.slice(0, opts.limit);

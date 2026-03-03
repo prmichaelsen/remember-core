@@ -20,6 +20,7 @@ describe('RelationshipService', () => {
         doc_type: 'memory',
         content: 'test memory',
         relationship_ids: [],
+        relationship_count: 0,
         deleted_at: null,
         ...overrides,
       },
@@ -329,6 +330,89 @@ describe('RelationshipService', () => {
       const result = await service.findByMemoryIds({ memory_ids: [] });
       expect(result.total).toBe(0);
       expect(result.relationships).toEqual([]);
+    });
+  });
+
+  describe('relationship_count maintenance', () => {
+    it('increments relationship_count when creating relationship', async () => {
+      const mem1 = await insertMemory({ relationship_count: 0 });
+      const mem2 = await insertMemory({ relationship_count: 0 });
+
+      await service.create({
+        memory_ids: [mem1, mem2],
+        relationship_type: 'related',
+        observation: 'Test relationship',
+      });
+
+      const updated1 = collection._store.get(mem1);
+      const updated2 = collection._store.get(mem2);
+
+      expect(updated1!.properties.relationship_count).toBe(1);
+      expect(updated2!.properties.relationship_count).toBe(1);
+    });
+
+    it('decrements relationship_count when deleting relationship', async () => {
+      const mem1 = await insertMemory({ relationship_count: 2 });
+      const mem2 = await insertMemory({ relationship_count: 3 });
+
+      const { relationship_id } = await service.create({
+        memory_ids: [mem1, mem2],
+        relationship_type: 'related',
+        observation: 'Test',
+      });
+
+      // After creation, counts should be incremented
+      expect(collection._store.get(mem1)!.properties.relationship_count).toBe(3);
+      expect(collection._store.get(mem2)!.properties.relationship_count).toBe(4);
+
+      await service.delete({ relationship_id });
+
+      // After deletion, counts should be back to original
+      const updated1 = collection._store.get(mem1);
+      const updated2 = collection._store.get(mem2);
+
+      expect(updated1!.properties.relationship_count).toBe(2);
+      expect(updated2!.properties.relationship_count).toBe(3);
+    });
+
+    it('never goes negative', async () => {
+      const mem1 = await insertMemory({ relationship_count: 0 });
+      const mem2 = await insertMemory({ relationship_count: 1 });
+
+      const { relationship_id } = await service.create({
+        memory_ids: [mem1, mem2],
+        relationship_type: 'related',
+        observation: 'Test',
+      });
+
+      // After creation: mem1 = 1, mem2 = 2
+      expect(collection._store.get(mem1)!.properties.relationship_count).toBe(1);
+      expect(collection._store.get(mem2)!.properties.relationship_count).toBe(2);
+
+      await service.delete({ relationship_id });
+
+      // After deletion: mem1 = 0 (floor at 0), mem2 = 1
+      const updated1 = collection._store.get(mem1);
+      const updated2 = collection._store.get(mem2);
+
+      expect(updated1!.properties.relationship_count).toBe(0); // Floor at 0, not negative
+      expect(updated2!.properties.relationship_count).toBe(1);
+    });
+
+    it('handles multiple memories in one relationship', async () => {
+      const mem1 = await insertMemory({ relationship_count: 0 });
+      const mem2 = await insertMemory({ relationship_count: 0 });
+      const mem3 = await insertMemory({ relationship_count: 0 });
+
+      await service.create({
+        memory_ids: [mem1, mem2, mem3],
+        relationship_type: 'related',
+        observation: 'Test 3-way relationship',
+      });
+
+      expect(collection._store.get(mem1)!.properties.relationship_count).toBe(1);
+      expect(collection._store.get(mem2)!.properties.relationship_count).toBe(1);
+      expect(collection._store.get(mem3)!.properties.relationship_count).toBe(1);
     });
   });
 

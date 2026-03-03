@@ -33,7 +33,7 @@ export const TRUST_THRESHOLDS = {
  * @returns Weaviate filter object
  */
 export function buildTrustFilter(collection: any, accessorTrustLevel: number): any {
-  return collection.filter.byProperty('trust_score').lessThanOrEqual(accessorTrustLevel);
+  return collection.filter.byProperty('trust_score').lessOrEqual(accessorTrustLevel);
 }
 
 // ─── Prompt-Level Enforcement ──────────────────────────────────────────────

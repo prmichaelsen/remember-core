@@ -65,24 +65,24 @@ function buildDocTypeFilters(
   // Weight range
   if (filters?.weight_min !== undefined) {
     filterList.push(
-      collection.filter.byProperty('weight').greaterThanOrEqual(filters.weight_min),
+      collection.filter.byProperty('weight').greaterOrEqual(filters.weight_min),
     );
   }
   if (filters?.weight_max !== undefined) {
     filterList.push(
-      collection.filter.byProperty('weight').lessThanOrEqual(filters.weight_max),
+      collection.filter.byProperty('weight').lessOrEqual(filters.weight_max),
     );
   }
 
   // Trust range
   if (filters?.trust_min !== undefined) {
     filterList.push(
-      collection.filter.byProperty('trust_score').greaterThanOrEqual(filters.trust_min),
+      collection.filter.byProperty('trust_score').greaterOrEqual(filters.trust_min),
     );
   }
   if (filters?.trust_max !== undefined) {
     filterList.push(
-      collection.filter.byProperty('trust_score').lessThanOrEqual(filters.trust_max),
+      collection.filter.byProperty('trust_score').lessOrEqual(filters.trust_max),
     );
   }
 
@@ -91,14 +91,14 @@ function buildDocTypeFilters(
     filterList.push(
       collection.filter
         .byProperty('created_at')
-        .greaterThanOrEqual(new Date(filters.date_from)),
+        .greaterOrEqual(new Date(filters.date_from)),
     );
   }
   if (filters?.date_to) {
     filterList.push(
       collection.filter
         .byProperty('created_at')
-        .lessThanOrEqual(new Date(filters.date_to)),
+        .lessOrEqual(new Date(filters.date_to)),
     );
   }
 

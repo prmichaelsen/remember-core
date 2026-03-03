@@ -113,6 +113,43 @@ export class RelationshipService {
     private logger: Logger,
   ) {}
 
+  // ── Helper Methods ──────────────────────────────────────────────────
+
+  /**
+   * Update relationship_count for a memory by a delta (+1 or -1).
+   * Ensures count never goes negative.
+   */
+  private async updateRelationshipCount(
+    memoryId: string,
+    delta: number,
+  ): Promise<void> {
+    try {
+      const memory = await this.collection.query.fetchObjectById(memoryId, {
+        returnProperties: ['relationship_count'],
+      });
+
+      if (!memory) {
+        this.logger.warn(`Memory ${memoryId} not found, skipping relationship_count update`);
+        return;
+      }
+
+      const currentCount = (memory.properties.relationship_count as number) || 0;
+      const newCount = Math.max(0, currentCount + delta); // Floor at 0
+
+      await this.collection.data.update({
+        id: memoryId,
+        properties: {
+          relationship_count: newCount,
+        },
+      });
+
+      this.logger.debug(`Updated relationship_count for ${memoryId}: ${currentCount} -> ${newCount}`);
+    } catch (error: any) {
+      this.logger.error(`Failed to update relationship_count for ${memoryId}:`, { error: error?.message || String(error) });
+      // Don't throw - this is a denormalized field, not critical for relationship creation
+    }
+  }
+
   // ── Create ──────────────────────────────────────────────────────────
 
   async create(input: CreateRelationshipInput): Promise<CreateRelationshipResult> {
@@ -156,6 +193,11 @@ export class RelationshipService {
     };
 
     const relationshipId = await this.collection.data.insert({ properties });
+
+    // Update relationship_count for all memories
+    await Promise.all(
+      input.memory_ids.map((memoryId) => this.updateRelationshipCount(memoryId, +1)),
+    );
 
     // Update connected memories with bidirectional reference
     await Promise.all(
@@ -317,6 +359,11 @@ export class RelationshipService {
 
     const memoryIds = (existing.properties.related_memory_ids as string[]) || [];
     let memoriesUpdated = 0;
+
+    // Update relationship_count for all memories
+    await Promise.all(
+      memoryIds.map((memoryId) => this.updateRelationshipCount(memoryId, -1)),
+    );
 
     // Remove relationship reference from connected memories
     await Promise.all(

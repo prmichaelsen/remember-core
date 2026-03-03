@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.3] - 2026-03-02
+
+### Fixed
+- uuid added to dependencies
+- Remove `merge: true` in GhostService (dependency bug)
+
 ## [0.19.2] - 2026-03-02
 
 ### Changed

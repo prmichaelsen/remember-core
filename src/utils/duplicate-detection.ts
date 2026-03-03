@@ -49,7 +49,7 @@ export interface DuplicateDetectionOptions {
 // ─── Normalization ───────────────────────────────────────────────────────
 
 function normalizeContent(content: string): string {
-  return content.trim().toLowerCase().replace(/\s+/g, ' ');
+  return (content || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 // ─── Similarity Metrics ──────────────────────────────────────────────────
@@ -58,7 +58,7 @@ function normalizeContent(content: string): string {
  * Cosine similarity between two embedding vectors.
  */
 export function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length) return 0;
+  if (!a || !b || a.length !== b.length) return 0;
 
   let dotProduct = 0;
   let normA = 0;
@@ -78,6 +78,10 @@ export function cosineSimilarity(a: number[], b: number[]): number {
  * Levenshtein distance between two strings.
  */
 function levenshteinDistance(a: string, b: string): number {
+  if (!a && !b) return 0;
+  if (!a) return b.length;
+  if (!b) return a.length;
+
   const matrix: number[][] = [];
 
   for (let i = 0; i <= b.length; i++) {
@@ -109,6 +113,8 @@ function levenshteinDistance(a: string, b: string): number {
  * Fuzzy string similarity ratio (0-1) using Levenshtein distance.
  */
 export function fuzzySimilarity(a: string, b: string): number {
+  if (!a && !b) return 1.0;
+  if (!a || !b) return 0;
   const maxLen = Math.max(a.length, b.length);
   if (maxLen === 0) return 1.0;
   const distance = levenshteinDistance(a, b);
@@ -121,6 +127,7 @@ export function fuzzySimilarity(a: string, b: string): number {
  * Check if two memories are exact duplicates.
  */
 export function isExactDuplicate(m1: MemoryWithEmbedding, m2: MemoryWithEmbedding): boolean {
+  if (!m1.content || !m2.content) return false;
   return m1.content === m2.content;
 }
 
@@ -128,6 +135,7 @@ export function isExactDuplicate(m1: MemoryWithEmbedding, m2: MemoryWithEmbeddin
  * Check if two memories are normalized duplicates (ignoring whitespace, case).
  */
 export function isNormalizedDuplicate(m1: MemoryWithEmbedding, m2: MemoryWithEmbedding): boolean {
+  if (!m1.content || !m2.content) return false;
   return normalizeContent(m1.content) === normalizeContent(m2.content);
 }
 
@@ -151,6 +159,7 @@ export function isFuzzyDuplicate(
   m2: MemoryWithEmbedding,
   threshold = 0.90
 ): boolean {
+  if (!m1.content || !m2.content) return false;
   return fuzzySimilarity(m1.content, m2.content) >= threshold;
 }
 
@@ -178,6 +187,9 @@ export function findDuplicateCandidates(
     for (let j = i + 1; j < memories.length; j++) {
       const m1 = memories[i];
       const m2 = memories[j];
+
+      // Skip memories without ids
+      if (!m1.id || !m2.id) continue;
 
       // Skip if we've already paired these
       const pairKey = [m1.id, m2.id].sort().join('|');
@@ -213,8 +225,8 @@ export function findDuplicateCandidates(
         }
       }
 
-      // Check fuzzy match
-      if (checkFuzzy) {
+      // Check fuzzy match (guard against missing content)
+      if (checkFuzzy && m1.content && m2.content) {
         const fuzzySim = fuzzySimilarity(m1.content, m2.content);
         if (fuzzySim >= fuzzySimilarityThreshold) {
           reasons.push(`High string similarity (${fuzzySim.toFixed(3)})`);
@@ -288,10 +300,12 @@ export function groupDuplicates(
           .map((id) => memoryMap.get(id)!)
           .filter(Boolean);
 
-        // Choose primary: newest creation, or highest weight
+        // Choose primary: highest weight, then newest creation
         const primary = memories.reduce((best, curr) => {
-          if (curr.weight > best.weight) return curr;
-          if (curr.weight === best.weight && curr.created_at > best.created_at) {
+          const currWeight = curr.weight ?? 0;
+          const bestWeight = best.weight ?? 0;
+          if (currWeight > bestWeight) return curr;
+          if (currWeight === bestWeight && (curr.created_at ?? '') > (best.created_at ?? '')) {
             return curr;
           }
           return best;

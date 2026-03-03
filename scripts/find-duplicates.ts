@@ -16,7 +16,8 @@
  *   npx tsx scripts/find-duplicates.ts user_abc123 --output my-duplicates.json
  */
 
-import { getWeaviateClient } from '../src/database/weaviate/client.js';
+import { config as loadEnv } from 'dotenv';
+import { initWeaviateClient } from '../src/database/weaviate/client.js';
 import { createLogger } from '../src/utils/logger.js';
 import {
   findDuplicateCandidates,
@@ -88,7 +89,12 @@ Example:
   const fuzzyThreshold = parseFloat(getArg(args, '--fuzzy-threshold') || '0.90');
   const limit = parseInt(getArg(args, '--limit') || '0', 10);
 
-  const logger = createLogger({ level: 'info' });
+  // Load .env file (--env-file=path or default .env.prod.local)
+  const envFileArg = args.find(a => a.startsWith('--env-file='));
+  const envFile = envFileArg ? envFileArg.split('=')[1] : '.env.prod.local';
+  loadEnv({ path: envFile });
+
+  const logger = createLogger({ level: 'trace' });
 
   console.log('🔍 Finding Duplicates');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
@@ -100,10 +106,10 @@ Example:
   console.log();
 
   // Initialize Weaviate
-  const client = await getWeaviateClient({
-    host: process.env.WEAVIATE_HOST || 'localhost',
-    port: parseInt(process.env.WEAVIATE_PORT || '8080', 10),
-    scheme: (process.env.WEAVIATE_SCHEME as 'http' | 'https') || 'http',
+  const client = await initWeaviateClient({
+    url: process.env.WEAVIATE_REST_URL!,
+    apiKey: process.env.WEAVIATE_API_KEY,
+    openaiApiKey: process.env.OPENAI_EMBEDDINGS_API_KEY,
   });
 
   const collectionId = `Memory_${collectionType}_${userId}`;
@@ -111,18 +117,44 @@ Example:
 
   console.log('📥 Fetching memories...');
 
-  // Fetch all memories with embeddings
-  const fetchResult = await collection.query.fetchObjects({
-    limit: limit > 0 ? limit : undefined,
-    includeVector: true,
-  });
+  // Fetch all memories with embeddings (paginate — Weaviate defaults to 10)
+  const allObjects: any[] = [];
+  const pageSize = limit > 0 ? Math.min(limit, 100) : 100;
+  let cursor: string | undefined;
 
-  const memories = fetchResult.objects.map((obj) => ({
-    ...obj.properties,
-    embedding: obj.vector as number[] | undefined,
-  })) as Memory[];
+  while (true) {
+    const opts: any = { limit: pageSize, includeVector: true };
+    if (cursor) opts.after = cursor;
+    const page = await collection.query.fetchObjects(opts);
+    if (!page.objects || page.objects.length === 0) break;
+    allObjects.push(...page.objects);
+    cursor = page.objects[page.objects.length - 1].uuid;
+    if (limit > 0 && allObjects.length >= limit) {
+      allObjects.splice(limit);
+      break;
+    }
+    if (page.objects.length < pageSize) break;
+  }
 
-  console.log(`✓ Fetched ${memories.length} memories\n`);
+  // Filter to doc_type=memory only (skip relationships) and map fields
+  const memories = allObjects
+    .filter((obj) => !obj.properties.doc_type || obj.properties.doc_type === 'memory')
+    .map((obj) => {
+      // Weaviate v3 vector can be { default: number[] } or number[]
+      let embedding: number[] | undefined;
+      if (Array.isArray(obj.vectors?.default)) {
+        embedding = obj.vectors.default;
+      } else if (Array.isArray(obj.vector)) {
+        embedding = obj.vector;
+      }
+      return {
+        ...obj.properties,
+        id: obj.uuid,
+        embedding,
+      };
+    }) as Memory[];
+
+  console.log(`✓ Fetched ${memories.length} memories (skipped ${allObjects.length - memories.length} non-memory objects)\n`);
 
   if (memories.length < 2) {
     console.log('⚠️  Need at least 2 memories to find duplicates');
@@ -165,11 +197,11 @@ Example:
       reasons: group.reasons,
       memories: group.memories.map((m) => ({
         id: m.id,
-        content: m.content,
+        content: m.content ?? '',
         tags: m.tags || [],
-        weight: m.weight,
-        created_at: m.created_at,
-        updated_at: m.updated_at,
+        weight: m.weight ?? 0,
+        created_at: m.created_at ?? '',
+        updated_at: m.updated_at ?? '',
         content_type: m.content_type,
       })),
       action: undefined,

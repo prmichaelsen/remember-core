@@ -14,7 +14,8 @@
  *   npx tsx scripts/deduplicate.ts duplicates-review.json
  */
 
-import { getWeaviateClient } from '../src/database/weaviate/client.js';
+import { config as loadEnv } from 'dotenv';
+import { initWeaviateClient } from '../src/database/weaviate/client.js';
 import { createLogger } from '../src/utils/logger.js';
 import { readFileSync } from 'fs';
 import { createInterface } from 'readline';
@@ -138,11 +139,14 @@ Example:
     console.log();
   }
 
+  // Load .env
+  loadEnv({ path: '.env.prod.local' });
+
   // Initialize Weaviate
-  const client = await getWeaviateClient({
-    host: process.env.WEAVIATE_HOST || 'localhost',
-    port: parseInt(process.env.WEAVIATE_PORT || '8080', 10),
-    scheme: (process.env.WEAVIATE_SCHEME as 'http' | 'https') || 'http',
+  const client = await initWeaviateClient({
+    url: process.env.WEAVIATE_REST_URL!,
+    apiKey: process.env.WEAVIATE_API_KEY,
+    openaiApiKey: process.env.OPENAI_EMBEDDINGS_API_KEY,
   });
 
   const collection = client.collections.get(review.collection_id);

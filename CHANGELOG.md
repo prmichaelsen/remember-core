@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.10] - 2026-03-03
+
+### Added
+- **Enhanced Haiku validation logging** — show memory titles and full Haiku reasoning:
+  - Before validation: log all memory titles (first line/60 chars) in cluster
+  - After rejection: log reason for rejection
+  - After validation: log full Haiku response (observation, confidence, strength, tags, relationship_type)
+- Changed Haiku validation logs from debug to info level for better visibility
+
 ## [0.19.9] - 2026-03-03
 
 ### Added

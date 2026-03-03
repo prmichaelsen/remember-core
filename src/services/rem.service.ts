@@ -151,19 +151,34 @@ export class RemService {
     for (const action of actions) {
       try {
         if (action.type === 'create') {
+          // Log which memories are being evaluated
+          const memoryTitles = action.cluster.memories.map(m => ({
+            id: m.id.slice(-8),
+            title: this.extractTitle(m.content),
+          }));
+
+          this.logger.info?.('Evaluating cluster with Haiku', {
+            cluster_size: action.cluster.memory_ids.length,
+            memories: memoryTitles,
+          });
+
           const validated = await this.validateWithHaiku(action.cluster);
           if (!validated) {
-            this.logger.debug?.('Cluster rejected by Haiku', {
+            this.logger.info?.('Cluster rejected by Haiku', {
               cluster_size: action.cluster.memory_ids.length,
+              reason: 'Haiku determined memories are not sufficiently related',
             });
             stats.skipped_by_haiku++;
             continue;
           }
 
-          this.logger.debug?.('Cluster validated by Haiku', {
+          this.logger.info?.('Cluster validated by Haiku', {
             cluster_size: action.cluster.memory_ids.length,
             relationship_type: validated.relationship_type,
             observation: validated.observation,
+            confidence: validated.confidence,
+            strength: validated.strength,
+            tags: validated.tags,
           });
 
           await relationshipService.create({
@@ -275,5 +290,14 @@ export class RemService {
       return collectionId.replace('Memory_groups_', '');
     }
     return 'system';
+  }
+
+  private extractTitle(content: string): string {
+    // Extract first line or first 60 chars as title
+    const firstLine = content.split('\n')[0];
+    if (firstLine.length <= 60) {
+      return firstLine;
+    }
+    return firstLine.slice(0, 57) + '...';
   }
 }

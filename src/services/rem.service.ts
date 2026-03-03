@@ -114,13 +114,9 @@ export class RemService {
       collection,
       memoryCursor,
       this.config.max_candidates_per_run,
+      this.logger,
     );
     stats.memories_scanned = candidates.length;
-
-    this.logger.debug?.('Memory candidates selected', {
-      count: candidates.length,
-      memory_cursor: memoryCursor || '(none)',
-    });
 
     if (candidates.length === 0) {
       await this.advanceCursor(collectionId, memoryCursor);
@@ -129,15 +125,8 @@ export class RemService {
     }
 
     // 7. Form clusters
-    const clusters = await formClusters(collection, candidates, this.config);
+    const clusters = await formClusters(collection, candidates, this.config, this.logger);
     stats.clusters_found = clusters.length;
-
-    this.logger.info?.('Clusters formed', {
-      clusters_found: clusters.length,
-      avg_cluster_size: clusters.length > 0
-        ? Math.round(clusters.reduce((sum, c) => sum + c.memory_ids.length, 0) / clusters.length)
-        : 0,
-    });
 
     if (clusters.length === 0) {
       await this.advanceCursor(collectionId, memoryCursor);

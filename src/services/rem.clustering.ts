@@ -7,6 +7,7 @@
 
 import type { RemConfig } from './rem.types.js';
 import type { RelationshipService } from './relationship.service.js';
+import type { Logger } from '../utils/logger.js';
 import { computeOverlap } from './relationship.service.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
@@ -42,12 +43,16 @@ export async function selectCandidates(
   collection: any,
   memoryCursor: string,
   count: number,
+  logger?: Logger,
 ): Promise<MemoryCandidate[]> {
   const third = Math.max(1, Math.ceil(count / 3));
   const returnProps = ['content', 'created_at', 'tags', 'doc_type'] as const;
   const memoryFilter = collection.filter.byProperty('doc_type').equal('memory');
 
+  logger?.debug?.('Selecting candidates', { target: count, per_source: third });
+
   // 1/3 newest
+  logger?.debug?.('Fetching newest memories');
   const newestResult = await collection.query.fetchObjects({
     filters: memoryFilter,
     sort: { sorts: [{ property: 'created_at', order: 'desc' }] },
@@ -56,6 +61,7 @@ export async function selectCandidates(
   });
 
   // 1/3 unprocessed (created_at > cursor)
+  logger?.debug?.('Fetching unprocessed memories', { cursor: memoryCursor || '(none)' });
   let unprocessedResult = { objects: [] as any[] };
   if (memoryCursor) {
     const unprocessedFilter = collection.filter.byProperty('created_at').greaterThan(memoryCursor);
@@ -72,6 +78,7 @@ export async function selectCandidates(
   }
 
   // 1/3 random: use offset with a pseudo-random skip
+  logger?.debug?.('Fetching random memories');
   const randomOffset = Math.floor(Math.random() * 50);
   const randomResult = await collection.query.fetchObjects({
     filters: memoryFilter,
@@ -99,7 +106,17 @@ export async function selectCandidates(
     }
   }
 
-  return candidates.slice(0, count);
+  const final = candidates.slice(0, count);
+  logger?.debug?.('Candidates selected', {
+    requested: count,
+    selected: final.length,
+    sources: {
+      newest: newestResult.objects?.length ?? 0,
+      unprocessed: unprocessedResult.objects?.length ?? 0,
+      random: randomResult.objects?.length ?? 0,
+    },
+  });
+  return final;
 }
 
 // ─── Cluster Formation ───────────────────────────────────────────────────
@@ -112,10 +129,29 @@ export async function formClusters(
   collection: any,
   candidates: MemoryCandidate[],
   config: RemConfig,
+  logger?: Logger,
 ): Promise<Cluster[]> {
   const rawClusters: Cluster[] = [];
+  const total = candidates.length;
+  const logInterval = Math.max(1, Math.floor(total / 10)); // Log every 10%
 
-  for (const candidate of candidates) {
+  logger?.info?.('Starting cluster formation', {
+    candidates: total,
+    similarity_threshold: config.similarity_threshold,
+  });
+
+  for (let i = 0; i < candidates.length; i++) {
+    const candidate = candidates[i];
+
+    // Log progress every 10%
+    if (i > 0 && i % logInterval === 0) {
+      logger?.info?.('Cluster formation progress', {
+        processed: i,
+        total,
+        percent: Math.round((i / total) * 100),
+        clusters_found: rawClusters.length,
+      });
+    }
     const distance = 1 - config.similarity_threshold;
     const res = await collection.query.nearObject(candidate.id, {
       limit: config.max_similar_per_candidate + 1,
@@ -155,7 +191,16 @@ export async function formClusters(
     });
   }
 
-  return deduplicateClusters(rawClusters);
+  const deduplicated = deduplicateClusters(rawClusters);
+  logger?.info?.('Cluster formation complete', {
+    candidates_processed: total,
+    raw_clusters: rawClusters.length,
+    deduplicated_clusters: deduplicated.length,
+    avg_cluster_size: deduplicated.length > 0
+      ? Math.round(deduplicated.reduce((sum, c) => sum + c.memory_ids.length, 0) / deduplicated.length)
+      : 0,
+  });
+  return deduplicated;
 }
 
 /**

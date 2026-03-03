@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.8] - 2026-03-03
+
+### Added
+- **Enhanced clustering progress logging** — added logger parameter to `selectCandidates()` and `formClusters()` with detailed progress tracking:
+  - Candidate selection: logs each source query (newest, unprocessed, random) and summary with source counts
+  - Cluster formation: logs start, progress every 10%, and completion summary with deduplication stats
+  - Prevents "frozen" appearance when processing large batches (e.g., 5000 candidates)
+
+### Changed
+- Remove duplicate logging from RemService — clustering functions now handle their own logging
+
 ## [0.19.7] - 2026-03-03
 
 ### Fixed

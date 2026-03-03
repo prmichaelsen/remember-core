@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.7] - 2026-03-03
+
+### Fixed
+- **CRITICAL**: Fix Weaviate sort parameter structure in selectCandidates — wrap sort array in `sorts` property (`{ sorts: [{ property, order }] }`) as expected by Weaviate client v3.11.0 API. Previous fix used array format but client expects `args.sort.sorts` accessor.
+
 ## [0.19.6] - 2026-03-03
 
 ### Fixed

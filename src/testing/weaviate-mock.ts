@@ -5,7 +5,7 @@
  * used by MemoryService, RelationshipService, and SpaceService.
  */
 
-import { randomUUID } from 'crypto';
+const randomUUID = () => globalThis.crypto.randomUUID();
 
 export interface MockWeaviateObject {
   uuid: string;

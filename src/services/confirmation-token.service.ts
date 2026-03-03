@@ -6,7 +6,7 @@
  * Tokens are one-time use with 5-minute expiry.
  */
 
-import { randomUUID } from 'crypto';
+const randomUUID = () => globalThis.crypto.randomUUID();
 import {
   addDocument,
   updateDocument,

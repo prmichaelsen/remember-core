@@ -47,6 +47,12 @@ export function createMockCollection() {
       },
     },
 
+    sort: {
+      byProperty(property: string, ascending = true) {
+        return { sorts: [{ property, ascending }] };
+      },
+    },
+
     query: {
       async fetchObjectById(
         id: string,
@@ -56,19 +62,18 @@ export function createMockCollection() {
       },
 
       async fetchObjects(
-        opts?: { filters?: any; limit?: number; sort?: Array<{ property: string; order: 'asc' | 'desc' }> },
+        opts?: { filters?: any; limit?: number; sort?: { sorts: Array<{ property: string; ascending: boolean }> } },
       ): Promise<{ objects: MockWeaviateObject[] }> {
         let objects = Array.from(store.values());
         if (opts?.filters) {
           objects = applyFilter(objects, opts.filters);
         }
-        if (opts?.sort && opts.sort.length > 0) {
-          const sortConfig = opts.sort[0]; // Only handle first sort for simplicity
+        if (opts?.sort?.sorts && opts.sort.sorts.length > 0) {
+          const sortConfig = opts.sort.sorts[0];
           objects.sort((a, b) => {
             const aVal = a.properties[sortConfig.property];
             const bVal = b.properties[sortConfig.property];
 
-            // Handle string comparisons (like ISO dates)
             let comparison = 0;
             if (typeof aVal === 'string' && typeof bVal === 'string') {
               comparison = aVal.localeCompare(bVal);
@@ -76,7 +81,7 @@ export function createMockCollection() {
               comparison = aVal - bVal;
             }
 
-            return sortConfig.order === 'desc' ? -comparison : comparison;
+            return sortConfig.ascending ? comparison : -comparison;
           });
         }
         if (opts?.limit) {

@@ -160,10 +160,9 @@ milestones:
     progress: 100
     completed: 2026-03-03
     estimated_weeks: 1
-    tasks_completed: 5
-    tasks_total: 5
+    tasks_completed: 6
+    tasks_total: 6
     started: 2026-03-03
-    completed: null
     notes: |
       Implement basic server-side sort modes (Smart, Time, Density) using
       existing Weaviate capabilities. Phase 1 MVP from memory-sorting-algorithms
@@ -845,6 +844,17 @@ tasks:
         Sort by relationship_count DESC (highest first). Enables users to discover
         highly-connected "hub" memories. Completes Density mode from Phase 1 MVP.
         Server-side sorting with Weaviate native sort. 458 tests passing (5 new for byDensity).
+    - id: task-58
+      name: Fix Weaviate Sort API Crash in byTime and byDensity
+      status: completed
+      file: agent/tasks/milestone-11-basic-sort-modes/task-58-fix-weaviate-sort-api-crash.md
+      estimated_hours: 1-2
+      dependencies: [task-36, task-40]
+      notes: |
+        PRODUCTION BLOCKER. byTime/byDensity pass plain array to fetchObjects sort option,
+        but weaviate-client SDK expects a Sorting instance with .sorts property.
+        Crashes with TypeError: Cannot read properties of undefined (reading 'map').
+        Fix: use collection.sort.byProperty() instead of raw objects.
 
   unassigned:
     - id: task-56

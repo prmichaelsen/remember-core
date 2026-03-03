@@ -358,12 +358,7 @@ export class MemoryService {
 
       const queryOptions: any = {
         limit: limit + offset,
-        sort: [
-          {
-            property: 'created_at',
-            order: direction,
-          },
-        ],
+        sort: this.collection.sort.byProperty('created_at', direction === 'asc'),
       };
 
       if (combinedFilters) {
@@ -429,12 +424,7 @@ export class MemoryService {
 
       const queryOptions: any = {
         limit: limit + offset,
-        sort: [
-          {
-            property: 'relationship_count',
-            order: 'desc', // Highest first
-          },
-        ],
+        sort: this.collection.sort.byProperty('relationship_count', false),
       };
 
       if (combinedFilters) {

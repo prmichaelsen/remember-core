@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.22.8] - 2026-03-03
+
+### Fixed
+- **PRODUCTION BLOCKER**: byTime() and byDensity() crash with `TypeError: Cannot read properties of undefined (reading 'map')`
+  - Weaviate-client SDK expects `Sorting` instance (with `.sorts` array), but we passed plain object arrays
+  - Mock accepted plain arrays so tests passed — masking the bug
+  - Fix: use `collection.sort.byProperty()` to produce proper Sorting objects
+- Updated weaviate mock `fetchObjects` to accept `Sorting` shape (`{ sorts: [...] }`) instead of plain arrays
+- Added `sort.byProperty()` builder to mock collection for test fidelity
+
+Completed Task 58: Fix Weaviate Sort API Crash in byTime and byDensity
+Version: 0.22.7 → 0.22.8
+
 ## [0.22.5] - 2026-03-03
 
 ### Fixed

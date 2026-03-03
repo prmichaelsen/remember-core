@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.14] - 2026-03-03
+
+### Fixed
+- **CRITICAL**: Fix Weaviate filter combination syntax — use `Filters.and()` instead of `.and()` method which doesn't exist in Weaviate client v3 API. This caused "TypeError: collection.filter.byProperty(...).equal(...).and is not a function" error when fetching unprocessed memories.
+
 ## [0.19.13] - 2026-03-03
 
 ### Added

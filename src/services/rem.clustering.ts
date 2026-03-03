@@ -5,6 +5,7 @@
  * deduplication against existing relationships, and merge/split decisions.
  */
 
+import { Filters } from 'weaviate-client';
 import type { RemConfig } from './rem.types.js';
 import type { RelationshipService } from './relationship.service.js';
 import type { Logger } from '../utils/logger.js';
@@ -66,10 +67,10 @@ export async function selectCandidates(
   let unprocessedResult = { objects: [] as any[] };
   if (memoryCursor) {
     // Combine both filters: doc_type='memory' AND created_at > cursor
-    const unprocessedFilter = collection.filter
-      .byProperty('doc_type').equal('memory')
-      .and()
-      .byProperty('created_at').greaterThan(memoryCursor);
+    const unprocessedFilter = Filters.and(
+      collection.filter.byProperty('doc_type').equal('memory'),
+      collection.filter.byProperty('created_at').greaterThan(memoryCursor),
+    );
 
     unprocessedResult = await collection.query.fetchObjects({
       filters: unprocessedFilter,

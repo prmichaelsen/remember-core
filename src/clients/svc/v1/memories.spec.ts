@@ -83,4 +83,24 @@ describe('MemoriesResource', () => {
       body: { query: 'recent projects', limit: 5 },
     });
   });
+
+  it('byTime calls POST /api/svc/v1/memories/by-time', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byTime('user1', { limit: 50, direction: 'desc' });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-time', {
+      userId: 'user1',
+      body: { limit: 50, direction: 'desc' },
+    });
+  });
+
+  it('byDensity calls POST /api/svc/v1/memories/by-density', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byDensity('user1', { limit: 20, min_relationship_count: 5 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-density', {
+      userId: 'user1',
+      body: { limit: 20, min_relationship_count: 5 },
+    });
+  });
 });

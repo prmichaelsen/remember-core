@@ -22,6 +22,8 @@ export interface MemoriesResource {
   search(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   similar(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   query(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byTime(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byDensity(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
 }
 
 export function createMemoriesResource(http: HttpClient): MemoriesResource {
@@ -52,6 +54,12 @@ export function createMemoriesResource(http: HttpClient): MemoriesResource {
     },
     query(userId, input) {
       return http.request('POST', '/api/svc/v1/memories/query', { userId, body: input });
+    },
+    byTime(userId, input) {
+      return http.request('POST', '/api/svc/v1/memories/by-time', { userId, body: input });
+    },
+    byDensity(userId, input) {
+      return http.request('POST', '/api/svc/v1/memories/by-density', { userId, body: input });
     },
   };
 }

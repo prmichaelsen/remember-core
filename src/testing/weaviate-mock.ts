@@ -181,9 +181,6 @@ export function createMockCollection() {
                     lessOrEqual(value: any) {
                       return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'lte', field: nextName, value }] });
                     },
-                    lessThanOrEqual(value: any) {
-                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'lte', field: nextName, value }] });
-                    },
                     containsAny(values: any[]) {
                       return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'containsAny', field: nextName, values }] });
                     },
@@ -211,9 +208,6 @@ export function createMockCollection() {
             return createChainableFilter({ _type: 'gte', field: name, value });
           },
           lessOrEqual(value: any) {
-            return createChainableFilter({ _type: 'lte', field: name, value });
-          },
-          lessThanOrEqual(value: any) {
             return createChainableFilter({ _type: 'lte', field: name, value });
           },
           containsAny(values: any[]) {

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.24.1] - 2026-03-03
+
+### Added
+- `byDensitySlice()` method on `MemoriesResource` svc client — REST wrapper for `POST /api/svc/v1/memories/by-density-slice`
+
+Version: 0.24.0 → 0.24.1
+
 ## [0.24.0] - 2026-03-03
 
 ### Added

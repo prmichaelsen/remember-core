@@ -110,7 +110,7 @@ export async function selectCandidates(
   logger?.info?.('Strategy: newest', { limit: baseStrategyCount });
   const newestResult = await collection.query.fetchObjects({
     filters: memoryFilter,
-    sort: { sorts: [{ property: 'created_at', order: 'desc' }] },
+    sort: collection.sort.byProperty('created_at', false),
     limit: baseStrategyCount,
     returnProperties: returnProps,
   });

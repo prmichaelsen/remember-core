@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.22.9] - 2026-03-03
+
+### Fixed
+- Fix manually built sort object in `selectCandidates()` (rem.clustering.ts) — used `order: 'desc'` instead of `ascending: false`
+- Completes audit: all sort/filter/query calls now use Weaviate SDK builders
+
+Version: 0.22.8 → 0.22.9
+
 ## [0.22.8] - 2026-03-03
 
 ### Fixed

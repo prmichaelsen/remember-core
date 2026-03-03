@@ -68,11 +68,11 @@ describe('TrustEnforcementService', () => {
   });
 
   describe('buildTrustFilter', () => {
-    it('creates a filter with lessThanOrEqual', () => {
+    it('creates a filter with lessOrEqual', () => {
       const mockCollection = {
         filter: {
           byProperty: jest.fn().mockReturnValue({
-            lessThanOrEqual: jest.fn().mockReturnValue('mock-filter'),
+            lessOrEqual: jest.fn().mockReturnValue('mock-filter'),
           }),
         },
       };
@@ -83,13 +83,13 @@ describe('TrustEnforcementService', () => {
     });
 
     it('passes accessor trust level to the filter', () => {
-      const lessThanOrEqual = jest.fn().mockReturnValue('filter');
+      const lessOrEqual = jest.fn().mockReturnValue('filter');
       const mockCollection = {
-        filter: { byProperty: jest.fn().mockReturnValue({ lessThanOrEqual }) },
+        filter: { byProperty: jest.fn().mockReturnValue({ lessOrEqual }) },
       };
 
       buildTrustFilter(mockCollection, 0.75);
-      expect(lessThanOrEqual).toHaveBeenCalledWith(0.75);
+      expect(lessOrEqual).toHaveBeenCalledWith(0.75);
     });
   });
 

@@ -62,7 +62,7 @@ export async function setGhostConfigFields(
   logger?: Logger,
 ): Promise<GhostConfig> {
   const { collectionPath, docId } = getGhostConfigPath(ownerUserId);
-  await setDocument(collectionPath, docId, config, { merge: true });
+  await setDocument(collectionPath, docId, config, { mergeFields: Object.keys(config) });
 
   logger?.info('Ghost config updated', {
     service: SERVICE,

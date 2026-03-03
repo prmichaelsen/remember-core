@@ -105,6 +105,12 @@ export class RemService {
       return stats;
     }
 
+    this.logger.info?.('Collection ready for processing', {
+      collectionId,
+      total_memories: objectCount,
+      min_size: this.config.min_collection_size,
+    });
+
     // 5. Load collection state for memory cursor
     const collectionState = await this.deps.stateStore.getCollectionState(collectionId);
     const memoryCursor = collectionState?.memory_cursor ?? '';

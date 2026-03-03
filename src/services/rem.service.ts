@@ -192,6 +192,38 @@ export class RemService {
             continue;
           }
 
+          // Check if Haiku returned sub-clusters instead of validating the full cluster
+          if (!validated.valid && validated.sub_clusters && validated.sub_clusters.length > 0) {
+            this.logger.info?.('Cluster rejected but sub-clusters identified', {
+              original_size: action.cluster.memory_ids.length,
+              sub_cluster_count: validated.sub_clusters.length,
+              reason: validated.reason,
+            });
+
+            // Create relationships for each sub-cluster
+            for (const subCluster of validated.sub_clusters) {
+              if (subCluster.memory_ids.length < 2) continue;
+
+              this.logger.info?.('Creating relationship from sub-cluster', {
+                size: subCluster.memory_ids.length,
+                relationship_type: subCluster.relationship_type,
+                observation: subCluster.observation,
+              });
+
+              await relationshipService.create({
+                memory_ids: subCluster.memory_ids,
+                relationship_type: subCluster.relationship_type,
+                observation: subCluster.observation,
+                strength: subCluster.strength,
+                confidence: subCluster.confidence,
+                tags: subCluster.tags,
+                source: 'rem',
+              });
+              stats.relationships_created++;
+            }
+            continue;
+          }
+
           this.logger.info?.('Cluster validated by Haiku', {
             cluster_size: action.cluster.memory_ids.length,
             relationship_type: validated.relationship_type,
@@ -298,7 +330,7 @@ export class RemService {
       };
       const result = await this.deps.haikuClient.validateCluster(input);
 
-      if (!result.valid) {
+      if (!result.valid && (!result.sub_clusters || result.sub_clusters.length === 0)) {
         this.logger.info?.('Cluster rejected by Haiku', {
           cluster_size: cluster.memories.length,
           unique_count: uniqueMemories.length,
@@ -307,6 +339,7 @@ export class RemService {
         return null;
       }
 
+      // Return result even if !valid, as long as sub_clusters exist
       return result;
     } catch (err) {
       this.logger.warn?.('Haiku validation error', {

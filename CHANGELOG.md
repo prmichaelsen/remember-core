@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.21.1] - 2026-03-03
+
+### Changed
+- **CRITICAL: Aggressive sub-cluster extraction** - completely rewrote Haiku validation prompt to salvage relationships from heterogeneous clusters
+  - **Problem**: Greedy clustering can produce heterogeneous groups (21 memories that are 75%+ similar to a seed, but not all similar to each other)
+  - **Old behavior**: Haiku rejected entire cluster if not 100% cohesive → false negatives
+  - **New behavior**: Haiku aggressively splits clusters into 2+ sub-groups when appropriate
+  - **Three-tier decision**: (1) Accept all if cohesive, (2) **Split into sub-clusters** if heterogeneous, (3) Reject only if nothing relates
+  - **Directive**: "AGGRESSIVELY look for sub-clusters. It's better to create 2-3 small relationships than reject everything."
+  - Examples: 10 dog + 8 cat memories → 2 sub-clusters; 5 comedy shows + 4 YouTube links → 1-2 sub-clusters
+  - Existing RemService code (lines 196-224) already handles `sub_clusters` response format
+  - This maximizes recall without sacrificing precision
+
+### Added
+- **remember-rem CLI args** for REM config tuning:
+  - `--auto-approve=0.85` - auto-approve similarity threshold (0.0-1.0, default 0.9)
+  - `--similarity=0.70` - base clustering similarity threshold (0.0-1.0, default 0.75)
+  - `--seed-count=5` - LLM-enhanced seed count (default 2)
+  - `--batch=50` - max candidates per run (default 30)
+  - Config values now logged in "REM Config" section for transparency
+
 ## [0.21.0] - 2026-03-03
 
 ### Changed

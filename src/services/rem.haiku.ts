@@ -25,6 +25,15 @@ export interface HaikuValidationResult {
   confidence?: number;
   tags?: string[];
   reason?: string;
+  // Sub-cluster support: Haiku splits heterogeneous clusters into related subsets
+  sub_clusters?: Array<{
+    memory_ids: string[];
+    relationship_type: string;
+    observation: string;
+    strength: number;
+    confidence: number;
+    tags: string[];
+  }>;
 }
 
 export interface HaikuExtraction {
@@ -46,50 +55,53 @@ function buildValidationPrompt(input: HaikuValidationInput): string {
     .map((m) => `- [${m.id}] ${m.content} (tags: ${m.tags.join(', ') || 'none'})`)
     .join('\n');
 
-  return `Determine if these memories form a meaningful relationship that should be linked together.
+  return `**CRITICAL**: Your primary task is to SALVAGE relationships from this cluster. Even if the full group isn't cohesive, identify ANY sub-groups that are related.
 
 Memories:
 ${memoryList}
 
-A VALID relationship exists when memories share:
+**Three-tier decision process**:
+
+1. **FIRST**: Check if ALL memories form ONE cohesive group
+   - If yes: return valid=true with all memory IDs
+
+2. **SECOND** (MOST IMPORTANT): If not all cohesive, split into 2+ sub-clusters
+   - Look for ANY groupings of 2+ memories that share connections
+   - Each sub-cluster must share: topic, entities, timeframe, location, activity, hub-and-spoke, creative format, or cause-effect
+   - **Strongly prefer creating sub-clusters over rejecting everything**
+   - Drop orphans (memories that don't fit any group)
+
+3. **LAST RESORT**: Only reject completely if NO memories relate to each other at all
+
+**Valid connection types**:
 - **Common topic/theme** (e.g., all about dogs, comedy, coding, travel, Airbnb)
 - **Common entities** (people, places, events, projects, businesses)
 - **Common timeframe or location**
 - **Common activity or experience**
-- **Hub-and-spoke** (main topic + related activities, tools, or resources)
-- **Cause and effect** (related sequence of events)
-- **Creative format** (poems, lyrics, quotes - recognize by structure, rhythm, artistic style)
+- **Hub-and-spoke** (main topic + related activities/tools/resources)
+- **Cause and effect** (related sequence)
+- **Creative format** (poems, lyrics, quotes - recognize by structure/rhythm)
+- **Multimedia** (YouTube links + images + text about same topic)
 
-Examples of VALID relationships:
-✓ Multiple memories about the same event (comedy shows at same venue)
-✓ Memories documenting progress on a project (song revisions, code iterations)
-✓ Photos and notes about the same subject (dog photos + "went to dog park")
-✓ Hub-and-spoke topic (Airbnb hosting + booking tools + house photography + host reflections)
-✓ Related technical issues and solutions (admin filters, settings, configurations)
-✓ Memories from the same trip or timeframe
-✓ Resources and activities for a shared goal (even if not explicitly named in each memory)
-✓ Creative content iterations (poem/lyric variations, draft revisions, artistic explorations)
-✓ Quotes, lyrics, or poetic phrases (recognize structure, rhythm, repetition)
+**Examples showing sub-clustering**:
+✓ 10 dog memories + 8 cat memories + 3 bird memories → 3 sub-clusters (pets)
+✓ 5 comedy show memories + 4 YouTube links → 1-2 sub-clusters (entertainment)
+✓ 4 Airbnb posts + 3 house photos + 2 unrelated → 1 sub-cluster (drop unrelated)
+✓ 6 duplicates of same URL + 5 related images → 1 sub-cluster (multimedia)
+✓ 3 song revisions + 2 chord progressions + 1 recipe → 1 sub-cluster (drop recipe)
 
-Examples of INVALID relationships:
-✗ Completely unrelated topics mixed together
-✗ Only 1-2 duplicates with no additional context
-✗ Empty or minimal content with no clear connection
-✗ Test data or placeholder text
+**Response formats**:
 
-If VALID, respond with ONLY this JSON:
-{"valid":true,"relationship_type":"<type>","observation":"<descriptive title>","strength":<0-1>,"confidence":<0-1>,"tags":["<tags>"]}
+All memories cohesive (ONE group):
+{"valid":true,"relationship_type":"<type>","observation":"<title>","strength":<0-1>,"confidence":<0-1>,"tags":["<tags>"]}
 
-If INVALID, respond with ONLY this JSON:
-{"valid":false,"reason":"<why not>"}
+Multiple distinct groups (SPLIT into sub-clusters):
+{"valid":false,"reason":"heterogeneous cluster split into sub-groups","sub_clusters":[{"memory_ids":["id1","id2","id3"],"relationship_type":"<type>","observation":"<title>","strength":<0-1>,"confidence":<0-1>,"tags":["<tags>"]},{"memory_ids":["id4","id5"],"relationship_type":"<type>","observation":"<title>","strength":<0-1>,"confidence":<0-1>,"tags":["<tags>"]}]}
 
-Relationship types: topical, temporal, locational, event, project, activity, or descriptive type.
+Nothing salvageable (RARE - only if truly all unrelated):
+{"valid":false,"reason":"no related memories found"}
 
-**Be generous**:
-- Accept if memories share a clear common thread (even if implicit)
-- Accept supporting activities for a main topic (photography for Airbnb, testing for development)
-- Accept if most memories relate, even if 1-2 are tangential
-- Focus on meaningful connections, not perfect semantic overlap`;
+**Directive**: AGGRESSIVELY look for sub-clusters. It's better to create 2-3 small relationships than reject everything.`;
 }
 
 function buildExtractionPrompt(content: string): string {

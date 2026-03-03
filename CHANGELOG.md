@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.5] - 2026-03-03
+
+### Added
+- **Enhanced REM logging** — 8 new structured log statements in RemService for full observability:
+  - Cursor state on load (last_collection_id, last_run_at)
+  - Collection selection details (advanced_from, is_same_collection, wrap_around)
+  - Memory candidate count and cursor position
+  - Cluster formation progress (count, avg_cluster_size)
+  - Haiku validation results (accept/reject with cluster details)
+  - Cursor advancement confirmation
+  - Cycle complete with duration_seconds
+  - Logging test verifying all key log points
+
 ## [0.19.4] - 2026-03-03
 
 ### Fixed

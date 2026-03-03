@@ -70,13 +70,24 @@ export class RemService {
 
     // 1. Pick next collection via cursor
     const cursor = await this.deps.stateStore.getCursor();
+    this.logger.info?.('REM cursor loaded', {
+      last_collection_id: cursor?.last_collection_id ?? '(none)',
+      last_run_at: cursor?.last_run_at ?? '(never)',
+    });
+
     const collectionId = await getNextMemoryCollection(cursor?.last_collection_id ?? null);
     if (!collectionId) {
+      this.logger.info?.('No collections to process');
       stats.duration_ms = Date.now() - start;
       return stats;
     }
     stats.collection_id = collectionId;
-    this.logger.info?.('REM cycle starting', { collectionId });
+    this.logger.info?.('REM cycle starting', {
+      collectionId,
+      advanced_from: cursor?.last_collection_id ?? '(first run)',
+      is_same_collection: cursor?.last_collection_id === collectionId,
+      wrap_around: cursor?.last_collection_id && cursor.last_collection_id >= collectionId,
+    });
 
     // 3. Get collection handle
     const collection = this.deps.weaviateClient.collections.get(collectionId);
@@ -106,6 +117,11 @@ export class RemService {
     );
     stats.memories_scanned = candidates.length;
 
+    this.logger.debug?.('Memory candidates selected', {
+      count: candidates.length,
+      memory_cursor: memoryCursor || '(none)',
+    });
+
     if (candidates.length === 0) {
       await this.advanceCursor(collectionId, memoryCursor);
       stats.duration_ms = Date.now() - start;
@@ -115,6 +131,13 @@ export class RemService {
     // 7. Form clusters
     const clusters = await formClusters(collection, candidates, this.config);
     stats.clusters_found = clusters.length;
+
+    this.logger.info?.('Clusters formed', {
+      clusters_found: clusters.length,
+      avg_cluster_size: clusters.length > 0
+        ? Math.round(clusters.reduce((sum, c) => sum + c.memory_ids.length, 0) / clusters.length)
+        : 0,
+    });
 
     if (clusters.length === 0) {
       await this.advanceCursor(collectionId, memoryCursor);
@@ -135,9 +158,18 @@ export class RemService {
         if (action.type === 'create') {
           const validated = await this.validateWithHaiku(action.cluster);
           if (!validated) {
+            this.logger.debug?.('Cluster rejected by Haiku', {
+              cluster_size: action.cluster.memory_ids.length,
+            });
             stats.skipped_by_haiku++;
             continue;
           }
+
+          this.logger.debug?.('Cluster validated by Haiku', {
+            cluster_size: action.cluster.memory_ids.length,
+            relationship_type: validated.relationship_type,
+            observation: validated.observation,
+          });
 
           await relationshipService.create({
             memory_ids: action.cluster.memory_ids,
@@ -198,7 +230,10 @@ export class RemService {
     await this.advanceCursor(collectionId, newCursor);
 
     stats.duration_ms = Date.now() - start;
-    this.logger.info?.('REM cycle complete', stats);
+    this.logger.info?.('REM cycle complete', {
+      ...stats,
+      duration_seconds: Math.round(stats.duration_ms / 1000),
+    });
     return stats;
   }
 
@@ -230,6 +265,10 @@ export class RemService {
       collection_id: collectionId,
       last_processed_at: now,
       memory_cursor: memoryCursor,
+    });
+    this.logger.debug?.('Cursor advanced', {
+      collection_id: collectionId,
+      memory_cursor: memoryCursor || '(reset)',
     });
   }
 

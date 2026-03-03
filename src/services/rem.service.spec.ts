@@ -251,4 +251,41 @@ describe('RemService', () => {
     expect(cursor).not.toBeNull();
     expect(cursor?.last_collection_id).toBe('Memory_users_eve');
   });
+
+  it('logs cursor state and collection selection', async () => {
+    await insertMemories('Memory_users_frank', 60);
+
+    const loggerSpy = {
+      info: jest.fn(),
+      debug: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+
+    const service = new RemService({
+      weaviateClient: mockClient as any,
+      relationshipServiceFactory: createRelationshipService,
+      stateStore,
+      haikuClient: createMockHaikuClient(),
+      config: { min_collection_size: 10 },
+      logger: loggerSpy,
+    });
+
+    await service.runCycle();
+
+    // Verify key logging calls
+    expect(loggerSpy.info).toHaveBeenCalledWith('REM cursor loaded', expect.any(Object));
+    expect(loggerSpy.info).toHaveBeenCalledWith('REM cycle starting', expect.objectContaining({
+      collectionId: 'Memory_users_frank',
+      advanced_from: expect.any(String),
+      is_same_collection: expect.any(Boolean),
+    }));
+    expect(loggerSpy.info).toHaveBeenCalledWith('Clusters formed', expect.any(Object));
+    expect(loggerSpy.info).toHaveBeenCalledWith('REM cycle complete', expect.objectContaining({
+      collection_id: 'Memory_users_frank',
+      duration_seconds: expect.any(Number),
+    }));
+    expect(loggerSpy.debug).toHaveBeenCalledWith('Memory candidates selected', expect.any(Object));
+    expect(loggerSpy.debug).toHaveBeenCalledWith('Cursor advanced', expect.any(Object));
+  });
 });

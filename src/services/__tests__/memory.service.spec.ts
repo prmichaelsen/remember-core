@@ -471,4 +471,87 @@ describe('MemoryService', () => {
       }
     });
   });
+
+  describe('byDensity', () => {
+    beforeEach(async () => {
+      // Create memories with different relationship counts
+      const hub = await service.create({ content: 'Hub memory' });
+      const connected = await service.create({ content: 'Well connected' });
+      const few = await service.create({ content: 'Few links' });
+      const isolated = await service.create({ content: 'Isolated' });
+
+      // Manually set relationship_count for testing
+      await collection.data.update({ id: hub.memory_id, properties: { relationship_count: 10 } });
+      await collection.data.update({ id: connected.memory_id, properties: { relationship_count: 5 } });
+      await collection.data.update({ id: few.memory_id, properties: { relationship_count: 2 } });
+      await collection.data.update({ id: isolated.memory_id, properties: { relationship_count: 0 } });
+    });
+
+    it('sorts memories by relationship_count descending', async () => {
+      const result = await service.byDensity({ limit: 10 });
+
+      expect(result.memories.length).toBe(4);
+      // Verify descending order
+      for (let i = 0; i < result.memories.length - 1; i++) {
+        const current = result.memories[i].relationship_count as number;
+        const next = result.memories[i + 1].relationship_count as number;
+        expect(current).toBeGreaterThanOrEqual(next);
+      }
+    });
+
+    it('filters by min_relationship_count', async () => {
+      const result = await service.byDensity({
+        limit: 10,
+        min_relationship_count: 5,
+      });
+
+      expect(result.memories.length).toBeGreaterThanOrEqual(1);
+      for (const memory of result.memories) {
+        expect(memory.relationship_count).toBeGreaterThanOrEqual(5);
+      }
+    });
+
+    it('respects pagination', async () => {
+      const page1 = await service.byDensity({ limit: 2, offset: 0 });
+      const page2 = await service.byDensity({ limit: 2, offset: 2 });
+
+      expect(page1.memories.length).toBe(2);
+      expect(page2.memories.length).toBe(2);
+      expect(page1.memories[0].id).not.toBe(page2.memories[0].id);
+    });
+
+    it('applies filters correctly', async () => {
+      const note = await service.create({
+        content: 'Important note',
+        type: 'note',
+        tags: ['important'],
+      });
+      await collection.data.update({ id: note.memory_id, properties: { relationship_count: 7 } });
+
+      const result = await service.byDensity({
+        limit: 10,
+        filters: {
+          types: ['note'],
+          tags: ['important'],
+        },
+      });
+
+      expect(result.memories.length).toBeGreaterThanOrEqual(1);
+      for (const memory of result.memories) {
+        expect(memory.content_type).toBe('note');
+        expect((memory.tags as string[]).includes('important')).toBe(true);
+      }
+    });
+
+    it('includes memories with zero relationships', async () => {
+      const result = await service.byDensity({
+        limit: 100,
+        // No min filter, should include all
+      });
+
+      const isolated = result.memories.find(m => (m.relationship_count as number) === 0);
+      expect(isolated).toBeDefined();
+      expect(isolated!.relationship_count).toBe(0);
+    });
+  });
 });

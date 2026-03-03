@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.22.3
+  version: 0.22.4
   started: 2026-02-27
   status: in_progress
   current_milestone: M11
@@ -156,10 +156,11 @@ milestones:
 
   - id: M11
     name: Basic Sort Modes (MVP)
-    status: in_progress
-    progress: 80
+    status: completed
+    progress: 100
+    completed: 2026-03-03
     estimated_weeks: 1
-    tasks_completed: 4
+    tasks_completed: 5
     tasks_total: 5
     started: 2026-03-03
     completed: null
@@ -835,14 +836,15 @@ tasks:
         Added updateRelationshipCount() helper, updated create/delete methods. 453 tests passing.
     - id: task-40
       name: Add byDensity sort mode to MemoryService
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-11-basic-sort-modes/task-40-add-bydensity-sort-mode.md
       estimated_hours: 0.5
-      completed_date: null
+      completed_date: 2026-03-03
       dependencies: [task-37, task-38, task-39]
       notes: |
         Sort by relationship_count DESC (highest first). Enables users to discover
         highly-connected "hub" memories. Completes Density mode from Phase 1 MVP.
+        Server-side sorting with Weaviate native sort. 458 tests passing (5 new for byDensity).
 
   unassigned:
     - id: task-56
@@ -875,6 +877,21 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-03-03
+    description: |
+      🎉 M11 COMPLETE — Task 40: Add byDensity sort mode to MemoryService
+    items:
+      - "Added MemoryService.byDensity() method for density-based sorting"
+      - "Sorts memories by relationship_count descending (highest first)"
+      - "Discovers highly-connected 'hub' memories"
+      - "Uses Weaviate native sort parameter for optimal performance"
+      - "Supports min_relationship_count filter"
+      - "Supports pagination (limit/offset) and standard filters"
+      - "Added DensityModeRequest and DensityModeResult interfaces"
+      - "Added 5 comprehensive test cases covering sorting, filtering, pagination"
+      - "All 458 tests passing (31 suites)"
+      - "✅ M11 Basic Sort Modes (MVP): COMPLETE (5/5 tasks, 100%)"
+      - "✅ Phase 1 MVP Complete: Smart, Time, and Density sort modes"
   - date: 2026-03-03
     description: |
       Task 39 — Update RelationshipService to maintain relationship_count

@@ -122,6 +122,22 @@ export interface TimeModeResult {
   limit: number;
 }
 
+export interface DensityModeRequest {
+  limit?: number;
+  offset?: number;
+  min_relationship_count?: number;
+  filters?: SearchFilters;
+  deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
+}
+
+export interface DensityModeResult {
+  memories: Record<string, unknown>[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 export interface UpdateMemoryInput {
   memory_id: string;
   content?: string;
@@ -346,6 +362,77 @@ export class MemoryService {
           {
             property: 'created_at',
             order: direction,
+          },
+        ],
+      };
+
+      if (combinedFilters) {
+        queryOptions.filters = combinedFilters;
+      }
+
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    const results = await this.retryWithoutDeletedFilter(executeQuery);
+    const paginated = results.objects.slice(offset);
+
+    const memories: Record<string, unknown>[] = [];
+    for (const obj of paginated) {
+      const doc = { id: obj.uuid, ...obj.properties };
+      if (doc.doc_type === 'memory') {
+        memories.push(doc);
+      }
+    }
+
+    return {
+      memories,
+      total: memories.length,
+      offset,
+      limit,
+    };
+  }
+
+  // ── By Density (relationship count) ────────────────────────────────
+
+  async byDensity(input: DensityModeRequest): Promise<DensityModeResult> {
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+
+    // Build filters
+    const memoryFilters = buildMemoryOnlyFilters(this.collection, input.filters);
+
+    // Ghost/trust filtering
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+
+    // Min relationship count filter
+    const densityFilters: any[] = [];
+    if (input.min_relationship_count !== undefined) {
+      densityFilters.push(
+        this.collection.filter.byProperty('relationship_count').greaterOrEqual(input.min_relationship_count),
+      );
+    }
+
+    const executeQuery = async (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+
+      const combinedFilters = combineFiltersWithAnd(
+        [deletedFilter, memoryFilters, ...ghostFilters, ...densityFilters].filter((f) => f !== null),
+      );
+
+      const queryOptions: any = {
+        limit: limit + offset,
+        sort: [
+          {
+            property: 'relationship_count',
+            order: 'desc', // Highest first
           },
         ],
       };

@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.22.4] - 2026-03-03
+
+### Added
+- **MemoryService.byDensity()** - Server-side sorting by relationship count
+  - Sorts memories by relationship_count (highest first)
+  - Discovers highly-connected "hub" memories
+  - Uses Weaviate's native sort for optimal performance
+  - Supports min_relationship_count filter
+  - Supports pagination (limit/offset) and filters
+  - Includes 5 comprehensive test cases
+- **DensityModeRequest and DensityModeResult** interfaces for density sorting API
+
+Completed Task 40: Add byDensity sort mode to MemoryService
+Milestone: M11 - Basic Sort Modes (MVP) **COMPLETE** (5/5 tasks, 100%)
+Version: 0.22.3 → 0.22.4
+
+Phase 1 MVP Complete: Smart (hybrid search), Time (chronological), and Density (relationship-based) sort modes
+
 ## [0.22.3] - 2026-03-03
 
 ### Added

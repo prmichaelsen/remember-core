@@ -11,7 +11,7 @@
 export interface HaikuValidationInput {
   memories: Array<{
     id: string;
-    content_summary: string;
+    content: string;
     tags: string[];
     content_type?: string;
   }>;
@@ -34,14 +34,14 @@ export interface HaikuClient {
 // ─── Prompt ──────────────────────────────────────────────────────────────
 
 function buildValidationPrompt(input: HaikuValidationInput): string {
-  const memorySummaries = input.memories
-    .map((m) => `- [${m.id}] ${m.content_summary} (tags: ${m.tags.join(', ') || 'none'})`)
+  const memoryList = input.memories
+    .map((m) => `- [${m.id}] ${m.content} (tags: ${m.tags.join(', ') || 'none'})`)
     .join('\n');
 
-  return `Given these memory summaries from a single collection, determine if they form a meaningful group that should be linked as a relationship.
+  return `Given these memories from a single collection, determine if they form a meaningful group that should be linked as a relationship.
 
 Memories:
-${memorySummaries}
+${memoryList}
 
 If these memories form a coherent group, respond with ONLY valid JSON:
 {"valid":true,"relationship_type":"<type>","observation":"<descriptive title for this group>","strength":<0-1>,"confidence":<0-1>,"tags":["<relevant tags>"]}
@@ -67,14 +67,7 @@ export function createHaikuClient(options: {
   return {
     async validateCluster(input: HaikuValidationInput): Promise<HaikuValidationResult> {
       try {
-        const truncated: HaikuValidationInput = {
-          memories: input.memories.map((m) => ({
-            ...m,
-            content_summary: m.content_summary.slice(0, 200),
-          })),
-        };
-
-        const prompt = buildValidationPrompt(truncated);
+        const prompt = buildValidationPrompt(input);
 
         const response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',

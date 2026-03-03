@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.19.12] - 2026-03-03
+
+### Changed
+- **CRITICAL**: Pass full memory content to Haiku for validation instead of truncated 200-char summaries
+  - Renamed `content_summary` field to `content` in HaikuValidationInput (more accurate)
+  - Removed double truncation (RemService + createHaikuClient both truncated to 200 chars)
+  - Updated prompt to say "memories" instead of "memory summaries"
+  - Haiku now receives complete memory content for better relationship validation decisions
+
 ## [0.19.11] - 2026-03-03
 
 ### Fixed

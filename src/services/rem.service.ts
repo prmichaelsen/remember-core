@@ -254,7 +254,7 @@ export class RemService {
       const input: HaikuValidationInput = {
         memories: cluster.memories.map((m) => ({
           id: m.id,
-          content_summary: m.content.slice(0, 200),
+          content: m.content,
           tags: m.tags,
         })),
       };

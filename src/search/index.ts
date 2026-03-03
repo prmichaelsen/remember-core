@@ -8,3 +8,10 @@ export {
   buildGradedSlices,
   buildEvenSlices,
 } from './time-slices.js';
+
+export {
+  type TimeSliceSearchOptions,
+  type TimeSliceSearchResult,
+  type TimeSliceSearchClient,
+  searchByTimeSlice,
+} from './search-by-time-slice.js';

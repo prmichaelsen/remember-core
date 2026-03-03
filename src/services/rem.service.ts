@@ -166,10 +166,6 @@ export class RemService {
 
           const validated = await this.validateWithHaiku(action.cluster);
           if (!validated) {
-            this.logger.info?.('Cluster rejected by Haiku', {
-              cluster_size: action.cluster.memory_ids.length,
-              reason: 'Haiku determined memories are not sufficiently related',
-            });
             stats.skipped_by_haiku++;
             continue;
           }
@@ -253,16 +249,47 @@ export class RemService {
     cluster: { memories: Array<{ id: string; content: string; tags: string[] }> },
   ) {
     try {
+      // Deduplicate memories by content before validation
+      const seen = new Set<string>();
+      const uniqueMemories = cluster.memories.filter((m) => {
+        const key = m.content.slice(0, 200); // Use first 200 chars as dedup key
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      // Skip if only duplicates remain
+      if (uniqueMemories.length < 2) {
+        this.logger.info?.('Cluster rejected: only duplicates', {
+          cluster_size: cluster.memories.length,
+          unique_count: uniqueMemories.length,
+        });
+        return null;
+      }
+
       const input: HaikuValidationInput = {
-        memories: cluster.memories.map((m) => ({
+        memories: uniqueMemories.map((m) => ({
           id: m.id,
           content: m.content,
           tags: m.tags,
         })),
       };
       const result = await this.deps.haikuClient.validateCluster(input);
-      return result.valid ? result : null;
-    } catch {
+
+      if (!result.valid) {
+        this.logger.info?.('Cluster rejected by Haiku', {
+          cluster_size: cluster.memories.length,
+          unique_count: uniqueMemories.length,
+          reason: result.reason || 'Haiku determined memories are not sufficiently related',
+        });
+        return null;
+      }
+
+      return result;
+    } catch (err) {
+      this.logger.warn?.('Haiku validation error', {
+        error: err instanceof Error ? err.message : String(err),
+      });
       return null;
     }
   }

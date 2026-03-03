@@ -46,19 +46,39 @@ function buildValidationPrompt(input: HaikuValidationInput): string {
     .map((m) => `- [${m.id}] ${m.content} (tags: ${m.tags.join(', ') || 'none'})`)
     .join('\n');
 
-  return `Given these memories from a single collection, determine if they form a meaningful group that should be linked as a relationship.
+  return `Determine if these memories form a meaningful relationship that should be linked together.
 
 Memories:
 ${memoryList}
 
-If these memories form a coherent group, respond with ONLY valid JSON:
-{"valid":true,"relationship_type":"<type>","observation":"<descriptive title for this group>","strength":<0-1>,"confidence":<0-1>,"tags":["<relevant tags>"]}
+A VALID relationship exists when memories share:
+- **Common topic/theme** (e.g., all about dogs, comedy, coding, travel)
+- **Common entities** (people, places, events, projects)
+- **Common timeframe or location**
+- **Common activity or experience**
+- **Cause and effect** (related sequence of events)
 
-If they do NOT form a meaningful group, respond with ONLY valid JSON:
+Examples of VALID relationships:
+✓ Multiple memories about the same event (comedy shows at same venue)
+✓ Memories documenting progress on a project
+✓ Photos and notes about the same subject (dog photos + "went to dog park")
+✓ Related technical issues and solutions
+✓ Memories from the same trip or timeframe
+
+Examples of INVALID relationships:
+✗ Completely unrelated topics mixed together
+✗ Only 1-2 duplicates with no additional context
+✗ Empty or minimal content with no clear connection
+✗ Test data or placeholder text
+
+If VALID, respond with ONLY this JSON:
+{"valid":true,"relationship_type":"<type>","observation":"<descriptive title>","strength":<0-1>,"confidence":<0-1>,"tags":["<tags>"]}
+
+If INVALID, respond with ONLY this JSON:
 {"valid":false,"reason":"<why not>"}
 
-Relationship types: topical, temporal, locational, author, genre, event, or other descriptive type.
-Respond with ONLY the JSON object, no other text.`;
+Relationship types: topical, temporal, locational, event, project, activity, or descriptive type.
+Be generous - if memories clearly share a common thread, mark as valid.`;
 }
 
 function buildExtractionPrompt(content: string): string {

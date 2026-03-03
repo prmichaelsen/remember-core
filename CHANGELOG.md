@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.20.1] - 2026-03-03
+
+### Fixed
+- **CRITICAL**: Improved Haiku validation prompt to reduce false negatives
+  - Added explicit criteria for valid relationships (common topic, entities, timeframe, activity)
+  - Provided concrete examples of what SHOULD pass (comedy events, dog photos, song revisions)
+  - Added "be generous" instruction to lean toward accepting clear connections
+  - Changed from vague "meaningful group" to specific relationship patterns
+- **Deduplicate before Haiku validation** — filter out duplicate memories (by first 200 chars) before sending to Haiku to avoid confusion from repeated content
+- **Better rejection logging** — now logs actual Haiku rejection reason instead of generic message, and logs duplicate-only clusters separately
+
+### Changed
+- Skip Haiku validation entirely if cluster only contains duplicates (< 2 unique memories after deduplication)
+
 ## [0.20.0] - 2026-03-03
 
 ### Added

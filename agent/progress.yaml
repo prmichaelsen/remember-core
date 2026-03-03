@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.22.2
+  version: 0.22.3
   started: 2026-02-27
   status: in_progress
   current_milestone: M11
@@ -157,9 +157,9 @@ milestones:
   - id: M11
     name: Basic Sort Modes (MVP)
     status: in_progress
-    progress: 60
+    progress: 80
     estimated_weeks: 1
-    tasks_completed: 3
+    tasks_completed: 4
     tasks_total: 5
     started: 2026-03-03
     completed: null
@@ -824,14 +824,15 @@ tasks:
         Uses Firestore collection registry. Idempotent, graceful error handling, progress logging.
     - id: task-39
       name: Update RelationshipService to maintain relationship_count
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-11-basic-sort-modes/task-39-maintain-relationship-count.md
       estimated_hours: 1
-      completed_date: null
+      completed_date: 2026-03-03
       dependencies: [task-37]
       notes: |
         Increment/decrement relationship_count when relationships are created/deleted.
         Keeps denormalized property in sync with relationships array.
+        Added updateRelationshipCount() helper, updated create/delete methods. 453 tests passing.
     - id: task-40
       name: Add byDensity sort mode to MemoryService
       status: not_started
@@ -874,6 +875,21 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-03-03
+    description: |
+      Task 39 — Update RelationshipService to maintain relationship_count
+    items:
+      - "Added private updateRelationshipCount() helper method"
+      - "Increments relationship_count (+1) when creating relationships"
+      - "Decrements relationship_count (-1) when deleting relationships"
+      - "Floor at 0 prevents negative counts (Math.max(0, currentCount + delta))"
+      - "Parallel updates via Promise.all for all connected memories"
+      - "Graceful error handling (logged warnings, doesn't block operations)"
+      - "Added 4 comprehensive test cases for relationship_count maintenance"
+      - "Updated insertMemory test helper to include relationship_count: 0"
+      - "Fixed Weaviate v3 API compatibility (lessOrEqual vs lessThanOrEqual)"
+      - "All 453 tests passing (31 suites)"
+      - "M11 Basic Sort Modes (MVP): 4/5 tasks complete (80%)"
   - date: 2026-03-03
     description: |
       Task 38 — Backfill relationship_count for existing memories

@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.22.3] - 2026-03-03
+
+### Added
+- **RelationshipService automatic relationship_count maintenance**
+  - Added updateRelationshipCount() helper method
+  - Increments relationship_count when creating relationships
+  - Decrements relationship_count when deleting relationships
+  - Ensures count never goes negative (floor at 0)
+  - Graceful error handling (doesn't block relationship operations)
+  - 4 comprehensive test cases (453 total tests passing)
+- Updated insertMemory test helper to include relationship_count: 0
+
+### Fixed
+- Weaviate v3 API compatibility - use lessOrEqual instead of lessThanOrEqual
+
+Completed Task 39: Update RelationshipService to maintain relationship_count
+Milestone: M11 - Basic Sort Modes (MVP) (4/5 tasks, 80%)
+Version: 0.22.2 → 0.22.3
+
 ## [0.22.2] - 2026-03-03
 
 ### Added

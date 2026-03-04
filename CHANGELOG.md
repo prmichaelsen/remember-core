@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.25.0] - 2026-03-04
+
+### Added
+- **ImportService** — bulk memory import with token-count chunking, HaikuClient summary generation, and relationship linking
+  - `chunkByTokens()` — splits text on paragraph boundaries within configurable token budget (~4 chars/token estimation)
+  - `estimateTokens()` — rough token count from text length
+  - `ImportService.import()` — accepts multiple items, chunks each, creates chunk memories with `[CHUNK NNNNN]` markers, generates parent summary via HaikuClient, links chunks to parent via `part_of` relationships
+  - Types: `ImportItem`, `ImportInput`, `ImportItemResult`, `ImportResult`
+- 19 unit tests for ImportService, chunkByTokens, and estimateTokens
+
+Version: 0.24.2 → 0.25.0
+
 ## [0.24.2] - 2026-03-04
 
 ### Added

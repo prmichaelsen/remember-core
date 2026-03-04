@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.27.0] - 2026-03-04
+
+### Added
+- **M15: Relationship GUI App Endpoints** (tasks 71-74)
+  - `RelationshipService.getById()` — fetch single relationship by UUID with discriminated union result
+  - `relationship_ids` filter on `SearchFilters` — scope memory searches to specific relationships
+  - `MemoriesResource` (`src/app/memories.ts`) — compound `get()` returns memory + relationship previews with `MemoryPreview` titles
+  - `RelationshipWithPreviews`, `MemoryPreview`, `MemoryWithRelationships` types
+  - `RelationshipsResource` (`src/app/relationships.ts`) — `getMemories()` returns paginated relationship memories with `RelationshipMetadata`
+  - Both resources wired into `createAppClient()` factory (7 total methods)
+  - OpenAPI schemas for compound endpoint responses in `openapi-web.yaml`
+- **M16: Job Tracking System** (tasks 75-78)
+  - `JobService` — Firestore-backed async job CRUD with progress tracking, step management, TTL, cancellation
+  - Job types: `import`, `rem_cycle` with statuses: pending → running → completed/failed/cancelled
+  - `ImportJobWorker` — async import with step tracking, cancellation checks, chunking + summary generation
+  - `JobsResource` in SVC client — `get()`, `cancel()`, `poll()` with configurable interval/timeout
+  - OpenAPI job schemas and endpoints (`/api/svc/v1/jobs/{jobId}`, cancel)
+  - Import endpoint updated to return 202 with `job_id`
+- `GetRelationshipResult` type exported from services barrel
+
+Version: 0.26.1 → 0.27.0
+
 ## [0.26.1] - 2026-03-04
 
 ### Added

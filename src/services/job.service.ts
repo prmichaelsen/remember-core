@@ -100,12 +100,15 @@ export class JobService {
 
   async updateProgress(jobId: string, update: JobProgressUpdate): Promise<void> {
     const now = new Date().toISOString();
+    const job = await this.getStatus(jobId);
+    // Don't overwrite cancelled/terminal status with 'running'
+    const status = job && job.status !== 'cancelled' ? 'running' : job?.status ?? 'running';
     await updateDocument(JOBS_COLLECTION, jobId, {
       progress: update.progress,
       current_step: update.current_step,
-      status: 'running',
+      status,
       updated_at: now,
-      started_at: now, // Set started_at on first progress update (Firestore merge keeps first value)
+      ...(job && !job.started_at ? { started_at: now } : {}),
     });
   }
 

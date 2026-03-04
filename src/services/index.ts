@@ -168,6 +168,37 @@ export {
   type ResolvedMemory,
 } from './memory-resolution.service.js';
 
+// Job tracking system
+export {
+  type Job,
+  type JobStep,
+  type JobError,
+  type JobType,
+  type JobStatus,
+  type JobStepStatus,
+  type CreateJobInput,
+  type JobProgressUpdate,
+  type CompleteJobInput,
+  DEFAULT_TTL_HOURS,
+  TERMINAL_STATUSES,
+} from './job.types.js';
+
+export {
+  JobService,
+  type JobServiceDeps,
+} from './job.service.js';
+
+export {
+  ImportJobWorker,
+  type ImportJobParams,
+} from './import-job.worker.js';
+
+export {
+  RemJobWorker,
+  type RemJobParams,
+  scheduleRemJobs,
+} from './rem-job.worker.js';
+
 // Import service
 export {
   ImportService,

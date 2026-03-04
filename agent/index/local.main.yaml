@@ -50,6 +50,18 @@ local:
         schema migration (source field), and Firestore state tracking.
       applies: acp.init, acp.proceed, acp.task-create
 
+    - path: agent/design/local.job-tracking-system.md
+      weight: 0.75
+      kind: design
+      description: |
+        Job tracking system — async job infrastructure for long-running operations.
+        Firestore-backed state, Cloud Run Jobs execution, REST polling, stepped progress.
+        Covers import migration, REM migration, cancellation, partial failure.
+      rationale: |
+        Active design for next milestone. Required context for any work on
+        JobService, ImportJobWorker, or job-related REST/SDK endpoints.
+      applies: acp.init, acp.proceed, acp.task-create
+
     - path: agent/design/ghost-persona-system.md
       weight: 0.7
       kind: design

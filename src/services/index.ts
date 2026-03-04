@@ -160,6 +160,13 @@ export {
   type TrustResult,
 } from './ghost-config-handler.service.js';
 
+// Memory resolution (cross-collection fallback)
+export {
+  MemoryResolutionService,
+  type MemorySource,
+  type ResolvedMemory,
+} from './memory-resolution.service.js';
+
 // Import service
 export {
   ImportService,

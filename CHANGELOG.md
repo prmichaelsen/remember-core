@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.27.1] - 2026-03-04
+
+### Added
+- **M16: Job Tracking System** (tasks 79-80, completing milestone)
+  - `RemJobWorker` — REM cycle execution as tracked job steps with 4-phase progress reporting
+  - `scheduleRemJobs()` — daily cron utility to enumerate collections and create per-collection REM jobs
+  - `RemCursorState` and `RemCollectionState` marked `@deprecated` in favor of job-based scheduling
+  - Job barrel exports: all types, JobService, ImportJobWorker, RemJobWorker, scheduleRemJobs
+  - Integration tests: full lifecycle, cancellation flow, partial failure with `completed_with_errors`
+  - Fix: `updateProgress()` no longer overwrites cancelled status with 'running'
+
+### Changed
+- 623 tests passing across 45 suites (was 536)
+
+Version: 0.27.0 → 0.27.1
+
 ## [0.27.0] - 2026-03-04
 
 ### Added

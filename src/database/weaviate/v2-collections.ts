@@ -118,6 +118,9 @@ const COMMON_MEMORY_PROPERTIES = [
   { name: 'thread_root_id', dataType: configure.dataType.TEXT },
   { name: 'moderation_flags', dataType: configure.dataType.TEXT_ARRAY },
 
+  // Agent follow-up tracking
+  { name: 'follow_up_at', dataType: configure.dataType.DATE },
+
   // Soft delete
   { name: 'deleted_at', dataType: configure.dataType.DATE },
   { name: 'deleted_by', dataType: configure.dataType.TEXT },

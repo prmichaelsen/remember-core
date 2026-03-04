@@ -64,6 +64,8 @@ export const CONTENT_TYPES: readonly ContentType[] = [
   'comment',
   // Profile
   'profile',
+  // Agent
+  'agent',
 ] as const;
 
 /**
@@ -404,6 +406,26 @@ export const CONTENT_TYPE_METADATA: Record<ContentType, ContentTypeMetadata> = {
     description: 'User profile published to the profiles space for people discovery',
     examples: ['User bio', 'About me', 'Profile introduction'],
   },
+
+  // Agent
+  agent: {
+    name: 'agent',
+    category: 'system',
+    description: 'Agent working memory — observations, preferences, session notes, project tracking',
+    examples: [
+      'User responds well to concise, bulleted answers',
+      'User prefers seeing full code context rather than snippets',
+      'When user says "fix it", they mean fix and commit without asking',
+      'User is a senior engineer working primarily in TypeScript',
+      'User timezone is US Central, typically active 9am-11pm',
+      'User is building agentbase.me — an AI integration platform on Cloudflare Workers',
+      'Auth system redesign planned for Q2 — user wants JWT replaced with session cookies',
+      'User tracking 3 active projects: agentbase.me, remember-core, agentbase-mobile',
+      'Milestone M36 (Notifications) nearly complete — 4 tasks remaining as of March 2026',
+      'Follow up March 10: revisit subscription tier pricing discussion',
+    ],
+    common_fields: ['observations', 'preferences', 'summaries', 'follow_ups'],
+  },
 };
 
 /**
@@ -419,7 +441,7 @@ export const CONTENT_TYPE_CATEGORIES = {
   personal: ['journal', 'memory', 'event'],
   organizational: ['bookmark', 'form', 'location'],
   business: ['invoice', 'contract'],
-  system: ['system', 'action', 'audit', 'history'],
+  system: ['system', 'action', 'audit', 'history', 'agent'],
   cross_user: ['ghost', 'comment', 'profile'],
 } as const;
 

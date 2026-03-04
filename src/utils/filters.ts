@@ -50,15 +50,37 @@ function buildDocTypeFilters(
   filterList.push(collection.filter.byProperty('doc_type').equal(docType));
 
   // Content type filter — only for memories
-  if (docType === 'memory' && filters?.types && filters.types.length > 0) {
-    if (filters.types.length === 1) {
-      filterList.push(
-        collection.filter.byProperty('content_type').equal(filters.types[0]),
-      );
+  if (docType === 'memory') {
+    // Default-excluded content types (hidden unless explicitly requested via types filter)
+    const DEFAULT_EXCLUDED_TYPES = ['agent'];
+
+    if (filters?.types && filters.types.length > 0) {
+      // Caller explicitly specified types — use as include filter (no default exclusion)
+      if (filters.types.length === 1) {
+        filterList.push(
+          collection.filter.byProperty('content_type').equal(filters.types[0]),
+        );
+      } else {
+        filterList.push(
+          collection.filter.byProperty('content_type').containsAny(filters.types),
+        );
+      }
     } else {
-      filterList.push(
-        collection.filter.byProperty('content_type').containsAny(filters.types),
-      );
+      // No types filter — apply default exclusion
+      for (const excludedType of DEFAULT_EXCLUDED_TYPES) {
+        filterList.push(
+          collection.filter.byProperty('content_type').notEqual(excludedType),
+        );
+      }
+    }
+
+    // Explicit exclude_types — always applied, takes precedence over types
+    if (filters?.exclude_types && filters.exclude_types.length > 0) {
+      for (const excludedType of filters.exclude_types) {
+        filterList.push(
+          collection.filter.byProperty('content_type').notEqual(excludedType),
+        );
+      }
     }
   }
 

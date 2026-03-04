@@ -11,6 +11,7 @@ import type { ContentType, Memory, Relationship } from './memory.types.js';
  */
 export interface SearchFilters {
   types?: ContentType[];
+  exclude_types?: ContentType[];
   tags?: string[];
   weight_min?: number;
   weight_max?: number;

@@ -72,7 +72,9 @@ export type ContentType =
   | 'ghost'
   | 'comment'
   // Profile
-  | 'profile';
+  | 'profile'
+  // Agent
+  | 'agent';
 
 /**
  * Core Memory interface.
@@ -133,6 +135,9 @@ export interface Memory {
   parent_id?: string | null; // ID of parent memory or comment (null for top-level)
   thread_root_id?: string | null; // Root memory ID for fetching entire thread (null for top-level)
   moderation_flags?: string[]; // Per-space moderation flags (format: "{space_id}:{flag_type}")
+
+  // Agent Follow-Up Tracking
+  follow_up_at?: string; // ISO 8601 datetime — agent follow-up reminder date
 
   // Soft Delete Fields
   deleted_at?: Date | null; // Timestamp when memory was soft-deleted (null = not deleted)

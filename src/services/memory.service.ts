@@ -39,6 +39,7 @@ export interface CreateMemoryInput {
   moderation_flags?: string[];
   context_summary?: string;
   context_conversation_id?: string;
+  follow_up_at?: string;
 }
 
 export interface CreateMemoryResult {
@@ -250,6 +251,7 @@ export class MemoryService {
       parent_id: input.parent_id ?? null,
       thread_root_id: input.thread_root_id ?? null,
       moderation_flags: input.moderation_flags ?? [],
+      follow_up_at: input.follow_up_at || null,
       space_ids: [],
       group_ids: [],
     };

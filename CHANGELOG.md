@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.26.0] - 2026-03-04
+
+### Added
+- **Agent content type** (`content_type: 'agent'`) — persistent agent working memory for observations, preferences, session notes, project tracking
+  - Added to `ContentType` union, `CONTENT_TYPES` array, `CONTENT_TYPE_METADATA` (category: system, 10 examples), `CONTENT_TYPE_CATEGORIES`
+  - Added to OpenAPI `ContentType` enum (also added missing `profile`)
+- **`exclude_types` filter** on `SearchFilters` — exclude specific content types from search results without listing all others
+  - Takes precedence if a type appears in both `types` and `exclude_types`
+  - Added to OpenAPI `SearchFilters` schema
+- **Server-side default exclusion** — `content_type: 'agent'` automatically excluded from unfiltered searches (no `types` specified). Explicitly including `'agent'` in `types` opts in.
+- **`follow_up_at` memory property** — ISO 8601 datetime field for agent follow-up reminders
+  - Added to Weaviate schema (`COMMON_MEMORY_PROPERTIES`), `Memory` interface, `CreateMemoryInput`, and OpenAPI `CreateMemoryInput` schema
+  - REM processing of follow_up_at is future work — field tracked now for forward compatibility
+
+Version: 0.25.0 → 0.26.0
+
 ## [0.25.0] - 2026-03-04
 
 ### Added

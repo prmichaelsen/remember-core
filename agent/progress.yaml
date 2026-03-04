@@ -207,13 +207,13 @@ milestones:
 
   - id: M14
     name: Import Service
-    status: in_progress
-    progress: 66
+    status: completed
+    progress: 100
     estimated_weeks: 1
-    tasks_completed: 2
+    tasks_completed: 3
     tasks_total: 3
     started: 2026-03-04
-    completed: null
+    completed: 2026-03-04
     notes: |
       Bulk memory import service: token-count chunking, batch memory creation,
       HaikuClient summary generation, relationship linking. OpenAPI spec +
@@ -1015,13 +1015,14 @@ tasks:
         Add memories.import() to SVC client SDK. 21 client tests passing.
     - id: task-70
       name: Barrel Exports + Integration Test
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-14-import-service/task-70-barrel-exports-integration-test.md
       estimated_hours: 1-2
+      completed_date: 2026-03-04
       dependencies: task-68, task-69
       notes: |
-        Export ImportService + types from services barrel. Integration test
-        against real Weaviate instance.
+        Export ImportService + types from services barrel. TypeScript compiles
+        clean. All 536 tests passing across 37 suites.
 
 documentation:
   design_documents: 9

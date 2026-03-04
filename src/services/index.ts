@@ -160,6 +160,17 @@ export {
   type TrustResult,
 } from './ghost-config-handler.service.js';
 
+// Import service
+export {
+  ImportService,
+  chunkByTokens,
+  estimateTokens,
+  type ImportItem,
+  type ImportInput,
+  type ImportItemResult,
+  type ImportResult,
+} from './import.service.js';
+
 // REM (Relationship Engine for Memories)
 export {
   type RemConfig,

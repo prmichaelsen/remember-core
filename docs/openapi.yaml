@@ -329,6 +329,33 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/import:
+    post:
+      tags: [memories]
+      summary: Bulk import text as chunked memories
+      description: |
+        Accepts one or more text items, splits each into ~3K token chunks,
+        creates memories via MemoryService, generates a parent summary via
+        HaikuClient, and links chunks to parent via part_of relationships.
+      operationId: memoriesImport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportInput'
+      responses:
+        '200':
+          description: Import completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   # ============================================================
   # Relationships
   # ============================================================
@@ -1489,6 +1516,77 @@ components:
           type: array
           items:
             type: string
+
+    # ----------------------------------------------------------
+    # Import types
+    # ----------------------------------------------------------
+    ImportItem:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          description: Raw text content to import
+        source_filename:
+          type: string
+          description: Original filename for metadata
+
+    ImportInput:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportItem'
+          minItems: 1
+          description: One or more items to import
+        chunk_size:
+          type: integer
+          minimum: 100
+          default: 3000
+          description: Max tokens per chunk
+        context_conversation_id:
+          type: string
+          description: Conversation that triggered the import
+
+    ImportItemResult:
+      type: object
+      required: [import_id, parent_memory_id, chunk_memory_ids, chunk_count, summary]
+      properties:
+        import_id:
+          type: string
+          description: UUID for this import item
+        parent_memory_id:
+          type: string
+          description: Summary memory ID
+        chunk_memory_ids:
+          type: array
+          items:
+            type: string
+          description: Ordered chunk memory IDs
+        chunk_count:
+          type: integer
+          description: Number of chunks created
+        source_filename:
+          type: string
+          description: Original filename if provided
+        summary:
+          type: string
+          description: Generated summary text
+
+    ImportResult:
+      type: object
+      required: [items, total_memories_created]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportItemResult'
+          description: Results per item
+        total_memories_created:
+          type: integer
+          description: Total memories created (parents + chunks)
 
     # ----------------------------------------------------------
     # Relationship inputs

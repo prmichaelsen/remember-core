@@ -113,4 +113,24 @@ describe('MemoriesResource', () => {
       body: { query: 'vacation', limit: 10, direction: 'desc' },
     });
   });
+
+  it('byDensitySlice calls POST /api/svc/v1/memories/by-density-slice', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byDensitySlice('user1', { query: 'projects', limit: 10, direction: 'desc' });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-density-slice', {
+      userId: 'user1',
+      body: { query: 'projects', limit: 10, direction: 'desc' },
+    });
+  });
+
+  it('import calls POST /api/svc/v1/memories/import', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.import('user1', { items: [{ content: 'bulk text' }] });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/import', {
+      userId: 'user1',
+      body: { items: [{ content: 'bulk text' }] },
+    });
+  });
 });

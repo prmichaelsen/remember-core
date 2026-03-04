@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   - `ImportService.import()` — accepts multiple items, chunks each, creates chunk memories with `[CHUNK NNNNN]` markers, generates parent summary via HaikuClient, links chunks to parent via `part_of` relationships
   - Types: `ImportItem`, `ImportInput`, `ImportItemResult`, `ImportResult`
 - 19 unit tests for ImportService, chunkByTokens, and estimateTokens
+- **OpenAPI spec**: `POST /api/svc/v1/memories/import` endpoint with `ImportInput`, `ImportResult`, `ImportItem`, `ImportItemResult` schemas
+- **SVC SDK**: `memories.import(userId, input)` method on MemoriesResource (12 methods total, up from 11)
+- Updated SVC client tests: byDensitySlice + import tests, method count assertion → 35
 
 Version: 0.24.2 → 0.25.0
 

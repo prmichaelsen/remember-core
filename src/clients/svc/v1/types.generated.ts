@@ -205,6 +205,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk import text as chunked memories
+         * @description Accepts one or more text items, splits each into ~3K token chunks,
+         *     creates memories via MemoryService, generates a parent summary via
+         *     HaikuClient, and links chunks to parent via part_of relationships.
+         */
+        post: operations["memoriesImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/relationships": {
         parameters: {
             query?: never;
@@ -762,6 +784,43 @@ export interface components {
             /** Format: date-time */
             deleted_at: string;
             orphaned_relationship_ids: string[];
+        };
+        ImportItem: {
+            /** @description Raw text content to import */
+            content: string;
+            /** @description Original filename for metadata */
+            source_filename?: string;
+        };
+        ImportInput: {
+            /** @description One or more items to import */
+            items: components["schemas"]["ImportItem"][];
+            /**
+             * @description Max tokens per chunk
+             * @default 3000
+             */
+            chunk_size: number;
+            /** @description Conversation that triggered the import */
+            context_conversation_id?: string;
+        };
+        ImportItemResult: {
+            /** @description UUID for this import item */
+            import_id: string;
+            /** @description Summary memory ID */
+            parent_memory_id: string;
+            /** @description Ordered chunk memory IDs */
+            chunk_memory_ids: string[];
+            /** @description Number of chunks created */
+            chunk_count: number;
+            /** @description Original filename if provided */
+            source_filename?: string;
+            /** @description Generated summary text */
+            summary: string;
+        };
+        ImportResult: {
+            /** @description Results per item */
+            items: components["schemas"]["ImportItemResult"][];
+            /** @description Total memories created (parents + chunks) */
+            total_memories_created: number;
         };
         CreateRelationshipInput: {
             memory_ids: string[];
@@ -1429,6 +1488,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DensitySliceSearchResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportInput"];
+            };
+        };
+        responses: {
+            /** @description Import completed successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
                 };
             };
             400: components["responses"]["ValidationError"];

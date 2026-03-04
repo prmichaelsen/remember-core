@@ -208,9 +208,9 @@ milestones:
   - id: M14
     name: Import Service
     status: in_progress
-    progress: 33
+    progress: 66
     estimated_weeks: 1
-    tasks_completed: 1
+    tasks_completed: 2
     tasks_total: 3
     started: 2026-03-04
     completed: null
@@ -1005,13 +1005,14 @@ tasks:
         19 unit tests passing.
     - id: task-69
       name: OpenAPI Spec + SVC SDK Import Method
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-14-import-service/task-69-openapi-spec-svc-sdk.md
       estimated_hours: 2-3
+      completed_date: 2026-03-04
       dependencies: task-68
       notes: |
         Define POST /api/svc/v1/memories/import in OpenAPI spec. Generate types.
-        Add memories.import() to SVC client SDK.
+        Add memories.import() to SVC client SDK. 21 client tests passing.
     - id: task-70
       name: Barrel Exports + Integration Test
       status: not_started

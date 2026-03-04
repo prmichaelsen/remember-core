@@ -36,6 +36,8 @@ tags:
     description: User preference management
   - name: trust
     description: Ghost config and trust enforcement
+  - name: jobs
+    description: Async job tracking and management
   - name: health
     description: Public health and version endpoints
 
@@ -345,14 +347,78 @@ paths:
             schema:
               $ref: '#/components/schemas/ImportInput'
       responses:
-        '200':
-          description: Import completed successfully
+        '202':
+          description: Import job accepted
+          headers:
+            Location:
+              description: URL to poll for job status
+              schema:
+                type: string
+                example: /api/svc/v1/jobs/{job_id}
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ImportResult'
+                type: object
+                required: [job_id]
+                properties:
+                  job_id:
+                    type: string
+                    format: uuid
         '400':
           $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ============================================================
+  # Jobs
+  # ============================================================
+  /api/svc/v1/jobs/{jobId}:
+    get:
+      tags: [jobs]
+      summary: Get job status
+      description: Returns the current state of a job including progress and step details.
+      operationId: getJobStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          description: Job not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/jobs/{jobId}/cancel:
+    post:
+      tags: [jobs]
+      summary: Cancel a running job
+      description: Requests cancellation of a running job. The worker checks this flag between steps.
+      operationId: cancelJob
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelJobResponse'
+        '404':
+          description: Job not found
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -2232,3 +2298,110 @@ components:
           type: boolean
         message:
           type: string
+
+    # ── Job Tracking ─────────────────────────────────────────
+
+    JobType:
+      type: string
+      enum: [import, rem_cycle]
+
+    JobStatus:
+      type: string
+      enum: [pending, running, completed, completed_with_errors, failed, cancelled, paused]
+
+    JobStepStatus:
+      type: string
+      enum: [pending, running, completed, failed, skipped]
+
+    JobError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        step_id:
+          type: string
+
+    JobStep:
+      type: object
+      required: [id, label, status]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        status:
+          $ref: '#/components/schemas/JobStepStatus'
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        error:
+          $ref: '#/components/schemas/JobError'
+          nullable: true
+
+    Job:
+      type: object
+      required: [id, type, status, progress, steps, ttl_hours, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/JobType'
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        current_step:
+          type: string
+          nullable: true
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobStep'
+        user_id:
+          type: string
+          nullable: true
+        params:
+          type: object
+          additionalProperties: true
+        result:
+          type: object
+          additionalProperties: true
+          nullable: true
+        error:
+          $ref: '#/components/schemas/JobError'
+          nullable: true
+        ttl_hours:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    CancelJobResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [cancelled]

@@ -227,6 +227,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/jobs/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get job status
+         * @description Returns the current state of a job including progress and step details.
+         */
+        get: operations["getJobStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/jobs/{jobId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a running job
+         * @description Requests cancellation of a running job. The worker checks this flag between steps.
+         */
+        post: operations["cancelJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/relationships": {
         parameters: {
             query?: never;
@@ -1092,6 +1132,57 @@ export interface components {
             success: boolean;
             message: string;
         };
+        /** @enum {string} */
+        JobType: "import" | "rem_cycle";
+        /** @enum {string} */
+        JobStatus: "pending" | "running" | "completed" | "completed_with_errors" | "failed" | "cancelled" | "paused";
+        /** @enum {string} */
+        JobStepStatus: "pending" | "running" | "completed" | "failed" | "skipped";
+        JobError: {
+            code: string;
+            message: string;
+            step_id?: string;
+        };
+        JobStep: {
+            id: string;
+            label: string;
+            status: components["schemas"]["JobStepStatus"];
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            completed_at?: string | null;
+            error?: components["schemas"]["JobError"];
+        };
+        Job: {
+            /** Format: uuid */
+            id: string;
+            type: components["schemas"]["JobType"];
+            status: components["schemas"]["JobStatus"];
+            progress: number;
+            current_step?: string | null;
+            steps: components["schemas"]["JobStep"][];
+            user_id?: string | null;
+            params?: {
+                [key: string]: unknown;
+            };
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            error?: components["schemas"]["JobError"];
+            ttl_hours: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            completed_at?: string | null;
+        };
+        CancelJobResponse: {
+            /** @enum {string} */
+            status: "cancelled";
+        };
     };
     responses: {
         /** @description Validation error */
@@ -1516,17 +1607,82 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Import completed successfully */
+            /** @description Import job accepted */
+            202: {
+                headers: {
+                    /** @description URL to poll for job status */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        job_id: string;
+                    };
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    getJobStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Job status */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportResult"];
+                    "application/json": components["schemas"]["Job"];
                 };
             };
-            400: components["responses"]["ValidationError"];
             401: components["responses"]["UnauthorizedError"];
+            /** @description Job not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cancelJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Job cancelled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelJobResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            /** @description Job not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     createRelationship: {

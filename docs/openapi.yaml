@@ -1088,6 +1088,11 @@ components:
           type: integer
           minimum: 0
           description: Inclusive upper bound on relationship_count
+        relationship_ids:
+          type: array
+          items:
+            type: string
+          description: Filter to memories in these relationships (resolved to memory_ids by caller)
 
     GhostSearchContext:
       type: object

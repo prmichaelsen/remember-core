@@ -560,7 +560,7 @@ export interface components {
             };
         };
         /** @enum {string} */
-        ContentType: "code" | "note" | "documentation" | "reference" | "todo" | "checklist" | "project" | "goal" | "habit" | "email" | "conversation" | "meeting" | "person" | "article" | "webpage" | "social" | "image" | "video" | "audio" | "song" | "transcript" | "presentation" | "spreadsheet" | "pdf" | "screenplay" | "recipe" | "idea" | "quote" | "poetry" | "journal" | "memory" | "event" | "bookmark" | "form" | "location" | "invoice" | "contract" | "system" | "action" | "audit" | "history" | "ghost" | "comment";
+        ContentType: "code" | "note" | "documentation" | "reference" | "todo" | "checklist" | "project" | "goal" | "habit" | "email" | "conversation" | "meeting" | "person" | "article" | "webpage" | "social" | "image" | "video" | "audio" | "song" | "transcript" | "presentation" | "spreadsheet" | "pdf" | "screenplay" | "recipe" | "idea" | "quote" | "poetry" | "journal" | "memory" | "event" | "bookmark" | "form" | "location" | "invoice" | "contract" | "system" | "action" | "audit" | "history" | "ghost" | "comment" | "profile" | "agent";
         /**
          * @default exclude
          * @enum {string}
@@ -568,6 +568,8 @@ export interface components {
         DeletedFilter: "exclude" | "include" | "only";
         SearchFilters: {
             types?: components["schemas"]["ContentType"][];
+            /** @description Content types to exclude from results. Takes precedence if a type appears in both types and exclude_types. */
+            exclude_types?: components["schemas"]["ContentType"][];
             tags?: string[];
             weight_min?: number;
             weight_max?: number;
@@ -582,6 +584,8 @@ export interface components {
             relationship_count_min?: number;
             /** @description Inclusive upper bound on relationship_count */
             relationship_count_max?: number;
+            /** @description Filter to memories in these relationships (resolved to memory_ids by caller) */
+            relationship_ids?: string[];
         };
         GhostSearchContext: {
             accessor_trust_level: number;
@@ -609,6 +613,11 @@ export interface components {
             moderation_flags?: string[];
             context_summary?: string;
             context_conversation_id?: string;
+            /**
+             * Format: date-time
+             * @description ISO 8601 datetime for agent follow-up reminders
+             */
+            follow_up_at?: string;
         };
         SearchMemoryInput: {
             query: string;

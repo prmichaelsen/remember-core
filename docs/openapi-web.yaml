@@ -453,6 +453,82 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
   # ============================================================
+  # Compound Endpoints (memory + relationship views)
+  # ============================================================
+  /api/app/v1/memories/{memoryId}/with-relationships:
+    get:
+      tags: [memories]
+      summary: Get memory with relationship previews
+      description: |
+        Returns a memory document plus its relationships with memory title previews.
+        Compound endpoint that avoids N+1 fan-out for the memory view page.
+      operationId: appGetMemoryWithRelationships
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+        - name: includeRelationships
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Whether to include relationship previews
+        - name: relationshipMemoryLimit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 5
+          description: Max memory previews per relationship
+      responses:
+        '200':
+          description: Memory with relationship previews
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryWithRelationships'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/app/v1/relationships/{relationshipId}/memories:
+    get:
+      tags: [relationships]
+      summary: Get relationship with paginated memories
+      description: |
+        Returns relationship metadata plus paginated resolved memories.
+        Compound endpoint for the relationship view page with infinite scroll.
+      operationId: appGetRelationshipMemories
+      parameters:
+        - $ref: '#/components/parameters/relationshipId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          description: Number of memories to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Offset for pagination
+      responses:
+        '200':
+          description: Relationship with paginated memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelationshipMemoriesResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ============================================================
   # Spaces
   # ============================================================
   /api/app/v1/spaces/publish:
@@ -1046,6 +1122,11 @@ components:
           format: date-time
         has_relationships:
           type: boolean
+        relationship_ids:
+          type: array
+          items:
+            type: string
+          description: Filter to memories in these relationships
 
     ModerationAction:
       type: string
@@ -2100,3 +2181,106 @@ components:
           $ref: '#/components/schemas/NotificationPreferences'
         display:
           $ref: '#/components/schemas/DisplayPreferences'
+
+    # ── Compound endpoint response types ──────────────────────────
+
+    MemoryPreview:
+      type: object
+      required: [memory_id, title, author_id, space_ids, group_ids]
+      properties:
+        memory_id:
+          type: string
+        title:
+          type: string
+        author_id:
+          type: string
+        space_ids:
+          type: array
+          items:
+            type: string
+        group_ids:
+          type: array
+          items:
+            type: string
+
+    RelationshipWithPreviews:
+      type: object
+      required: [id, relationship_type, observation, strength, confidence, source, memory_count, memory_previews]
+      properties:
+        id:
+          type: string
+        relationship_type:
+          type: string
+        observation:
+          type: string
+        strength:
+          type: number
+        confidence:
+          type: number
+        source:
+          type: string
+          enum: [user, rem, rule]
+        memory_count:
+          type: integer
+        memory_previews:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryPreview'
+
+    MemoryWithRelationships:
+      type: object
+      required: [memory]
+      properties:
+        memory:
+          type: object
+          description: Full memory document
+        relationships:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelationshipWithPreviews'
+
+    RelationshipMetadata:
+      type: object
+      required: [id, relationship_type, observation, strength, confidence, source, memory_count, created_at, updated_at, tags]
+      properties:
+        id:
+          type: string
+        relationship_type:
+          type: string
+        observation:
+          type: string
+        strength:
+          type: number
+        confidence:
+          type: number
+        source:
+          type: string
+          enum: [user, rem, rule]
+        memory_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+
+    RelationshipMemoriesResponse:
+      type: object
+      required: [relationship, memories, total, has_more]
+      properties:
+        relationship:
+          $ref: '#/components/schemas/RelationshipMetadata'
+        memories:
+          type: array
+          items:
+            type: object
+            description: Full memory document
+        total:
+          type: integer
+        has_more:
+          type: boolean

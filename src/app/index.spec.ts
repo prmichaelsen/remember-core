@@ -10,7 +10,7 @@ describe('createAppClient', () => {
     mockFetch.mockReset();
   });
 
-  it('returns profiles and ghost resource groups', () => {
+  it('returns all resource groups', () => {
     const client = createAppClient({
       baseUrl: 'https://api.example.com',
       getAuthToken: async () => 'token',
@@ -18,6 +18,8 @@ describe('createAppClient', () => {
 
     expect(client.profiles).toBeDefined();
     expect(client.ghost).toBeDefined();
+    expect(client.memories).toBeDefined();
+    expect(client.relationships).toBeDefined();
   });
 
   it('profiles has all 4 methods', () => {
@@ -41,7 +43,25 @@ describe('createAppClient', () => {
     expect(typeof client.ghost.searchAsGhost).toBe('function');
   });
 
-  it('total method count is 5', () => {
+  it('memories has get method', () => {
+    const client = createAppClient({
+      baseUrl: 'https://api.example.com',
+      getAuthToken: async () => 'token',
+    });
+
+    expect(typeof client.memories.get).toBe('function');
+  });
+
+  it('relationships has getMemories method', () => {
+    const client = createAppClient({
+      baseUrl: 'https://api.example.com',
+      getAuthToken: async () => 'token',
+    });
+
+    expect(typeof client.relationships.getMemories).toBe('function');
+  });
+
+  it('total method count is 7', () => {
     const client = createAppClient({
       baseUrl: 'https://api.example.com',
       getAuthToken: async () => 'token',
@@ -49,8 +69,10 @@ describe('createAppClient', () => {
 
     const methodCount =
       Object.keys(client.profiles).length +
-      Object.keys(client.ghost).length;
+      Object.keys(client.ghost).length +
+      Object.keys(client.memories).length +
+      Object.keys(client.relationships).length;
 
-    expect(methodCount).toBe(5);
+    expect(methodCount).toBe(7);
   });
 });

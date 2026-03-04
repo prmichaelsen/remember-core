@@ -245,6 +245,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/app/v1/memories/{memoryId}/with-relationships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get memory with relationship previews
+         * @description Returns a memory document plus its relationships with memory title previews.
+         *     Compound endpoint that avoids N+1 fan-out for the memory view page.
+         */
+        get: operations["appGetMemoryWithRelationships"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/app/v1/relationships/{relationshipId}/memories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get relationship with paginated memories
+         * @description Returns relationship metadata plus paginated resolved memories.
+         *     Compound endpoint for the relationship view page with infinite scroll.
+         */
+        get: operations["appGetRelationshipMemories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/app/v1/spaces/publish": {
         parameters: {
             query?: never;
@@ -536,6 +578,8 @@ export interface components {
             /** Format: date-time */
             date_to?: string;
             has_relationships?: boolean;
+            /** @description Filter to memories in these relationships */
+            relationship_ids?: string[];
         };
         /** @enum {string} */
         ModerationAction: "approve" | "reject" | "remove";
@@ -982,6 +1026,50 @@ export interface components {
             privacy?: components["schemas"]["PrivacyPreferences"];
             notifications?: components["schemas"]["NotificationPreferences"];
             display?: components["schemas"]["DisplayPreferences"];
+        };
+        MemoryPreview: {
+            memory_id: string;
+            title: string;
+            author_id: string;
+            space_ids: string[];
+            group_ids: string[];
+        };
+        RelationshipWithPreviews: {
+            id: string;
+            relationship_type: string;
+            observation: string;
+            strength: number;
+            confidence: number;
+            /** @enum {string} */
+            source: "user" | "rem" | "rule";
+            memory_count: number;
+            memory_previews: components["schemas"]["MemoryPreview"][];
+        };
+        MemoryWithRelationships: {
+            /** @description Full memory document */
+            memory: Record<string, never>;
+            relationships?: components["schemas"]["RelationshipWithPreviews"][];
+        };
+        RelationshipMetadata: {
+            id: string;
+            relationship_type: string;
+            observation: string;
+            strength: number;
+            confidence: number;
+            /** @enum {string} */
+            source: "user" | "rem" | "rule";
+            memory_count: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            tags: string[];
+        };
+        RelationshipMemoriesResponse: {
+            relationship: components["schemas"]["RelationshipMetadata"];
+            memories: Record<string, never>[];
+            total: number;
+            has_more: boolean;
         };
     };
     responses: {
@@ -1516,6 +1604,66 @@ export interface operations {
             };
             400: components["responses"]["ValidationError"];
             401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    appGetMemoryWithRelationships: {
+        parameters: {
+            query?: {
+                /** @description Whether to include relationship previews */
+                includeRelationships?: boolean;
+                /** @description Max memory previews per relationship */
+                relationshipMemoryLimit?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Memory UUID */
+                memoryId: components["parameters"]["memoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Memory with relationship previews */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryWithRelationships"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    appGetRelationshipMemories: {
+        parameters: {
+            query?: {
+                /** @description Number of memories to return */
+                limit?: number;
+                /** @description Offset for pagination */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Relationship UUID */
+                relationshipId: components["parameters"]["relationshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Relationship with paginated memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationshipMemoriesResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
         };
     };
     appPublishToSpace: {

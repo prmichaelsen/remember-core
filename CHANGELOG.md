@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.26.1] - 2026-03-04
+
+### Added
+- **MemoryResolutionService** — cross-collection memory lookup with fallback when context params (author/space/group) are invalid
+  - `resolveCollectionName()` — collection resolution with priority: group > space > author > user's own
+  - `resolve()` — fetch memory by ID, trying the requested collection first then falling back to user's own collection
+  - Handles cases where agents construct memory links with incorrect context params
+  - Exported types: `MemorySource`, `ResolvedMemory`
+
+Version: 0.26.0 → 0.26.1
+
 ## [0.26.0] - 2026-03-04
 
 ### Added

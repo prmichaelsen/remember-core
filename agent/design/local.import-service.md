@@ -260,15 +260,43 @@ import(userId, input) {
 }
 ```
 
-### 7. File Structure
+### 7. OpenAPI Spec
+
+Define the import endpoint in the OpenAPI spec (`docs/openapi.yaml`) so that request/response types for the SVC client SDK are generated rather than hand-written. This follows the existing pattern — `openapi-typescript` generates types from the spec, and the SVC client references them.
+
+```yaml
+/api/svc/v1/memories/import:
+  post:
+    summary: Bulk import text into memories
+    operationId: importMemories
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ImportInput'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportResult'
+```
+
+The `ImportInput` and `ImportResult` schemas should be defined in `components/schemas` alongside the existing memory schemas.
+
+### 8. File Structure
 
 ```
+docs/
+  openapi.yaml              # Add import endpoint + schemas
+
 src/services/
-  import.service.ts       # ImportService class
-  import.service.spec.ts  # Colocated unit tests
+  import.service.ts          # ImportService class
+  import.service.spec.ts     # Colocated unit tests
 
 src/clients/svc/v1/
-  memories.ts             # Add import() method to MemoriesResource
+  memories.ts                # Add import() method to MemoriesResource (types from generated spec)
 ```
 
 No new barrel exports needed beyond adding `ImportService` and its types to `src/services/index.ts`.

@@ -26,7 +26,7 @@ export interface MemoriesResource {
   byDensity(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byTimeSlice(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byDensitySlice(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
-  import(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  import(userId: string, input: Record<string, unknown>): Promise<SdkResponse<{ job_id: string }>>;
 }
 
 export function createMemoriesResource(http: HttpClient): MemoriesResource {

@@ -11,6 +11,7 @@ import { createConfirmationsResource } from './confirmations.js';
 import { createPreferencesResource } from './preferences.js';
 import { createTrustResource } from './trust.js';
 import { createHealthResource } from './health.js';
+import { createJobsResource } from './jobs.js';
 import type { MemoriesResource } from './memories.js';
 import type { RelationshipsResource } from './relationships.js';
 import type { SpacesResource } from './spaces.js';
@@ -18,6 +19,7 @@ import type { ConfirmationsResource } from './confirmations.js';
 import type { PreferencesResource } from './preferences.js';
 import type { TrustResource } from './trust.js';
 import type { HealthResource } from './health.js';
+import type { JobsResource } from './jobs.js';
 
 export interface SvcClient {
   memories: MemoriesResource;
@@ -27,6 +29,7 @@ export interface SvcClient {
   preferences: PreferencesResource;
   trust: TrustResource;
   health: HealthResource;
+  jobs: JobsResource;
 }
 
 /**
@@ -46,6 +49,7 @@ export function createSvcClient(config: HttpClientConfig): SvcClient {
     preferences: createPreferencesResource(http),
     trust: createTrustResource(http),
     health: createHealthResource(http),
+    jobs: createJobsResource(http),
   };
 }
 
@@ -59,3 +63,4 @@ export type { ConfirmationsResource } from './confirmations.js';
 export type { PreferencesResource } from './preferences.js';
 export type { TrustResource } from './trust.js';
 export type { HealthResource } from './health.js';
+export type { JobsResource, PollOptions } from './jobs.js';

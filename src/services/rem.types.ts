@@ -37,11 +37,17 @@ export const DEFAULT_REM_CONFIG: RemConfig = {
 
 // ─── State Tracking ──────────────────────────────────────────────────────
 
+/**
+ * @deprecated Use job-based REM scheduling instead. See RemJobWorker and scheduleRemJobs.
+ */
 export interface RemCursorState {
   last_collection_id: string;
   last_run_at: string; // ISO timestamp
 }
 
+/**
+ * @deprecated Use job-based REM scheduling instead. See RemJobWorker and scheduleRemJobs.
+ */
 export interface RemCollectionState {
   collection_id: string;
   last_processed_at: string; // ISO timestamp

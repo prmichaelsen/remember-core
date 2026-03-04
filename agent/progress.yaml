@@ -223,13 +223,13 @@ milestones:
 
   - id: M15
     name: Relationship GUI App Endpoints
-    status: completed
-    progress: 100
+    status: in_progress
+    progress: 80
     estimated_weeks: 1
     tasks_completed: 4
-    tasks_total: 4
+    tasks_total: 5
     started: 2026-03-04
-    completed: 2026-03-04
+    completed: null
     notes: |
       App Client compound endpoints for agentbase.me M46 Relationship GUI.
       Endpoint A: memory + relationship previews. Endpoint B: paginated
@@ -1152,12 +1152,21 @@ tasks:
       notes: |
         Wire memories + relationships into createAppClient(). Update
         OpenAPI specs. Regenerate types. Run full test suite.
+    - id: task-81
+      name: Wire relationship_ids Filter in Search Pipeline
+      status: not_started
+      file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-81-wire-relationship-ids-filter.md
+      estimated_hours: 2-3
+      dependencies: task-71
+      notes: |
+        Implement memory_ids filter in buildDocTypeFilters(). Callers resolve
+        relationship_ids to memory_ids before calling MemoryService.search().
 
 documentation:
   design_documents: 11
   milestone_documents: 12
   pattern_documents: 25
-  task_documents: 75
+  task_documents: 76
 
 progress:
   planning: 100

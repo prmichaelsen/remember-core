@@ -223,13 +223,13 @@ milestones:
 
   - id: M15
     name: Relationship GUI App Endpoints
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 4
     tasks_total: 4
-    started: null
-    completed: null
+    started: 2026-03-04
+    completed: 2026-03-04
     notes: |
       App Client compound endpoints for agentbase.me M46 Relationship GUI.
       Endpoint A: memory + relationship previews. Endpoint B: paginated
@@ -1118,7 +1118,7 @@ tasks:
   milestone_15:
     - id: task-71
       name: RelationshipService.getById + relationship_ids Filter
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-71-relationship-getbyid-searchfilters.md
       estimated_hours: 2-3
       dependencies: none
@@ -1127,7 +1127,7 @@ tasks:
         to SearchFilters. Wire ID filter support for scoped search.
     - id: task-72
       name: App Client Endpoint B — relationships.getMemories
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-72-app-endpoint-b-relationship-memories.md
       estimated_hours: 2-3
       dependencies: task-71
@@ -1136,7 +1136,7 @@ tasks:
         getMemories() for paginated relationship memory resolution.
     - id: task-73
       name: App Client Endpoint A — memories.get with Relationship Previews
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-73-app-endpoint-a-memory-with-relationships.md
       estimated_hours: 3-4
       dependencies: task-71
@@ -1145,7 +1145,7 @@ tasks:
         memory + RelationshipWithPreviews[] with MemoryPreview titles.
     - id: task-74
       name: AppClient Factory + OpenAPI Specs + Tests
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-74-app-factory-openapi-tests.md
       estimated_hours: 2-3
       dependencies: task-72, task-73

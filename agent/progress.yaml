@@ -221,6 +221,41 @@ milestones:
       See: agent/milestones/milestone-14-import-service.md
       See: agent/design/local.import-service.md
 
+  - id: M15
+    name: Relationship GUI App Endpoints
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 4
+    started: null
+    completed: null
+    notes: |
+      App Client compound endpoints for agentbase.me M46 Relationship GUI.
+      Endpoint A: memory + relationship previews. Endpoint B: paginated
+      relationship memories. SearchFilters: relationship_ids. Adds
+      RelationshipService.getById(), two new App Client resources.
+      See: agent/milestones/milestone-15-relationship-gui-app-endpoints.md
+      See: agent/design/local.relationship-gui-app-endpoints.md
+
+  - id: M16
+    name: Job Tracking System
+    status: not_started
+    progress: 0
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 6
+    started: null
+    completed: null
+    notes: |
+      Async job infrastructure for long-running operations. Firestore-backed
+      state, Cloud Run Jobs execution, REST polling, stepped progress.
+      Migrates ImportService to async (202 + job_id). REM migrates from
+      hourly round-robin to daily per-collection jobs. Extensible to future
+      job types (bulk delete, export, re-indexing, dedup).
+      See: agent/milestones/milestone-16-job-tracking-system.md
+      See: agent/design/local.job-tracking-system.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1024,11 +1059,105 @@ tasks:
         Export ImportService + types from services barrel. TypeScript compiles
         clean. All 536 tests passing across 37 suites.
 
+  milestone_16:
+    - id: task-75
+      name: Job types and JobService
+      status: not_started
+      file: agent/tasks/milestone-16-job-tracking-system/task-75-job-types-and-service.md
+      estimated_hours: 3-4
+      dependencies: []
+      notes: |
+        Job state types (Job, JobStep, JobError, JobStatus, JobType).
+        JobService — Firestore CRUD for job records. TTL cleanup.
+    - id: task-76
+      name: ImportJobWorker
+      status: not_started
+      file: agent/tasks/milestone-16-job-tracking-system/task-76-import-job-worker.md
+      estimated_hours: 4-6
+      dependencies: [task-75]
+      notes: |
+        Refactor ImportService into job-native worker. Per-chunk steps,
+        progress tracking, cancellation, partial failure support.
+    - id: task-77
+      name: OpenAPI spec and job REST endpoints
+      status: not_started
+      file: agent/tasks/milestone-16-job-tracking-system/task-77-openapi-spec-job-endpoints.md
+      estimated_hours: 2-3
+      dependencies: [task-75]
+      notes: |
+        Job schemas in OpenAPI spec. GET /jobs/:id, POST /jobs/:id/cancel.
+        Update import endpoint to 202 + job_id. Regenerate types.
+    - id: task-78
+      name: SVC client JobsResource
+      status: not_started
+      file: agent/tasks/milestone-16-job-tracking-system/task-78-svc-client-jobs-resource.md
+      estimated_hours: 3-4
+      dependencies: [task-77]
+      notes: |
+        client.jobs.get(), client.jobs.cancel(), client.jobs.poll() helper.
+        Update memories.import() return type to { job_id }.
+    - id: task-79
+      name: REM job migration
+      status: not_started
+      file: agent/tasks/milestone-16-job-tracking-system/task-79-rem-job-migration.md
+      estimated_hours: 3-4
+      dependencies: [task-75]
+      notes: |
+        Daily cron creates per-collection REM jobs. RemJobWorker.
+        Replaces round-robin cursor. Deprecate RemCursorState.
+    - id: task-80
+      name: Barrel exports and integration tests
+      status: not_started
+      file: agent/tasks/milestone-16-job-tracking-system/task-80-barrel-exports-integration-tests.md
+      estimated_hours: 2-3
+      dependencies: [task-75, task-76, task-78, task-79]
+      notes: |
+        Export all job modules from barrels. Integration tests for
+        full import job lifecycle, cancellation, partial failure.
+
+  milestone_15:
+    - id: task-71
+      name: RelationshipService.getById + relationship_ids Filter
+      status: not_started
+      file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-71-relationship-getbyid-searchfilters.md
+      estimated_hours: 2-3
+      dependencies: none
+      notes: |
+        Add getById() method to RelationshipService. Add relationship_ids
+        to SearchFilters. Wire ID filter support for scoped search.
+    - id: task-72
+      name: App Client Endpoint B — relationships.getMemories
+      status: not_started
+      file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-72-app-endpoint-b-relationship-memories.md
+      estimated_hours: 2-3
+      dependencies: task-71
+      notes: |
+        Create src/app/relationships.ts with RelationshipsResource.
+        getMemories() for paginated relationship memory resolution.
+    - id: task-73
+      name: App Client Endpoint A — memories.get with Relationship Previews
+      status: not_started
+      file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-73-app-endpoint-a-memory-with-relationships.md
+      estimated_hours: 3-4
+      dependencies: task-71
+      notes: |
+        Create src/app/memories.ts with MemoriesResource. get() returns
+        memory + RelationshipWithPreviews[] with MemoryPreview titles.
+    - id: task-74
+      name: AppClient Factory + OpenAPI Specs + Tests
+      status: not_started
+      file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-74-app-factory-openapi-tests.md
+      estimated_hours: 2-3
+      dependencies: task-72, task-73
+      notes: |
+        Wire memories + relationships into createAppClient(). Update
+        OpenAPI specs. Regenerate types. Run full test suite.
+
 documentation:
-  design_documents: 9
-  milestone_documents: 10
+  design_documents: 11
+  milestone_documents: 12
   pattern_documents: 25
-  task_documents: 65
+  task_documents: 75
 
 progress:
   planning: 100
@@ -1036,6 +1165,14 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-03-04
+    description: |
+      Planned M16 — Job Tracking System
+    items:
+      - "Created design doc: agent/design/local.job-tracking-system.md"
+      - "Created clarification-5 with 23 questions, all answered"
+      - "Created milestone-16 with 6 tasks (task-75 through task-80)"
+      - "Added to key file index at weight 0.75"
   - date: 2026-03-03
     description: |
       🎉 M11 COMPLETE — Task 40: Add byDensity sort mode to MemoryService

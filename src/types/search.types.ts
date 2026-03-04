@@ -24,6 +24,7 @@ export interface SearchFilters {
   has_relationships?: boolean;
   relationship_count_min?: number;  // inclusive lower bound
   relationship_count_max?: number;  // inclusive upper bound
+  relationship_ids?: string[];      // filter to memories in these relationships
 }
 
 /**

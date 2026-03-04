@@ -27,6 +27,44 @@ describe('RelationshipService', () => {
     });
   }
 
+  describe('getById', () => {
+    it('returns relationship when found', async () => {
+      const relId = await collection.data.insert({
+        properties: {
+          user_id: userId,
+          doc_type: 'relationship',
+          related_memory_ids: ['mem-1', 'mem-2'],
+          relationship_type: 'related_to',
+          observation: 'test observation',
+          strength: 0.7,
+          confidence: 0.9,
+          source: 'user',
+          tags: ['tag1'],
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+          version: 1,
+        },
+      });
+
+      const result = await service.getById(relId);
+      expect(result.found).toBe(true);
+      if (result.found) {
+        expect(result.relationship.id).toBe(relId);
+        expect(result.relationship.relationship_type).toBe('related_to');
+        expect(result.relationship.observation).toBe('test observation');
+        expect(result.relationship.strength).toBe(0.7);
+        expect(result.relationship.confidence).toBe(0.9);
+        expect(result.relationship.related_memory_ids).toEqual(['mem-1', 'mem-2']);
+      }
+    });
+
+    it('returns { found: false } when not found', async () => {
+      const result = await service.getById('nonexistent-id');
+      expect(result.found).toBe(false);
+      expect(result.relationship).toBeUndefined();
+    });
+  });
+
   describe('create', () => {
     it('creates a relationship between two memories', async () => {
       const mem1 = await insertMemory();

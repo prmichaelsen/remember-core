@@ -63,6 +63,7 @@ export {
   type SearchRelationshipResult,
   type FindByMemoryIdsInput,
   type FindByMemoryIdsResult,
+  type GetRelationshipResult,
   type DeleteRelationshipInput,
   type DeleteRelationshipResult,
 } from './relationship.service.js';

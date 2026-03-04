@@ -82,6 +82,10 @@ export interface FindByMemoryIdsResult {
   total: number;
 }
 
+export type GetRelationshipResult =
+  | { found: true; relationship: Record<string, unknown> }
+  | { found: false; relationship?: undefined };
+
 export interface DeleteRelationshipInput {
   relationship_id: string;
 }
@@ -148,6 +152,27 @@ export class RelationshipService {
       this.logger.error(`Failed to update relationship_count for ${memoryId}:`, { error: error?.message || String(error) });
       // Don't throw - this is a denormalized field, not critical for relationship creation
     }
+  }
+
+  // ── Get by ID ────────────────────────────────────────────────────────
+
+  async getById(relationshipId: string): Promise<GetRelationshipResult> {
+    const result = await this.collection.query.fetchObjectById(relationshipId, {
+      returnProperties: [
+        'user_id', 'related_memory_ids', 'relationship_type', 'observation',
+        'strength', 'confidence', 'source', 'tags',
+        'created_at', 'updated_at', 'version',
+      ],
+    });
+
+    if (!result) {
+      return { found: false };
+    }
+
+    return {
+      found: true,
+      relationship: { id: relationshipId, ...result.properties },
+    };
   }
 
   // ── Create ──────────────────────────────────────────────────────────

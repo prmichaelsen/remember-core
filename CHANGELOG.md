@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.24.2] - 2026-03-04
+
+### Added
+- Process-level TTL cache (60s) for `ensureUserCollection`, `ensureSpacesCollection`, `ensureGroupCollection`, and `ensurePublicCollection` — skips redundant Weaviate `exists()` and `reconcileCollectionProperties()` calls on cache hit
+- `clearCollectionCache()` export for testing and manual invalidation
+- 6 new cache tests (hit, miss, TTL expiry, isolation, clear)
+
+Version: 0.24.1 → 0.24.2
+
 ## [0.24.1] - 2026-03-03
 
 ### Added

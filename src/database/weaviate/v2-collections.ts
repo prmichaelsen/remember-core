@@ -12,6 +12,27 @@ import { configure } from 'weaviate-client';
 import type { WeaviateClient } from 'weaviate-client';
 import { registerCollection } from '../collection-registry.js';
 
+// ─── Collection Initialization Cache ──────────────────────────────────
+// Process-level TTL cache to skip redundant exists() + reconcile() calls.
+
+const collectionCache = new Map<string, number>();
+const COLLECTION_CACHE_TTL_MS = 60_000; // 60 seconds
+
+export function isCollectionCached(collectionName: string): boolean {
+  const expiresAt = collectionCache.get(collectionName);
+  if (expiresAt !== undefined && Date.now() < expiresAt) return true;
+  collectionCache.delete(collectionName);
+  return false;
+}
+
+export function cacheCollection(collectionName: string): void {
+  collectionCache.set(collectionName, Date.now() + COLLECTION_CACHE_TTL_MS);
+}
+
+export function clearCollectionCache(): void {
+  collectionCache.clear();
+}
+
 /**
  * Common properties shared across all memory collection types.
  *
@@ -251,9 +272,12 @@ export async function ensureUserCollection(
 ): Promise<boolean> {
   const collectionName = `Memory_users_${userId}`;
 
+  if (isCollectionCached(collectionName)) return false;
+
   const exists = await client.collections.exists(collectionName);
   if (exists) {
     await reconcileCollectionProperties(client, collectionName, COMMON_MEMORY_PROPERTIES);
+    cacheCollection(collectionName);
     return false;
   }
 
@@ -265,6 +289,7 @@ export async function ensureUserCollection(
     owner_id: userId,
     created_at: new Date().toISOString(),
   });
+  cacheCollection(collectionName);
   return true;
 }
 
@@ -275,6 +300,8 @@ export async function ensureUserCollection(
 export async function ensureSpacesCollection(client: WeaviateClient): Promise<boolean> {
   const collectionName = 'Memory_spaces_public';
 
+  if (isCollectionCached(collectionName)) return false;
+
   const exists = await client.collections.exists(collectionName);
   if (exists) {
     await reconcileCollectionProperties(
@@ -282,6 +309,7 @@ export async function ensureSpacesCollection(client: WeaviateClient): Promise<bo
       collectionName,
       [...COMMON_MEMORY_PROPERTIES, ...PUBLISHED_MEMORY_PROPERTIES],
     );
+    cacheCollection(collectionName);
     return false;
   }
 
@@ -293,6 +321,7 @@ export async function ensureSpacesCollection(client: WeaviateClient): Promise<bo
     owner_id: null,
     created_at: new Date().toISOString(),
   });
+  cacheCollection(collectionName);
   return true;
 }
 
@@ -306,6 +335,8 @@ export async function ensureGroupCollection(
 ): Promise<boolean> {
   const collectionName = `Memory_groups_${groupId}`;
 
+  if (isCollectionCached(collectionName)) return false;
+
   const exists = await client.collections.exists(collectionName);
   if (exists) {
     await reconcileCollectionProperties(
@@ -313,6 +344,7 @@ export async function ensureGroupCollection(
       collectionName,
       [...COMMON_MEMORY_PROPERTIES, ...PUBLISHED_MEMORY_PROPERTIES],
     );
+    cacheCollection(collectionName);
     return false;
   }
 
@@ -324,6 +356,7 @@ export async function ensureGroupCollection(
     owner_id: groupId,
     created_at: new Date().toISOString(),
   });
+  cacheCollection(collectionName);
   return true;
 }
 

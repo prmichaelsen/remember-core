@@ -5,7 +5,7 @@
 
 import type { WeaviateClient, Collection } from 'weaviate-client';
 import { SUPPORTED_SPACES, SPACE_DISPLAY_NAMES, type SpaceId } from '../../types/space.types.js';
-import { createSpaceCollectionSchema } from './v2-collections.js';
+import { createSpaceCollectionSchema, isCollectionCached, cacheCollection } from './v2-collections.js';
 
 /**
  * Unified public collection name for all public spaces (v2)
@@ -49,10 +49,13 @@ export async function ensurePublicCollection(
 ): Promise<Collection<any>> {
   const collectionName = PUBLIC_COLLECTION_NAME;
 
-  const exists = await client.collections.exists(collectionName);
-  if (!exists) {
-    const schema = createSpaceCollectionSchema();
-    await client.collections.create(schema);
+  if (!isCollectionCached(collectionName)) {
+    const exists = await client.collections.exists(collectionName);
+    if (!exists) {
+      const schema = createSpaceCollectionSchema();
+      await client.collections.create(schema);
+    }
+    cacheCollection(collectionName);
   }
 
   return client.collections.get(collectionName);

@@ -3,7 +3,7 @@ project:
   version: 0.22.4
   started: 2026-02-27
   status: in_progress
-  current_milestone: M12
+  current_milestone: M13
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -188,6 +188,22 @@ milestones:
       graded (desc) vs even (asc). No Weaviate schema changes needed.
       See: agent/milestones/milestone-12-time-slice-search.md
       See: agent/design/local.by-time-slice-search.md
+
+  - id: M13
+    name: Performance
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 2
+    started: null
+    completed: null
+    notes: |
+      Reduce latency on critical hot paths: REM cycle time (~20s → ~5s via
+      parallelization), search pipeline (progressive bucket fetching), and
+      Weaviate collection initialization (TTL cache). All optimizations
+      transparent — no API changes, no schema migrations.
+      See: agent/milestones/milestone-13-performance.md
 
 tasks:
   milestone_1:
@@ -902,6 +918,26 @@ tasks:
         remember-core/search subpath export. Package.json, typesVersions,
         CHANGELOG, README, version bump.
 
+  milestone_13:
+    - id: task-66
+      name: Progressive bucket fetching for search pipelines
+      status: not_started
+      file: agent/tasks/milestone-13-performance/task-66-progressive-bucket-fetching.md
+      estimated_hours: 3-4
+      dependencies: []
+      notes: |
+        Short-circuit time-slice (14) and density-slice (9) when early buckets
+        satisfy the limit. Query top buckets first, expand if needed.
+    - id: task-67
+      name: Collection initialization cache
+      status: not_started
+      file: agent/tasks/milestone-13-performance/task-67-collection-init-cache.md
+      estimated_hours: 2-3
+      dependencies: []
+      notes: |
+        Process-level TTL cache for ensureUserCollection/ensurePublicCollection.
+        Skip reconcileCollectionProperties on cache hit. ~100-200ms savings per op.
+
   unassigned:
     - id: task-56
       name: Replace Weaviate listAll() with Firestore collection registry
@@ -929,12 +965,21 @@ tasks:
         Bug fix — TrustResource uses SdkResponse<unknown> and Record<string, unknown>
         instead of generated GhostConfigResult / UpdateGhostConfigInput types.
         Caused agentbase.me bug where raw SdkResponse was returned as config.
+    - id: task-63
+      name: Pool Weaviate Collection Initialization
+      status: not_started
+      file: agent/tasks/unassigned/task-63-weaviate-collection-pool.md
+      estimated_hours: 2-3
+      notes: |
+        Cache ensureUserCollection() results so repeated requests for the same user
+        skip Weaviate existence check and schema reconciliation. Process-level cache
+        with TTL. The client is already a singleton — this caches collection readiness.
 
 documentation:
   design_documents: 9
   milestone_documents: 10
   pattern_documents: 25
-  task_documents: 64
+  task_documents: 65
 
 progress:
   planning: 100

@@ -45,7 +45,10 @@ export class HttpClient {
   }
 
   async request<T>(method: string, path: string, options?: RequestOptions): Promise<SdkResponse<T>> {
-    const url = `${this.baseUrl}${path}`;
+    const queryString = options?.params && Object.keys(options.params).length > 0
+      ? '?' + new URLSearchParams(options.params).toString()
+      : '';
+    const url = `${this.baseUrl}${path}${queryString}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };

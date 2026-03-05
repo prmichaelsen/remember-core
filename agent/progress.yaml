@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.27.0
+  version: 0.27.2
   started: 2026-02-27
   status: in_progress
   current_milestone: M13
@@ -224,10 +224,10 @@ milestones:
   - id: M15
     name: Relationship GUI App Endpoints
     status: in_progress
-    progress: 80
+    progress: 86
     estimated_weeks: 1
-    tasks_completed: 4
-    tasks_total: 6
+    tasks_completed: 6
+    tasks_total: 8
     started: 2026-03-04
     completed: null
     notes: |
@@ -1161,6 +1161,25 @@ tasks:
       notes: |
         Implement memory_ids filter in buildDocTypeFilters(). Callers resolve
         relationship_ids to memory_ids before calling MemoryService.search().
+    - id: task-82
+      name: Add includeSimilar Support to AppClient.memories.get()
+      status: not_started
+      file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-82-app-memories-include-similar.md
+      estimated_hours: 1-2
+      dependencies: task-73
+      notes: |
+        Add includeSimilar and similarLimit options to MemoriesResource.get().
+        Update OpenAPI spec. Add unit tests.
+    - id: task-83
+      name: Fix HttpClient Query Params Not Appended to URL
+      status: completed
+      completed_date: 2026-03-05
+      file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-83-fix-httpclient-query-params.md
+      estimated_hours: 0.5
+      dependencies: null
+      notes: |
+        Fixed HttpClient.request() to append options.params as URL query string.
+        3 new tests. 626 total passing.
 
 documentation:
   design_documents: 11
@@ -1174,6 +1193,15 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-03-05
+    description: |
+      Task 83: Fix HttpClient query params bug (M15)
+    items:
+      - "Fixed HttpClient.request() to append options.params as URL query string"
+      - "Empty/undefined params do not add trailing ?"
+      - "3 new unit tests for params serialization"
+      - "626 tests passing across 45 suites"
+      - "Version: 0.27.1 → 0.27.2"
   - date: 2026-03-04
     description: |
       Planned M16 — Job Tracking System

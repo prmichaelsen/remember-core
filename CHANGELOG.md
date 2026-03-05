@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.27.2] - 2026-03-05
+
+### Fixed
+- **HttpClient query params bug** — `HttpClient.request()` now appends `options.params` as URL query string
+  - Previously, params were silently dropped (URL constructed without query string)
+  - Affected all App Client GET requests: `memories.get()`, `relationships.getMemories()`
+  - Empty/undefined params do not add trailing `?`
+  - 3 new unit tests for params serialization
+  - 626 tests passing across 45 suites
+
+Completed Task 83: Fix HttpClient Query Params Not Appended to URL
+Version: 0.27.1 → 0.27.2
+
 ## [0.27.1] - 2026-03-04
 
 ### Added

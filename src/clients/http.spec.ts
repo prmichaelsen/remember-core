@@ -54,6 +54,59 @@ describe('HttpClient', () => {
     });
   });
 
+  describe('query params', () => {
+    it('appends params as query string', async () => {
+      mockFetch.mockResolvedValue(mockJsonResponse(200, { ok: true }));
+
+      const client = new HttpClient({
+        baseUrl: 'https://api.example.com',
+        getAuthToken: async () => 'token',
+      });
+
+      await client.request('GET', '/api/app/v1/memories/123', {
+        userId: 'user1',
+        params: { includeRelationships: 'true', relationshipMemoryLimit: '5' },
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/api/app/v1/memories/123?includeRelationships=true&relationshipMemoryLimit=5',
+        expect.any(Object),
+      );
+    });
+
+    it('does not add trailing ? when params is empty', async () => {
+      mockFetch.mockResolvedValue(mockJsonResponse(200, { ok: true }));
+
+      const client = new HttpClient({
+        baseUrl: 'https://api.example.com',
+        getAuthToken: async () => 'token',
+      });
+
+      await client.request('GET', '/health', { userId: 'user1', params: {} });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/health',
+        expect.any(Object),
+      );
+    });
+
+    it('does not add trailing ? when params is undefined', async () => {
+      mockFetch.mockResolvedValue(mockJsonResponse(200, { ok: true }));
+
+      const client = new HttpClient({
+        baseUrl: 'https://api.example.com',
+        getAuthToken: async () => 'token',
+      });
+
+      await client.request('GET', '/health', { userId: 'user1' });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/health',
+        expect.any(Object),
+      );
+    });
+  });
+
   describe('HTTP method and body', () => {
     it('sends GET request without body', async () => {
       mockFetch.mockResolvedValue(mockJsonResponse(200, {}));

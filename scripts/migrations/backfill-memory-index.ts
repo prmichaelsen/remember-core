@@ -82,24 +82,30 @@ async function backfillMemoryIndex() {
 
       const collection = client.collections.get(collectionName);
 
-      // Fetch all memories in batches
+      // Fetch all objects using cursor-based pagination
+      // Note: Weaviate cursor API doesn't allow filters with `after`,
+      // so we fetch all objects and filter client-side
       const batchSize = 100;
-      let hasMore = true;
+      let afterCursor: string | undefined = undefined;
       let collectionCount = 0;
 
-      while (hasMore) {
+      while (true) {
         const results = await collection.query.fetchObjects({
           limit: batchSize,
-          filters: collection.filter.byProperty('doc_type').equal('memory'),
+          ...(afterCursor ? { after: afterCursor } : {}),
+          returnProperties: ['doc_type'],
         });
 
         if (results.objects.length === 0) {
-          hasMore = false;
           break;
         }
 
-        // Index each memory
+        // Track cursor for next page
+        afterCursor = results.objects[results.objects.length - 1].uuid;
+
+        // Index only memory objects
         for (const obj of results.objects) {
+          if (obj.properties.doc_type !== 'memory') continue;
           try {
             await indexService.index(obj.uuid, collectionName);
             stats.memories_indexed++;
@@ -115,7 +121,7 @@ async function backfillMemoryIndex() {
         }
 
         if (results.objects.length < batchSize) {
-          hasMore = false;
+          break;
         }
       }
 

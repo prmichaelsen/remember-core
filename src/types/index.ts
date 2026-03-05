@@ -98,6 +98,7 @@ export {
   TRUST_LABELS,
   ALL_TRUST_LEVELS,
   isValidTrustLevel,
+  normalizeTrustScore,
 } from './trust.types.js';
 export type { TrustLevel as TrustLevelType } from './trust.types.js';
 

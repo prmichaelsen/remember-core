@@ -296,8 +296,8 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1
-    tasks_completed: 1
-    tasks_total: 5
+    tasks_completed: 2
+    tasks_total: 6
     notes: |
       Redesign trust system: invert semantics (higher = more confidential),
       switch float 0-1 to integer 1-5, add named labels (Public/Internal/
@@ -1447,12 +1447,27 @@ tasks:
       notes: |
         Migrate trust_score from float to int (inverted). Migration function
         with rounding strategy. Batch migration script. Schema property update.
+    - id: task-103
+      name: Read-Time Trust Score Normalization
+      status: completed
+      completed_date: 2026-03-05
+      actual_hours: 0.08
+      file: agent/tasks/milestone-19-trust-level-redesign/task-103-read-time-trust-normalization.md
+      estimated_hours: 2-3
+      dependencies: task-98
+      notes: |
+        normalizeTrustScore() in trust.types.ts. Applied at all MemoryService
+        read boundaries (getById, resolveById, search, byTime, byDensity,
+        findSimilar, query). create() default changed to TrustLevel.INTERNAL (2).
+        update() validation changed to isValidTrustLevel(). Web SDK transforms
+        (memories.ts, spaces.ts) updated. Exported from types barrel.
+        Unit tests written. tsc --noEmit clean.
     - id: task-102
       name: Tests and Documentation
       status: not_started
       file: agent/tasks/milestone-19-trust-level-redesign/task-102-tests-and-documentation.md
       estimated_hours: 2-3
-      dependencies: [task-99, task-100, task-101]
+      dependencies: [task-99, task-100, task-101, task-103]
       notes: |
         Update all trust-related tests to integer 1-5. Update design docs
         (trust-enforcement, ghost-persona, access-control-result). Update

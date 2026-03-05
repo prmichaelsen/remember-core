@@ -46,3 +46,25 @@ export const ALL_TRUST_LEVELS: readonly TrustLevel[] = [
 export function isValidTrustLevel(value: unknown): value is TrustLevel {
   return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 5;
 }
+
+/**
+ * Normalize a trust_score value to integer TrustLevel (1-5).
+ * Handles both legacy floats (0-1, higher=open) and already-migrated integers (1-5, higher=confidential).
+ * Safe to call on any trust value — idempotent for integers.
+ */
+export function normalizeTrustScore(value: number | undefined | null): TrustLevel {
+  if (value == null) return TrustLevel.INTERNAL; // default
+
+  // Already a valid integer trust level — pass through
+  if (isValidTrustLevel(value)) return value;
+
+  // Legacy float (0-1): invert and map to nearest tier
+  // Old semantics: 0 = private/secret, 1 = public/open
+  // New semantics: 1 = Public, 5 = Secret
+  const inverted = 1 - value;
+  if (inverted >= 0.875) return TrustLevel.SECRET;
+  if (inverted >= 0.625) return TrustLevel.RESTRICTED;
+  if (inverted >= 0.375) return TrustLevel.CONFIDENTIAL;
+  if (inverted >= 0.125) return TrustLevel.INTERNAL;
+  return TrustLevel.PUBLIC;
+}

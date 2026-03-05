@@ -6,6 +6,7 @@ import type { WebSDKError } from './errors.js';
 import type { Result } from './result.js';
 import { ok, err } from './result.js';
 import { internal } from './errors.js';
+import { normalizeTrustScore } from '../types/trust.types.js';
 import type {
   CreateMemoryInput,
   SearchMemoryInput,
@@ -134,7 +135,7 @@ function toMemorySearchResult(raw: Record<string, unknown>): MemorySearchResult 
     content_type: (raw.content_type ?? 'general') as string,
     tags: (raw.tags ?? []) as string[],
     weight: (raw.weight ?? raw.computed_weight ?? 0.5) as number,
-    trust_score: (raw.trust_score ?? 0.25) as number,
+    trust_score: normalizeTrustScore(raw.trust_score as number),
     created_at: (raw.created_at ?? '') as string,
     updated_at: (raw.updated_at ?? '') as string,
   };

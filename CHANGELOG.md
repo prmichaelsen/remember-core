@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.29.0] - 2026-03-05
+
+### Changed
+- **BREAKING: Read-time trust score normalization** (task-103, M19)
+  - All MemoryService read methods now normalize `trust_score` from legacy float (0-1) to integer TrustLevel (1-5)
+  - Affected methods: `getById`, `resolveById`, `search`, `byTime`, `byDensity`, `findSimilar`, `query`
+  - Web SDK transforms (`toMemorySearchResult`, `toSpaceSearchResult`) normalize trust_score
+  - `MemoryService.create()` default trust changed from `0.25` to `TrustLevel.INTERNAL` (2)
+  - `MemoryService.update()` trust validation changed from float 0-1 to integer 1-5 via `isValidTrustLevel()`
+  - New `normalizeTrustScore()` utility exported from `types` — handles mixed float/integer data safely
+
 ## [0.28.0] - 2026-03-05
 
 ### Changed

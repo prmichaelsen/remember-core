@@ -78,22 +78,25 @@ async function backfillRelationshipCount() {
       // Fetch all memories in batches
       let offset = 0;
       const batchSize = 100;
-      let hasMore = true;
+      let afterCursor: string | undefined = undefined;
       let collectionCount = 0;
 
-      while (hasMore) {
+      while (true) {
         const results = await collection.query.fetchObjects({
           limit: batchSize,
-          filters: collection.filter.byProperty('doc_type').equal('memory'),
+          ...(afterCursor ? { after: afterCursor } : {}),
         });
 
         if (results.objects.length === 0) {
-          hasMore = false;
           break;
         }
 
-        // Update each memory
+        // Track cursor for next page
+        afterCursor = results.objects[results.objects.length - 1].uuid;
+
+        // Update each memory (filter client-side since cursor API doesn't support filters)
         for (const obj of results.objects) {
+          if (obj.properties.doc_type !== 'memory') continue;
           try {
             const relationships = (obj.properties.relationships as string[]) || [];
             const relationshipIds = (obj.properties.relationship_ids as string[]) || [];
@@ -120,13 +123,8 @@ async function backfillRelationshipCount() {
           }
         }
 
-        offset += batchSize;
-
-        // For pagination, we need to get the next batch
-        // Since fetchObjects doesn't support offset in Weaviate v3,
-        // we'll use a simpler approach: break after first batch > limit
         if (results.objects.length < batchSize) {
-          hasMore = false;
+          break;
         }
       }
 

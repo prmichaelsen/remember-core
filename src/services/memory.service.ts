@@ -12,6 +12,7 @@ import { Filters } from 'weaviate-client';
 import type { Logger } from '../utils/logger.js';
 import type { SearchFilters, GhostSearchContext } from '../types/search.types.js';
 import type { ContentType } from '../types/index.js';
+import { normalizeTrustScore, isValidTrustLevel, TrustLevel } from '../types/trust.types.js';
 import { isValidContentType, DEFAULT_CONTENT_TYPE } from '../constants/content-types.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import {
@@ -181,6 +182,16 @@ export interface DeleteMemoryResult {
   orphaned_relationship_ids: string[];
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────
+
+/** Normalize trust_score on a Weaviate document from legacy float to integer TrustLevel */
+function normalizeDoc(doc: Record<string, unknown>): Record<string, unknown> {
+  if ('trust_score' in doc) {
+    doc.trust_score = normalizeTrustScore(doc.trust_score as number);
+  }
+  return doc;
+}
+
 // ─── Service ─────────────────────────────────────────────────────────────
 
 /**
@@ -224,7 +235,7 @@ export class MemoryService {
     const existing = await fetchMemoryWithAllProperties(this.collection, memoryId);
     if (!existing?.properties) throw new Error(`Memory not found: ${memoryId}`);
     if (existing.properties.user_id !== this.userId) throw new Error('Unauthorized');
-    return { memory: { id: existing.uuid, ...existing.properties } };
+    return { memory: normalizeDoc({ id: existing.uuid, ...existing.properties }) };
   }
 
   // ── Resolve by ID (cross-collection) ─────────────────────────────────
@@ -245,7 +256,7 @@ export class MemoryService {
         const memory = await fetchMemoryWithAllProperties(col, memoryId);
         if (memory?.properties) {
           return {
-            memory: { id: memory.uuid, ...memory.properties },
+            memory: normalizeDoc({ id: memory.uuid, ...memory.properties }),
             collectionName,
           };
         }
@@ -270,7 +281,7 @@ export class MemoryService {
       summary: input.title,
       content_type: contentType,
       weight: input.weight ?? 0.5,
-      trust_score: input.trust ?? 0.25,
+      trust_score: input.trust ?? TrustLevel.INTERNAL,
       confidence: 1.0,
       context_summary: input.context_summary || 'Memory created',
       context_conversation_id: input.context_conversation_id,
@@ -364,7 +375,7 @@ export class MemoryService {
     const relationships: Record<string, unknown>[] = [];
 
     for (const obj of paginated) {
-      const doc = { id: obj.uuid, ...obj.properties };
+      const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
       if (doc.doc_type === 'memory') memories.push(doc);
       else if (doc.doc_type === 'relationship') relationships.push(doc);
     }
@@ -423,7 +434,7 @@ export class MemoryService {
 
     const memories: Record<string, unknown>[] = [];
     for (const obj of paginated) {
-      const doc = { id: obj.uuid, ...obj.properties };
+      const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
       if (doc.doc_type === 'memory') {
         memories.push(doc);
       }
@@ -489,7 +500,7 @@ export class MemoryService {
 
     const memories: Record<string, unknown>[] = [];
     for (const obj of paginated) {
-      const doc = { id: obj.uuid, ...obj.properties };
+      const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
       if (doc.doc_type === 'memory') {
         memories.push(doc);
       }
@@ -557,11 +568,11 @@ export class MemoryService {
     }
 
     const items: SimilarMemoryItem[] = results.objects
-      .map((obj: any) => ({
+      .map((obj: any) => normalizeDoc({
         id: obj.uuid,
         ...obj.properties,
         similarity: Math.max(0, Math.min(1, 1 - (obj.metadata?.distance ?? 0))),
-      }))
+      }) as SimilarMemoryItem)
       .sort((a: SimilarMemoryItem, b: SimilarMemoryItem) => b.similarity - a.similarity)
       .slice(0, limit);
 
@@ -603,11 +614,11 @@ export class MemoryService {
     });
 
     const items: RelevantMemoryItem[] = results.objects
-      .map((obj: any) => ({
+      .map((obj: any) => normalizeDoc({
         id: obj.uuid,
         ...obj.properties,
         relevance: Math.max(0, Math.min(1, 1 - (obj.metadata?.distance ?? 0))),
-      }))
+      }) as RelevantMemoryItem)
       .sort((a: RelevantMemoryItem, b: RelevantMemoryItem) => b.relevance - a.relevance);
 
     return { memories: items, total: items.length };
@@ -637,7 +648,7 @@ export class MemoryService {
       updatedFields.push('weight');
     }
     if (input.trust !== undefined) {
-      if (input.trust < 0 || input.trust > 1) throw new Error('Trust must be between 0 and 1');
+      if (!isValidTrustLevel(input.trust)) throw new Error('Trust must be an integer between 1 and 5');
       updates.trust_score = input.trust; updatedFields.push('trust_score');
     }
     if (input.tags !== undefined) { updates.tags = input.tags; updatedFields.push('tags'); }

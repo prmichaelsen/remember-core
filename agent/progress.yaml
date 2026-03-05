@@ -291,6 +291,22 @@ milestones:
       See: agent/milestones/milestone-18-memory-index-lookup.md
       See: agent/design/local.memory-index-lookup.md
 
+  - id: M19
+    name: Trust Level Redesign
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 5
+    notes: |
+      Redesign trust system: invert semantics (higher = more confidential),
+      switch float 0-1 to integer 1-5, add named labels (Public/Internal/
+      Confidential/Restricted/Secret). Drop escalation penalty, keep
+      block-after-3. Remove trust=1.0 existence-only special case.
+      Weaviate data migration for existing memories.
+      See: agent/milestones/milestone-19-trust-level-redesign.md
+      See: agent/drafts/trust-level-thoughts.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1388,11 +1404,60 @@ tasks:
         Removed legacyResolve() from MemoryService — resolveById now returns null on index miss.
         Updated 2 tests to reflect no-fallback behavior. Build clean, 53 tests pass.
 
+  milestone_19:
+    - id: task-98
+      name: Trust Types and Constants
+      status: not_started
+      file: agent/tasks/milestone-19-trust-level-redesign/task-98-trust-types-and-constants.md
+      estimated_hours: 2-3
+      dependencies: null
+      notes: |
+        TrustLevel enum (1-5), TRUST_LABELS mapping, update GhostConfig types,
+        Memory.trust type, remove old TRUST_THRESHOLDS.
+    - id: task-99
+      name: Trust Enforcement Service Rewrite
+      status: not_started
+      file: agent/tasks/milestone-19-trust-level-redesign/task-99-trust-enforcement-rewrite.md
+      estimated_hours: 3-4
+      dependencies: task-98
+      notes: |
+        Rewrite formatMemoryForPrompt with integer switch, remove trust=1.0 guard,
+        update buildTrustFilter, getTrustLevelLabel, getTrustInstructions.
+    - id: task-100
+      name: Access Control and Escalation Simplification
+      status: not_started
+      file: agent/tasks/milestone-19-trust-level-redesign/task-100-access-control-escalation-simplification.md
+      estimated_hours: 2-3
+      dependencies: task-98
+      notes: |
+        Drop TRUST_PENALTY, simplify escalation to deny/deny/block.
+        Update suggestTrustLevel, validateTrustAssignment, resolveAccessorTrustLevel.
+        Tag overrides: public->1, private/secret->5.
+    - id: task-101
+      name: Weaviate Schema Migration
+      status: not_started
+      file: agent/tasks/milestone-19-trust-level-redesign/task-101-weaviate-schema-migration.md
+      estimated_hours: 3-4
+      dependencies: task-98
+      notes: |
+        Migrate trust_score from float to int (inverted). Migration function
+        with rounding strategy. Batch migration script. Schema property update.
+    - id: task-102
+      name: Tests and Documentation
+      status: not_started
+      file: agent/tasks/milestone-19-trust-level-redesign/task-102-tests-and-documentation.md
+      estimated_hours: 2-3
+      dependencies: [task-99, task-100, task-101]
+      notes: |
+        Update all trust-related tests to integer 1-5. Update design docs
+        (trust-enforcement, ghost-persona, access-control-result). Update
+        OpenAPI specs and migration guide.
+
 documentation:
   design_documents: 13
-  milestone_documents: 14
+  milestone_documents: 15
   pattern_documents: 25
-  task_documents: 89
+  task_documents: 94
 
 progress:
   planning: 100

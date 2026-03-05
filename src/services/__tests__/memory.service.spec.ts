@@ -25,7 +25,7 @@ describe('MemoryService', () => {
       expect(stored!.properties.user_id).toBe(userId);
       expect(stored!.properties.doc_type).toBe('memory');
       expect(stored!.properties.weight).toBe(0.5);
-      expect(stored!.properties.trust_score).toBe(0.25);
+      expect(stored!.properties.trust_score).toBe(2);
       expect(stored!.properties.version).toBe(1);
       expect(stored!.properties.space_ids).toEqual([]);
       expect(stored!.properties.group_ids).toEqual([]);
@@ -170,7 +170,7 @@ describe('MemoryService', () => {
 
     it('validates trust range', async () => {
       await expect(service.update({ memory_id: memoryId, trust: -0.1 })).rejects.toThrow(
-        'Trust must be between 0 and 1',
+        'Trust must be an integer between 1 and 5',
       );
     });
   });

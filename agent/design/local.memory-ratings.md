@@ -104,7 +104,6 @@ interface RateMemoryInput {
   memoryId: string;       // Weaviate UUID
   userId: string;         // rater's user ID
   rating: number;         // 1-5
-  collectionName: string; // Weaviate collection (TODO: use memory-index-lookup)
 }
 
 interface RatingResult {
@@ -140,7 +139,7 @@ class RatingService {
    * 3. Update Weaviate: sum -= oldRating, count -= 1
    * 4. Recompute rating_bayesian
    */
-  async retract(memoryId: string, userId: string, collectionName: string): Promise<void>;
+  async retract(memoryId: string, userId: string): Promise<void>;
 
   /**
    * Get the current user's rating for a memory.
@@ -178,7 +177,6 @@ New method on MemoryService, same pattern as `byTime` and `byDensity`:
 
 ```typescript
 interface RatingModeRequest {
-  collectionName: string;
   direction?: 'desc' | 'asc';  // default: desc
   limit?: number;
   offset?: number;
@@ -256,7 +254,7 @@ No App Client compound operations for MVP.
 - **Consistency gap**: If Weaviate update succeeds but Firestore write fails (or vice versa), aggregates may be temporarily inconsistent. Mitigated by write ordering (Firestore first, then Weaviate) and eventual consistency via periodic reconciliation (future).
 - **Bayesian constant prior**: Using 3.0 instead of actual global average means the prior is approximate. Sufficient for MVP; dynamic prior is a future enhancement.
 - **No weighting**: All ratings carry equal weight regardless of rater quality. Acceptable for MVP; reputation-based weighting is a future feature.
-- **Collection resolution**: RatingService needs to know which Weaviate collection the memory lives in. Depends on memory-index-lookup (in flight). Temporary workaround: caller passes `collectionName`.
+- **Collection resolution**: RatingService resolves the Weaviate collection via `MemoryIndexService.lookup()` (M18 complete). No caller-provided `collectionName` needed.
 
 ---
 
@@ -264,7 +262,7 @@ No App Client compound operations for MVP.
 
 - **Weaviate**: Schema update (3 new properties on Memory collections)
 - **Firestore**: New `memory_ratings` collection
-- **Memory-index-lookup** (in flight): For collection resolution in RatingService
+- **Memory-index-lookup** (M18 complete): Collection resolution via `MemoryIndexService.lookup()`
 - **Existing services**: MemoryService (for byRating sort mode), ACL checks (for access gating)
 
 ---
@@ -301,7 +299,7 @@ No App Client compound operations for MVP.
 ---
 
 **Status**: Design Specification
-**Recommendation**: Implement as a new milestone (M18). Low risk, additive changes only, no migrations.
+**Recommendation**: Implement as a new milestone (M19). Low risk, additive changes only, no migrations.
 **Related Documents**:
 - `agent/clarifications/clarification-8-memory-ratings-system.md`
 - `agent/clarifications/clarification-9-memory-ratings-followup.md`

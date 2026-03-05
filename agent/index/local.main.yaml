@@ -117,6 +117,17 @@ local:
         Required when adding new use-case functions.
       applies: acp.proceed, acp.task-create
 
+    - path: config/jest.config.js
+      weight: 1.0
+      kind: config
+      description: |
+        Jest test configuration. Project uses Jest (NOT vitest).
+        Run tests with: npx jest --config config/jest.config.js
+      rationale: |
+        Must be read before writing or running tests. Prevents vitest imports
+        and ensures correct test runner invocation.
+      applies: acp.init, acp.proceed, acp.task-create
+
     - path: agent/design/local.memory-index-lookup.md
       weight: 0.2
       kind: design

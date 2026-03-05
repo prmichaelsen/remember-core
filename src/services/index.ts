@@ -260,3 +260,9 @@ export { ImageExtractor } from './extractors/index.js';
 export type { VisionClient } from './extractors/index.js';
 export { validateImportItems, type ValidationError as ImportValidationError } from './extractors/index.js';
 export { ALLOWED_MIME_TYPES } from './extractors/index.js';
+
+// Memory index (UUID → collection lookup)
+export {
+  MemoryIndexService,
+  type MemoryIndexEntry,
+} from './memory-index.service.js';

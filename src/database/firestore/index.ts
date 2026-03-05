@@ -37,4 +37,5 @@ export {
   getRemCursorPath,
   getRemCollectionStatePath,
   getCollectionRegistryPath,
+  getMemoryIndexPath,
 } from './paths.js';

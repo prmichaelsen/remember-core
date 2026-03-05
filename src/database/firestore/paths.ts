@@ -155,3 +155,18 @@ export function getRemCollectionStatePath(collectionId: string): { collectionPat
 export function getCollectionRegistryPath(): string {
   return `${BASE}.collection_registry`;
 }
+
+// ============================================================================
+// MEMORY INDEX
+// ============================================================================
+
+/**
+ * Get path to the memory index (Firestore collection).
+ * Pattern: {BASE}.memory_index
+ *
+ * Maps memory UUIDs to their Weaviate collection names,
+ * enabling O(1) cross-collection memory resolution.
+ */
+export function getMemoryIndexPath(): string {
+  return `${BASE}.memory_index`;
+}

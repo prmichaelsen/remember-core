@@ -279,9 +279,10 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 5
-    started: null
+    progress: 20
+    started: 2026-03-05
     completed: null
     notes: |
       Firestore lookup table mapping memory UUIDs to Weaviate collection names.
@@ -1332,13 +1333,16 @@ tasks:
   milestone_18:
     - id: task-93
       name: MemoryIndexService
-      status: not_started
+      status: completed
+      completed_date: 2026-03-05
       file: agent/tasks/milestone-18-memory-index-lookup/task-93-memory-index-service.md
       estimated_hours: 2-3
+      actual_hours: 0.2
       dependencies: null
       notes: |
-        Firestore-backed service with index() and lookup() methods.
-        MemoryIndexEntry type. Path helper in firestore/paths.ts.
+        MemoryIndexService with index() and lookup() methods.
+        MemoryIndexEntry type. getMemoryIndexPath() in firestore/paths.ts.
+        9 unit tests passing. Exported from services barrel.
     - id: task-94
       name: Wire Index Write into MemoryService.create
       status: not_started

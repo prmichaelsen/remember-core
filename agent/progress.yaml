@@ -1158,6 +1158,7 @@ tasks:
       completed_date: 2026-03-05
       file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-81-wire-relationship-ids-filter.md
       estimated_hours: 2-3
+      actual_hours: 0.03
       dependencies: task-71
       notes: |
         Added memory_ids to SearchFilters. Wired byId().containsAny() in
@@ -1179,6 +1180,7 @@ tasks:
       completed_date: 2026-03-05
       file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-83-fix-httpclient-query-params.md
       estimated_hours: 0.5
+      actual_hours: 0.03
       dependencies: null
       notes: |
         Fixed HttpClient.request() to append options.params as URL query string.

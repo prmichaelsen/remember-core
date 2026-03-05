@@ -1532,7 +1532,7 @@ tasks:
         Self-rating and ghost-mode rejection.
     - id: task-106
       name: byRating Sort Mode
-      status: not_started
+      status: done
       file: agent/tasks/milestone-20-memory-ratings-system/task-106-byrating-sort-mode.md
       estimated_hours: 2-3
       dependencies: [task-104]

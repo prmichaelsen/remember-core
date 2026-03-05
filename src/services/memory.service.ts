@@ -13,6 +13,7 @@ import type { Logger } from '../utils/logger.js';
 import type { SearchFilters, GhostSearchContext } from '../types/search.types.js';
 import type { ContentType } from '../types/index.js';
 import { normalizeTrustScore, isValidTrustLevel, TrustLevel } from '../types/trust.types.js';
+import { computeRatingAvg, type RatingModeRequest, type RatingModeResult } from '../types/rating.types.js';
 import { isValidContentType, DEFAULT_CONTENT_TYPE } from '../constants/content-types.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import {
@@ -184,10 +185,16 @@ export interface DeleteMemoryResult {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
-/** Normalize trust_score on a Weaviate document from legacy float to integer TrustLevel */
+/** Normalize trust_score and compute derived rating_avg on a Weaviate document */
 function normalizeDoc(doc: Record<string, unknown>): Record<string, unknown> {
   if ('trust_score' in doc) {
     doc.trust_score = normalizeTrustScore(doc.trust_score as number);
+  }
+  // Compute derived rating_avg from stored aggregates
+  const ratingSum = doc.rating_sum as number | undefined;
+  const ratingCount = doc.rating_count as number | undefined;
+  if (ratingSum !== undefined && ratingCount !== undefined) {
+    doc.rating_avg = computeRatingAvg(ratingSum, ratingCount);
   }
   return doc;
 }
@@ -287,6 +294,9 @@ export class MemoryService {
       context_conversation_id: input.context_conversation_id,
       relationship_ids: [],
       relationship_count: 0,
+      rating_sum: 0,
+      rating_count: 0,
+      rating_bayesian: 3.0,  // (0 + 15) / (0 + 5) = 3.0 (prior mean)
       access_count: 0,
       last_accessed_at: now,
       created_at: now,
@@ -486,6 +496,65 @@ export class MemoryService {
       const queryOptions: any = {
         limit: limit + offset,
         sort: this.collection.sort.byProperty('relationship_count', false),
+      };
+
+      if (combinedFilters) {
+        queryOptions.filters = combinedFilters;
+      }
+
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    const results = await this.retryWithoutDeletedFilter(executeQuery);
+    const paginated = results.objects.slice(offset);
+
+    const memories: Record<string, unknown>[] = [];
+    for (const obj of paginated) {
+      const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
+      if (doc.doc_type === 'memory') {
+        memories.push(doc);
+      }
+    }
+
+    return {
+      memories,
+      total: memories.length,
+      offset,
+      limit,
+    };
+  }
+
+  // ── By Rating (Bayesian average) ─────────────────────────────────
+
+  async byRating(input: RatingModeRequest): Promise<RatingModeResult> {
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const direction = input.direction ?? 'desc';
+
+    // Build filters
+    const memoryFilters = buildMemoryOnlyFilters(this.collection, input.filters);
+
+    // Ghost/trust filtering
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+
+    const executeQuery = async (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+
+      const combinedFilters = combineFiltersWithAnd(
+        [deletedFilter, memoryFilters, ...ghostFilters].filter((f) => f !== null),
+      );
+
+      const queryOptions: any = {
+        limit: limit + offset,
+        sort: this.collection.sort.byProperty('rating_bayesian', direction === 'asc'),
       };
 
       if (combinedFilters) {

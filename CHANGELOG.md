@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.32.0] - 2026-03-05
+
+### Added
+- **Content Moderation** (M21)
+  - `ModerationService`: LLM-based content gate using Claude Haiku for space publish/revise
+  - Blocks: hate speech, extremism, violence incitement, CSAM, self-harm encouragement
+  - Allows: edgy content, dark humor, political opinions, profanity, educational content
+  - In-memory SHA-256 content hash cache with LRU eviction
+  - Fail-closed: API errors block content (not allow through)
+  - `createModerationClient()`, `createMockModerationClient()` exports
+  - SpaceService publish/revise pre-check via optional `moderationClient`
+  - `ValidationError` with `fields.moderation=['blocked']` and `fields.category`
+  - 17 new tests (763 total, 60 suites)
+
 ## [0.31.0] - 2026-03-05
 
 ### Added

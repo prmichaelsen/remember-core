@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.30.1
+  version: 0.32.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M21
@@ -328,11 +328,13 @@ milestones:
 
   - id: M21
     name: Content Moderation
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1.5
-    tasks_completed: 0
+    tasks_completed: 4
     tasks_total: 4
+    started: 2026-03-05
+    completed: 2026-03-05
     notes: |
       LLM-based content moderation gate for space publish/revise.
       ModerationService using Haiku for pass/fail classification.
@@ -1608,12 +1610,13 @@ tasks:
 
     - id: task-114
       name: Documentation
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-21-content-moderation/task-114-documentation.md
       estimated_hours: 1-2
+      completed_date: 2026-03-05
       dependencies: [task-113]
       notes: |
-        CHANGELOG, OpenAPI specs, README. Version bump.
+        CHANGELOG, OpenAPI specs, README. Version bump to 0.32.0.
 
 documentation:
   design_documents: 14

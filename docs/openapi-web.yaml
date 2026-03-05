@@ -552,6 +552,8 @@ paths:
       description: |
         Publishes a memory to the specified shared spaces.
         Returns a confirmation token that must be confirmed via the svc confirmations endpoint.
+        Content is checked by automated moderation. Hateful, extremist, or otherwise
+        policy-violating content will be rejected with a validation error.
       operationId: appPublishToSpace
       requestBody:
         required: true

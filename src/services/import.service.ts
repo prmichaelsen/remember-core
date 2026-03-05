@@ -14,8 +14,12 @@ import type { HaikuClient, HaikuExtraction } from './rem.haiku.js';
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
 export interface ImportItem {
-  /** Raw text content (pre-resolved by consumer) */
-  content: string;
+  /** Raw text content (mutually exclusive with file_url) */
+  content?: string;
+  /** Signed HTTPS URL for file-based import (mutually exclusive with content) */
+  file_url?: string;
+  /** MIME type of the file (required when file_url is provided) */
+  mime_type?: string;
   /** Original filename, for metadata */
   source_filename?: string;
 }
@@ -163,7 +167,7 @@ export class ImportService {
   ): Promise<ImportItemResult> {
     const importId = globalThis.crypto.randomUUID();
     const sourceLabel = item.source_filename || 'pasted text';
-    const chunks = chunkByTokens(item.content, chunkSize);
+    const chunks = chunkByTokens(item.content ?? '', chunkSize);
 
     this.logger.info('Importing item', {
       import_id: importId,
@@ -186,7 +190,7 @@ export class ImportService {
     }
 
     // 2. Generate parent summary via HaikuClient
-    const sample = item.content.substring(0, HAIKU_SAMPLE_CHARS);
+    const sample = (item.content ?? '').substring(0, HAIKU_SAMPLE_CHARS);
     let summaryText: string;
 
     try {

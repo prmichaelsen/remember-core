@@ -13,6 +13,8 @@ import type { RelationshipService } from './relationship.service.js';
 import type { HaikuClient, HaikuExtraction } from './rem.haiku.js';
 import type { ImportItem, ImportItemResult } from './import.service.js';
 import { chunkByTokens } from './import.service.js';
+import type { ExtractorRegistry } from './extractors/index.js';
+import { downloadFile } from './extractors/index.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -43,14 +45,47 @@ export class ImportJobWorker {
     private relationshipService: RelationshipService,
     private haikuClient: HaikuClient,
     private logger: Logger,
+    private extractorRegistry?: ExtractorRegistry,
   ) {}
 
   async execute(jobId: string, userId: string, params: ImportJobParams): Promise<void> {
     const chunkSize = params.chunk_size ?? DEFAULT_CHUNK_SIZE;
 
+    // 0. Extract file content for file-based items
+    for (const item of params.items) {
+      if (item.file_url && item.mime_type) {
+        try {
+          const extractor = this.extractorRegistry?.getExtractor(item.mime_type);
+          if (!extractor) {
+            await this.jobService.complete(jobId, {
+              status: 'failed',
+              error: { code: 'unsupported_format', message: `Unsupported file type: ${item.mime_type}` },
+            });
+            return;
+          }
+
+          this.logger.info('Downloading file', { job_id: jobId, mime_type: item.mime_type });
+          const buffer = await downloadFile(item.file_url);
+
+          this.logger.info('Extracting text', { job_id: jobId, mime_type: item.mime_type });
+          const result = await extractor.extract(buffer, item.mime_type);
+
+          item.content = result.text;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.warn('Extraction failed', { job_id: jobId, error: message });
+          await this.jobService.complete(jobId, {
+            status: 'failed',
+            error: { code: 'extraction_failed', message },
+          });
+          return;
+        }
+      }
+    }
+
     // 1. Chunk all items, flatten into ordered step list
     const allChunks: ChunkEntry[] = params.items.flatMap((item, i) => {
-      const chunks = chunkByTokens(item.content, chunkSize);
+      const chunks = chunkByTokens(item.content ?? '', chunkSize);
       return chunks.map((chunk, j) => ({ itemIndex: i, chunkIndex: j, chunk, item }));
     });
 
@@ -161,7 +196,7 @@ export class ImportJobWorker {
       // Generate summary
       let summaryText: string;
       try {
-        const sample = data.item.content.substring(0, HAIKU_SAMPLE_CHARS);
+        const sample = (data.item.content ?? '').substring(0, HAIKU_SAMPLE_CHARS);
         const extraction: HaikuExtraction = await this.haikuClient.extractFeatures(sample);
         summaryText = extraction.summary || `Imported ${data.chunkMemoryIds.length} chunks from ${sourceLabel}`;
       } catch {

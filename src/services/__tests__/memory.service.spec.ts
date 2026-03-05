@@ -590,4 +590,128 @@ describe('MemoryService', () => {
       expect(result.memory_id).toBeDefined();
     });
   });
+
+  describe('resolveById', () => {
+    const targetCollectionName = 'Memory_users_other';
+    let targetCollection: ReturnType<typeof createMockCollection>;
+    let mockWeaviateClient: any;
+    let mockIndex: any;
+
+    beforeEach(() => {
+      targetCollection = createMockCollection();
+      mockWeaviateClient = {
+        collections: {
+          get: jest.fn((name: string) => {
+            if (name === targetCollectionName) return targetCollection;
+            // For legacy fallback, return user's own collection
+            if (name === `Memory_users_${userId}`) return collection;
+            return createMockCollection();
+          }),
+        },
+      };
+      mockIndex = {
+        index: jest.fn().mockResolvedValue(undefined),
+        lookup: jest.fn(),
+      };
+    });
+
+    it('resolves via index lookup when indexed', async () => {
+      // Insert a memory in the target collection
+      const memId = await targetCollection.data.insert({
+        properties: { user_id: 'other', doc_type: 'memory', content: 'cross-collection' },
+      });
+      mockIndex.lookup.mockResolvedValue(targetCollectionName);
+
+      const svc = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockIndex as any,
+        weaviateClient: mockWeaviateClient,
+      });
+
+      const result = await svc.resolveById(memId);
+
+      expect(result.memory).not.toBeNull();
+      expect(result.memory!.content).toBe('cross-collection');
+      expect(result.collectionName).toBe(targetCollectionName);
+      expect(mockIndex.lookup).toHaveBeenCalledWith(memId);
+    });
+
+    it('falls back to legacy resolve when index returns null', async () => {
+      // Insert in user's own collection
+      const memId = await collection.data.insert({
+        properties: { user_id: userId, doc_type: 'memory', content: 'my memory' },
+      });
+      mockIndex.lookup.mockResolvedValue(null);
+
+      const svc = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockIndex as any,
+        weaviateClient: mockWeaviateClient,
+      });
+
+      const result = await svc.resolveById(memId);
+
+      expect(result.memory).not.toBeNull();
+      expect(result.memory!.content).toBe('my memory');
+      expect(result.collectionName).toBe(`Memory_users_${userId}`);
+    });
+
+    it('returns null for nonexistent memory', async () => {
+      mockIndex.lookup.mockResolvedValue(null);
+
+      const svc = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockIndex as any,
+        weaviateClient: mockWeaviateClient,
+      });
+
+      const result = await svc.resolveById('nonexistent-uuid');
+
+      expect(result.memory).toBeNull();
+      expect(result.collectionName).toBeNull();
+    });
+
+    it('resolves soft-deleted memory via index', async () => {
+      const memId = await targetCollection.data.insert({
+        properties: {
+          user_id: 'other',
+          doc_type: 'memory',
+          content: 'deleted content',
+          deleted_at: '2026-03-01T00:00:00.000Z',
+        },
+      });
+      mockIndex.lookup.mockResolvedValue(targetCollectionName);
+
+      const svc = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockIndex as any,
+        weaviateClient: mockWeaviateClient,
+      });
+
+      const result = await svc.resolveById(memId);
+
+      expect(result.memory).not.toBeNull();
+      expect(result.memory!.deleted_at).toBe('2026-03-01T00:00:00.000Z');
+      expect(result.collectionName).toBe(targetCollectionName);
+    });
+
+    it('throws if weaviateClient is not provided', async () => {
+      const svc = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockIndex as any,
+      });
+
+      await expect(svc.resolveById('any-id')).rejects.toThrow('resolveById requires weaviateClient');
+    });
+
+    it('works without memoryIndex (legacy-only path)', async () => {
+      const memId = await collection.data.insert({
+        properties: { user_id: userId, doc_type: 'memory', content: 'legacy only' },
+      });
+
+      const svc = new MemoryService(collection as any, userId, logger, {
+        weaviateClient: mockWeaviateClient,
+      });
+
+      const result = await svc.resolveById(memId);
+
+      expect(result.memory).not.toBeNull();
+      expect(result.memory!.content).toBe('legacy only');
+    });
+  });
 });

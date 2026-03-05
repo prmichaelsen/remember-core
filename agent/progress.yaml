@@ -1356,14 +1356,16 @@ tasks:
         Index write after Weaviate insert, non-fatal on failure.
         3 new tests. Mock collection gets .name property.
     - id: task-95
-      name: Add MemoryService.getById with Index Lookup
-      status: not_started
+      name: Add MemoryService.resolveById with Index Lookup
+      status: complete
       file: agent/tasks/milestone-18-memory-index-lookup/task-95-memory-service-getbyid.md
       estimated_hours: 2-3
       dependencies: [task-93, task-94]
       notes: |
-        New getById(memoryId) method on MemoryService.
-        Index lookup + Weaviate fetch. Legacy fallback for unindexed memories.
+        New resolveById(memoryId) method on MemoryService (named to avoid collision with existing getById).
+        Index lookup → Weaviate fetch. Legacy fallback via legacyResolve() for unindexed memories.
+        ResolveByIdResult type exported. weaviateClient added to constructor options.
+        6 new tests: index hit, index miss/fallback, nonexistent, soft-deleted, no client error, no index.
     - id: task-96
       name: Backfill Migration Script
       status: not_started

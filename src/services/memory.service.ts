@@ -23,6 +23,7 @@ import {
 } from '../utils/filters.js';
 import { buildTrustFilter } from './trust-enforcement.service.js';
 import type { MemoryIndexService } from './memory-index.service.js';
+import { CollectionType, getCollectionName } from '../collections/dot-notation.js';
 
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
@@ -170,6 +171,11 @@ export interface GetMemoryResult {
   memory: Record<string, unknown>;
 }
 
+export interface ResolveByIdResult {
+  memory: Record<string, unknown> | null;
+  collectionName: string | null;
+}
+
 export interface DeleteMemoryResult {
   memory_id: string;
   deleted_at: string;
@@ -192,6 +198,7 @@ export class MemoryService {
     private logger: Logger,
     private options?: {
       memoryIndex?: MemoryIndexService;
+      weaviateClient?: any;
     },
   ) {}
 
@@ -219,6 +226,61 @@ export class MemoryService {
     if (!existing?.properties) throw new Error(`Memory not found: ${memoryId}`);
     if (existing.properties.user_id !== this.userId) throw new Error('Unauthorized');
     return { memory: { id: existing.uuid, ...existing.properties } };
+  }
+
+  // ── Resolve by ID (cross-collection) ─────────────────────────────────
+
+  /**
+   * Resolve any memory by UUID alone using the Firestore index.
+   * Falls back to legacy 2-try resolution for unindexed memories.
+   * Requires `weaviateClient` in constructor options.
+   */
+  async resolveById(memoryId: string): Promise<ResolveByIdResult> {
+    if (!this.options?.weaviateClient) {
+      throw new Error('resolveById requires weaviateClient in options');
+    }
+
+    // 1. Try index lookup
+    if (this.options?.memoryIndex) {
+      const collectionName = await this.options.memoryIndex.lookup(memoryId);
+      if (collectionName) {
+        const col = this.options.weaviateClient.collections.get(collectionName);
+        const memory = await fetchMemoryWithAllProperties(col, memoryId);
+        if (memory?.properties) {
+          return {
+            memory: { id: memory.uuid, ...memory.properties },
+            collectionName,
+          };
+        }
+      }
+    }
+
+    // 2. Fallback: legacy resolution (for unindexed memories)
+    return this.legacyResolve(memoryId);
+  }
+
+  /**
+   * Legacy cross-collection fallback for unindexed memories.
+   * Tries user's own collection first, then returns null.
+   * @deprecated Will be removed after backfill migration (task-96).
+   */
+  private async legacyResolve(memoryId: string): Promise<ResolveByIdResult> {
+    const userColName = getCollectionName(CollectionType.USERS, this.userId);
+    const userCol = this.options!.weaviateClient.collections.get(userColName);
+
+    try {
+      const existing = await fetchMemoryWithAllProperties(userCol, memoryId);
+      if (existing?.properties) {
+        return {
+          memory: { id: existing.uuid, ...existing.properties },
+          collectionName: userColName,
+        };
+      }
+    } catch (err) {
+      this.logger.debug?.(`[MemoryService] Legacy resolve failed in ${userColName}: ${err}`);
+    }
+
+    return { memory: null, collectionName: null };
   }
 
   // ── Create ──────────────────────────────────────────────────────────

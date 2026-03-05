@@ -34,6 +34,7 @@ export {
   type CreateMemoryInput,
   type CreateMemoryResult,
   type GetMemoryResult,
+  type ResolveByIdResult,
   type SearchMemoryInput,
   type SearchMemoryResult,
   type FindSimilarInput,

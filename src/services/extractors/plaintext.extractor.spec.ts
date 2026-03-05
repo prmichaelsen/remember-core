@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { PlaintextExtractor } from './plaintext.extractor.js';
 
 describe('PlaintextExtractor', () => {

@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { HtmlExtractor } from './html.extractor.js';
 
 describe('HtmlExtractor', () => {

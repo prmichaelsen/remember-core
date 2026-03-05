@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { ExtractorRegistry, createDefaultRegistry } from './registry.js';
 import type { FileExtractor, ExtractionResult } from './types.js';
 

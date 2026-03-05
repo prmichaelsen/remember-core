@@ -6,6 +6,8 @@
  * the AuthContext threaded through tool handlers.
  */
 
+import type { TrustLevel } from './trust.types.js';
+
 export interface GroupPermissions {
   can_read: boolean;
   can_publish: boolean;
@@ -35,8 +37,8 @@ export interface GhostModeContext {
   owner_user_id: string;
   /** User ID of the accessor (who is talking to the ghost) */
   accessor_user_id: string;
-  /** Resolved trust level for this accessor (0-1) */
-  accessor_trust_level: number;
+  /** Resolved trust level for this accessor (1-5 integer) */
+  accessor_trust_level: TrustLevel;
 }
 
 export interface AuthContext {

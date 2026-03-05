@@ -14,6 +14,7 @@ import { BASE } from '../database/firestore/paths.js';
 import type { Logger } from '../utils/logger.js';
 import type { GhostConfig, TrustEnforcementMode } from '../types/ghost-config.types.js';
 import { DEFAULT_GHOST_CONFIG } from '../types/ghost-config.types.js';
+import { isValidTrustLevel } from '../types/trust.types.js';
 import type { GhostConfigProvider } from './access-control.service.js';
 
 const SERVICE = 'GhostConfigService';
@@ -82,8 +83,8 @@ export async function setUserTrust(
   trustLevel: number,
   logger?: Logger,
 ): Promise<void> {
-  if (trustLevel < 0 || trustLevel > 1) {
-    throw new Error(`Trust level must be between 0 and 1, got ${trustLevel}`);
+  if (!isValidTrustLevel(trustLevel)) {
+    throw new Error(`Trust level must be an integer between 1 and 5, got ${trustLevel}`);
   }
 
   const current = await getGhostConfig(ownerUserId, logger);
@@ -184,13 +185,13 @@ export async function isGhostEnabled(ownerUserId: string, logger?: Logger): Prom
  */
 export function validateGhostConfigUpdate(config: Partial<GhostConfig>): void {
   if (config.default_friend_trust !== undefined) {
-    if (config.default_friend_trust < 0 || config.default_friend_trust > 1) {
-      throw new Error(`default_friend_trust must be between 0 and 1, got ${config.default_friend_trust}`);
+    if (!isValidTrustLevel(config.default_friend_trust)) {
+      throw new Error(`default_friend_trust must be an integer between 1 and 5, got ${config.default_friend_trust}`);
     }
   }
   if (config.default_public_trust !== undefined) {
-    if (config.default_public_trust < 0 || config.default_public_trust > 1) {
-      throw new Error(`default_public_trust must be between 0 and 1, got ${config.default_public_trust}`);
+    if (!isValidTrustLevel(config.default_public_trust)) {
+      throw new Error(`default_public_trust must be an integer between 1 and 5, got ${config.default_public_trust}`);
     }
   }
   if (config.enforcement_mode !== undefined) {
@@ -201,8 +202,8 @@ export function validateGhostConfigUpdate(config: Partial<GhostConfig>): void {
   }
   if (config.per_user_trust !== undefined) {
     for (const [userId, level] of Object.entries(config.per_user_trust)) {
-      if (level < 0 || level > 1) {
-        throw new Error(`Trust level for ${userId} must be between 0 and 1, got ${level}`);
+      if (!isValidTrustLevel(level)) {
+        throw new Error(`Trust level for ${userId} must be an integer between 1 and 5, got ${level}`);
       }
     }
   }

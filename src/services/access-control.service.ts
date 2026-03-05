@@ -279,7 +279,7 @@ export function formatAccessResultMessage(result: AccessResult): string {
         ? 'Access granted (owner).'
         : 'Access granted (trusted).';
     case 'insufficient_trust':
-      return `Insufficient trust level. Required: ${result.required_trust.toFixed(2)}, actual: ${result.actual_trust.toFixed(2)}. ${result.attempts_remaining} attempt(s) remaining before access is blocked.`;
+      return `Insufficient trust level. Required: ${result.required_trust}, actual: ${result.actual_trust}. ${result.attempts_remaining} attempt(s) remaining before access is blocked.`;
     case 'blocked':
       return `Access blocked: ${result.reason}`;
     case 'no_permission':

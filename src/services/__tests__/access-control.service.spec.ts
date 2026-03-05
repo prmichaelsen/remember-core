@@ -16,6 +16,7 @@ import type { GhostConfig } from '../../types/ghost-config.types.js';
 import { DEFAULT_GHOST_CONFIG } from '../../types/ghost-config.types.js';
 import type { AccessResult } from '../../types/access-result.types.js';
 import type { UserCredentials } from '../../types/auth.types.js';
+import { TrustLevel } from '../../types/trust.types.js';
 
 function createTestMemory(overrides: Partial<Memory> = {}): Memory {
   return {
@@ -25,7 +26,7 @@ function createTestMemory(overrides: Partial<Memory> = {}): Memory {
     content: 'Test content',
     type: 'note',
     weight: 0.5,
-    trust: 0.5,
+    trust: TrustLevel.CONFIDENTIAL,
     location: { gps: null, address: null, source: 'unavailable', confidence: 0, is_approximate: true },
     context: { timestamp: '2026-01-15T10:00:00Z', source: { type: 'conversation' } },
     relationships: [],
@@ -86,7 +87,7 @@ describe('AccessControlService', () => {
     it('returns blocked when memory-specific block exists', async () => {
       const memory = createTestMemory({ user_id: 'owner-1' });
       ghostProvider.setGhostConfig('owner-1', createGhostConfig({
-        default_public_trust: 1.0,
+        default_public_trust: TrustLevel.SECRET,
       }));
       await escalationStore.setBlock('owner-1', 'accessor-1', 'mem-1', {
         blocked_at: '2026-01-15T10:00:00Z',
@@ -102,9 +103,9 @@ describe('AccessControlService', () => {
     });
 
     it('returns insufficient_trust when trust is too low', async () => {
-      const memory = createTestMemory({ user_id: 'owner-1', trust: 0.75 });
+      const memory = createTestMemory({ user_id: 'owner-1', trust: TrustLevel.RESTRICTED });
       ghostProvider.setGhostConfig('owner-1', createGhostConfig({
-        default_public_trust: 0.25,
+        default_public_trust: TrustLevel.INTERNAL,
       }));
 
       const result = await checkMemoryAccess('accessor-1', memory, ghostProvider, escalationStore);
@@ -112,9 +113,9 @@ describe('AccessControlService', () => {
     });
 
     it('grants trusted access when trust is sufficient', async () => {
-      const memory = createTestMemory({ user_id: 'owner-1', trust: 0.25 });
+      const memory = createTestMemory({ user_id: 'owner-1', trust: TrustLevel.INTERNAL });
       ghostProvider.setGhostConfig('owner-1', createGhostConfig({
-        default_public_trust: 0.5,
+        default_public_trust: TrustLevel.CONFIDENTIAL,
       }));
 
       const result = await checkMemoryAccess('accessor-1', memory, ghostProvider, escalationStore);
@@ -125,10 +126,10 @@ describe('AccessControlService', () => {
     });
 
     it('uses per-user trust override', async () => {
-      const memory = createTestMemory({ user_id: 'owner-1', trust: 0.75 });
+      const memory = createTestMemory({ user_id: 'owner-1', trust: TrustLevel.RESTRICTED });
       ghostProvider.setGhostConfig('owner-1', createGhostConfig({
-        default_public_trust: 0.0,
-        per_user_trust: { 'accessor-1': 0.8 },
+        default_public_trust: TrustLevel.PUBLIC,
+        per_user_trust: { 'accessor-1': TrustLevel.SECRET },
       }));
 
       const result = await checkMemoryAccess('accessor-1', memory, ghostProvider, escalationStore);
@@ -138,13 +139,13 @@ describe('AccessControlService', () => {
 
   describe('handleInsufficientTrust', () => {
     it('increments attempt count on each call', async () => {
-      await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', 0.75, 0.25, escalationStore);
+      await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', TrustLevel.RESTRICTED, TrustLevel.INTERNAL, escalationStore);
       const attempts = await escalationStore.getAttempts('owner-1', 'accessor-1', 'mem-1');
       expect(attempts!.count).toBe(1);
     });
 
     it('returns insufficient_trust for attempts below block threshold', async () => {
-      const result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', 0.75, 0.25, escalationStore);
+      const result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', TrustLevel.RESTRICTED, TrustLevel.INTERNAL, escalationStore);
       expect(result.status).toBe('insufficient_trust');
       if (result.status === 'insufficient_trust') {
         expect(result.attempts_remaining).toBe(MAX_ATTEMPTS_BEFORE_BLOCK - 1);
@@ -154,7 +155,7 @@ describe('AccessControlService', () => {
     it('blocks after MAX_ATTEMPTS_BEFORE_BLOCK attempts', async () => {
       let result: AccessResult;
       for (let i = 0; i < MAX_ATTEMPTS_BEFORE_BLOCK; i++) {
-        result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', 0.75, 0.25, escalationStore);
+        result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', TrustLevel.RESTRICTED, TrustLevel.INTERNAL, escalationStore);
       }
       expect(result!.status).toBe('blocked');
       if (result!.status === 'blocked') {
@@ -163,16 +164,16 @@ describe('AccessControlService', () => {
     });
 
     it('applies trust penalty on insufficient trust', async () => {
-      const result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', 0.75, 0.5, escalationStore);
+      const result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, escalationStore);
       if (result.status === 'insufficient_trust') {
-        expect(result.actual_trust).toBe(Math.max(0, 0.5 - TRUST_PENALTY));
+        expect(result.actual_trust).toBe(Math.max(1, TrustLevel.CONFIDENTIAL - TRUST_PENALTY));
       }
     });
 
-    it('trust floor is 0 (never negative)', async () => {
-      const result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', 0.75, 0.05, escalationStore);
+    it('trust floor is 1 (never below PUBLIC)', async () => {
+      const result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', TrustLevel.RESTRICTED, TrustLevel.PUBLIC, escalationStore);
       if (result.status === 'insufficient_trust') {
-        expect(result.actual_trust).toBeGreaterThanOrEqual(0);
+        expect(result.actual_trust).toBeGreaterThanOrEqual(1);
       }
     });
   });
@@ -180,20 +181,20 @@ describe('AccessControlService', () => {
   describe('resolveAccessorTrustLevel', () => {
     it('returns per-user override when present', () => {
       const config = createGhostConfig({
-        per_user_trust: { 'user-1': 0.8 },
-        default_public_trust: 0.1,
+        per_user_trust: { 'user-1': TrustLevel.SECRET },
+        default_public_trust: TrustLevel.PUBLIC,
       });
-      expect(resolveAccessorTrustLevel(config, 'user-1')).toBe(0.8);
+      expect(resolveAccessorTrustLevel(config, 'user-1')).toBe(TrustLevel.SECRET);
     });
 
     it('falls back to default_public_trust', () => {
-      const config = createGhostConfig({ default_public_trust: 0.3 });
-      expect(resolveAccessorTrustLevel(config, 'unknown-user')).toBe(0.3);
+      const config = createGhostConfig({ default_public_trust: TrustLevel.INTERNAL });
+      expect(resolveAccessorTrustLevel(config, 'unknown-user')).toBe(TrustLevel.INTERNAL);
     });
 
-    it('falls back to 0 when default_public_trust is not set', () => {
+    it('falls back to PUBLIC when default_public_trust is not set', () => {
       const config = createGhostConfig({ default_public_trust: undefined as any });
-      expect(resolveAccessorTrustLevel(config, 'unknown-user')).toBe(0);
+      expect(resolveAccessorTrustLevel(config, 'unknown-user')).toBe(TrustLevel.PUBLIC);
     });
   });
 
@@ -220,13 +221,12 @@ describe('AccessControlService', () => {
       const result: AccessResult = {
         status: 'insufficient_trust',
         memory_id: 'mem-1',
-        required_trust: 0.75,
-        actual_trust: 0.25,
+        required_trust: TrustLevel.RESTRICTED,
+        actual_trust: TrustLevel.INTERNAL,
         attempts_remaining: 2,
       };
       const msg = formatAccessResultMessage(result);
-      expect(msg).toContain('0.75');
-      expect(msg).toContain('0.25');
+      expect(msg).toContain('4');
       expect(msg).toContain('2');
     });
 

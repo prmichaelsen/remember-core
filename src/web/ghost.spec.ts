@@ -3,6 +3,7 @@ import { getGhostConfig, updateGhostConfig, setUserTrust, removeUserTrust, block
 import { createMemory } from './memories';
 import { StubGhostConfigProvider } from '../services/access-control.service';
 import { DEFAULT_GHOST_CONFIG } from '../types/ghost-config.types';
+import { TrustLevel } from '../types/trust.types';
 
 describe('Ghost/Trust use cases', () => {
   const ctx = createMockWebSDKContext();
@@ -26,7 +27,7 @@ describe('Ghost/Trust use cases', () => {
     it('rejects self-trust', async () => {
       const result = await setUserTrust(ctx, {
         target_user_id: ctx.userId,
-        trust_level: 0.5,
+        trust_level: TrustLevel.CONFIDENTIAL,
       });
       expect(result.ok).toBe(false);
     });
@@ -34,7 +35,7 @@ describe('Ghost/Trust use cases', () => {
     it('rejects trust level out of range', async () => {
       const result = await setUserTrust(ctx, {
         target_user_id: 'other-user',
-        trust_level: 1.5,
+        trust_level: 6,
       });
       expect(result.ok).toBe(false);
     });
@@ -81,7 +82,7 @@ describe('Ghost/Trust use cases', () => {
       provider.setGhostConfig(ctx.userId, {
         ...DEFAULT_GHOST_CONFIG,
         enabled: true,
-        default_public_trust: 0.3,
+        default_public_trust: TrustLevel.INTERNAL,
       });
 
       const result = await checkAccess(ctx, {

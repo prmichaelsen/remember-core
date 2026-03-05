@@ -98,7 +98,6 @@ export {
 
 // Trust & ghost system services (ported from remember-mcp v3.11.0+)
 export {
-  TRUST_THRESHOLDS,
   buildTrustFilter,
   formatMemoryForPrompt,
   getTrustLevelLabel,

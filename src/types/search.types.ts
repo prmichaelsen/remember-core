@@ -5,6 +5,7 @@
 
 import type { GPSCoordinates } from './context.types.js';
 import type { ContentType, Memory, Relationship } from './memory.types.js';
+import type { TrustLevel } from './trust.types.js';
 
 /**
  * Search filters
@@ -51,8 +52,8 @@ export interface SearchOptions {
  * When provided, MemoryService applies trust-level filtering and ghost content exclusion.
  */
 export interface GhostSearchContext {
-  /** Trust level of the user accessing ghost memories (0-1) */
-  accessor_trust_level: number;
+  /** Trust level of the user accessing ghost memories (1-5 integer) */
+  accessor_trust_level: TrustLevel;
   /** Owner of the ghost memories being searched */
   owner_user_id: string;
   /** If true, skip ghost content_type exclusion (explicit ghost search) */

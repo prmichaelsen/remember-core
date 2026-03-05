@@ -1,5 +1,4 @@
 import {
-  TRUST_THRESHOLDS,
   buildTrustFilter,
   formatMemoryForPrompt,
   getTrustLevelLabel,
@@ -9,6 +8,7 @@ import {
   resolveEnforcementMode,
 } from '../trust-enforcement.service.js';
 import type { Memory } from '../../types/memory.types.js';
+import { TrustLevel, TRUST_LABELS } from '../../types/trust.types.js';
 
 function createTestMemory(overrides: Partial<Memory> = {}): Memory {
   return {
@@ -20,7 +20,7 @@ function createTestMemory(overrides: Partial<Memory> = {}): Memory {
     summary: 'A summary of the memory',
     type: 'note',
     weight: 0.5,
-    trust: 0.5,
+    trust: TrustLevel.CONFIDENTIAL,
     confidence: 0.8,
     location: {
       gps: { latitude: 37.7749, longitude: -122.4194, timestamp: '2026-01-15T10:00:00Z' },
@@ -50,20 +50,20 @@ function createTestMemory(overrides: Partial<Memory> = {}): Memory {
 }
 
 describe('TrustEnforcementService', () => {
-  describe('TRUST_THRESHOLDS', () => {
-    it('has 5 tiers with correct values', () => {
-      expect(TRUST_THRESHOLDS.FULL_ACCESS).toBe(1.0);
-      expect(TRUST_THRESHOLDS.PARTIAL_ACCESS).toBe(0.75);
-      expect(TRUST_THRESHOLDS.SUMMARY_ONLY).toBe(0.5);
-      expect(TRUST_THRESHOLDS.METADATA_ONLY).toBe(0.25);
-      expect(TRUST_THRESHOLDS.EXISTENCE_ONLY).toBe(0.0);
+  describe('TrustLevel constants', () => {
+    it('has 5 levels with correct values', () => {
+      expect(TrustLevel.PUBLIC).toBe(1);
+      expect(TrustLevel.INTERNAL).toBe(2);
+      expect(TrustLevel.CONFIDENTIAL).toBe(3);
+      expect(TrustLevel.RESTRICTED).toBe(4);
+      expect(TrustLevel.SECRET).toBe(5);
     });
 
-    it('tiers are in descending order', () => {
-      expect(TRUST_THRESHOLDS.FULL_ACCESS).toBeGreaterThan(TRUST_THRESHOLDS.PARTIAL_ACCESS);
-      expect(TRUST_THRESHOLDS.PARTIAL_ACCESS).toBeGreaterThan(TRUST_THRESHOLDS.SUMMARY_ONLY);
-      expect(TRUST_THRESHOLDS.SUMMARY_ONLY).toBeGreaterThan(TRUST_THRESHOLDS.METADATA_ONLY);
-      expect(TRUST_THRESHOLDS.METADATA_ONLY).toBeGreaterThan(TRUST_THRESHOLDS.EXISTENCE_ONLY);
+    it('levels are in ascending order (higher = more confidential)', () => {
+      expect(TrustLevel.SECRET).toBeGreaterThan(TrustLevel.RESTRICTED);
+      expect(TrustLevel.RESTRICTED).toBeGreaterThan(TrustLevel.CONFIDENTIAL);
+      expect(TrustLevel.CONFIDENTIAL).toBeGreaterThan(TrustLevel.INTERNAL);
+      expect(TrustLevel.INTERNAL).toBeGreaterThan(TrustLevel.PUBLIC);
     });
   });
 
@@ -77,7 +77,7 @@ describe('TrustEnforcementService', () => {
         },
       };
 
-      const result = buildTrustFilter(mockCollection, 0.5);
+      const result = buildTrustFilter(mockCollection, TrustLevel.CONFIDENTIAL);
       expect(mockCollection.filter.byProperty).toHaveBeenCalledWith('trust_score');
       expect(result).toBe('mock-filter');
     });
@@ -88,79 +88,78 @@ describe('TrustEnforcementService', () => {
         filter: { byProperty: jest.fn().mockReturnValue({ lessOrEqual }) },
       };
 
-      buildTrustFilter(mockCollection, 0.75);
-      expect(lessOrEqual).toHaveBeenCalledWith(0.75);
+      buildTrustFilter(mockCollection, TrustLevel.RESTRICTED);
+      expect(lessOrEqual).toHaveBeenCalledWith(TrustLevel.RESTRICTED);
     });
   });
 
   describe('formatMemoryForPrompt', () => {
-    it('returns full content at trust 1.0 for self-access', () => {
-      const memory = createTestMemory({ trust: 0.5 });
-      const result = formatMemoryForPrompt(memory, 1.0, true);
+    it('returns full content for self-access', () => {
+      const memory = createTestMemory({ trust: TrustLevel.CONFIDENTIAL });
+      const result = formatMemoryForPrompt(memory, TrustLevel.SECRET, true);
 
-      expect(result.trust_tier).toBe('Full Access');
+      expect(result.trust_tier).toBe('Secret');
       expect(result.content).toContain('Full memory content here');
       expect(result.content).toContain('Test Memory');
       expect(result.content).toContain('test, important');
     });
 
-    it('returns existence-only for trust 1.0 memories in cross-user access', () => {
-      const memory = createTestMemory({ trust: 1.0 });
-      const result = formatMemoryForPrompt(memory, 1.0, false);
+    it('returns full content at SECRET accessor level', () => {
+      const memory = createTestMemory({ trust: TrustLevel.SECRET });
+      const result = formatMemoryForPrompt(memory, TrustLevel.SECRET);
 
-      expect(result.trust_tier).toBe('Existence Only');
-      expect(result.content).toBe('A memory exists about this topic.');
-      expect(result.content).not.toContain('Full memory content');
+      expect(result.trust_tier).toBe('Secret');
+      expect(result.content).toContain('Full memory content here');
     });
 
-    it('returns partial access at trust 0.75', () => {
-      const memory = createTestMemory({ trust: 0.5 });
-      const result = formatMemoryForPrompt(memory, 0.75);
+    it('returns partial access at RESTRICTED accessor level', () => {
+      const memory = createTestMemory({ trust: TrustLevel.CONFIDENTIAL });
+      const result = formatMemoryForPrompt(memory, TrustLevel.RESTRICTED);
 
-      expect(result.trust_tier).toBe('Partial Access');
+      expect(result.trust_tier).toBe('Restricted');
       expect(result.content).toContain('Full memory content here');
       expect(result.content).toContain('Tags:');
     });
 
-    it('returns summary only at trust 0.5', () => {
-      const memory = createTestMemory({ trust: 0.25 });
-      const result = formatMemoryForPrompt(memory, 0.5);
+    it('returns summary only at CONFIDENTIAL accessor level', () => {
+      const memory = createTestMemory({ trust: TrustLevel.INTERNAL });
+      const result = formatMemoryForPrompt(memory, TrustLevel.CONFIDENTIAL);
 
-      expect(result.trust_tier).toBe('Summary Only');
+      expect(result.trust_tier).toBe('Confidential');
       expect(result.content).toContain('Test Memory');
       expect(result.content).toContain('A summary of the memory');
       expect(result.content).not.toContain('Full memory content here');
     });
 
-    it('returns summary fallback when no summary at trust 0.5', () => {
-      const memory = createTestMemory({ trust: 0.25, summary: undefined });
-      const result = formatMemoryForPrompt(memory, 0.5);
+    it('returns summary fallback when no summary at CONFIDENTIAL level', () => {
+      const memory = createTestMemory({ trust: TrustLevel.INTERNAL, summary: undefined });
+      const result = formatMemoryForPrompt(memory, TrustLevel.CONFIDENTIAL);
 
       expect(result.content).toContain('(No summary available)');
     });
 
-    it('returns metadata only at trust 0.25', () => {
-      const memory = createTestMemory({ trust: 0.1 });
-      const result = formatMemoryForPrompt(memory, 0.25);
+    it('returns metadata only at INTERNAL accessor level', () => {
+      const memory = createTestMemory({ trust: TrustLevel.PUBLIC });
+      const result = formatMemoryForPrompt(memory, TrustLevel.INTERNAL);
 
-      expect(result.trust_tier).toBe('Metadata Only');
+      expect(result.trust_tier).toBe('Internal');
       expect(result.content).toContain('[note]');
       expect(result.content).toContain('Tags:');
       expect(result.content).not.toContain('Full memory content here');
       expect(result.content).not.toContain('A summary');
     });
 
-    it('returns existence only at trust 0.0', () => {
-      const memory = createTestMemory({ trust: 0.0 });
-      const result = formatMemoryForPrompt(memory, 0.0);
+    it('returns existence only at PUBLIC accessor level', () => {
+      const memory = createTestMemory({ trust: TrustLevel.PUBLIC });
+      const result = formatMemoryForPrompt(memory, TrustLevel.PUBLIC);
 
-      expect(result.trust_tier).toBe('Existence Only');
+      expect(result.trust_tier).toBe('Public');
       expect(result.content).toBe('A memory exists about this topic.');
     });
 
     it('includes memory_id in all tiers', () => {
       const memory = createTestMemory({ id: 'unique-id' });
-      for (const trust of [1.0, 0.75, 0.5, 0.25, 0.0]) {
+      for (const trust of [TrustLevel.SECRET, TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, TrustLevel.INTERNAL, TrustLevel.PUBLIC] as const) {
         const result = formatMemoryForPrompt(memory, trust, true);
         expect(result.memory_id).toBe('unique-id');
       }
@@ -168,55 +167,48 @@ describe('TrustEnforcementService', () => {
   });
 
   describe('getTrustLevelLabel', () => {
-    it('returns Full Access for 1.0', () => {
-      expect(getTrustLevelLabel(1.0)).toBe('Full Access');
+    it('returns Secret for level 5', () => {
+      expect(getTrustLevelLabel(TrustLevel.SECRET)).toBe('Secret');
     });
 
-    it('returns Partial Access for 0.75', () => {
-      expect(getTrustLevelLabel(0.75)).toBe('Partial Access');
+    it('returns Restricted for level 4', () => {
+      expect(getTrustLevelLabel(TrustLevel.RESTRICTED)).toBe('Restricted');
     });
 
-    it('returns Summary Only for 0.5', () => {
-      expect(getTrustLevelLabel(0.5)).toBe('Summary Only');
+    it('returns Confidential for level 3', () => {
+      expect(getTrustLevelLabel(TrustLevel.CONFIDENTIAL)).toBe('Confidential');
     });
 
-    it('returns Metadata Only for 0.25', () => {
-      expect(getTrustLevelLabel(0.25)).toBe('Metadata Only');
+    it('returns Internal for level 2', () => {
+      expect(getTrustLevelLabel(TrustLevel.INTERNAL)).toBe('Internal');
     });
 
-    it('returns Existence Only for 0.0', () => {
-      expect(getTrustLevelLabel(0.0)).toBe('Existence Only');
-    });
-
-    it('returns correct label for values between tiers', () => {
-      expect(getTrustLevelLabel(0.9)).toBe('Partial Access');
-      expect(getTrustLevelLabel(0.6)).toBe('Summary Only');
-      expect(getTrustLevelLabel(0.3)).toBe('Metadata Only');
-      expect(getTrustLevelLabel(0.1)).toBe('Existence Only');
+    it('returns Public for level 1', () => {
+      expect(getTrustLevelLabel(TrustLevel.PUBLIC)).toBe('Public');
     });
   });
 
   describe('getTrustInstructions', () => {
-    it('returns non-empty instructions for each tier', () => {
-      for (const trust of [1.0, 0.75, 0.5, 0.25, 0.0]) {
+    it('returns non-empty instructions for each level', () => {
+      for (const trust of [TrustLevel.SECRET, TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, TrustLevel.INTERNAL, TrustLevel.PUBLIC] as const) {
         const instructions = getTrustInstructions(trust);
         expect(instructions.length).toBeGreaterThan(10);
       }
     });
 
     it('full access mentions sharing freely', () => {
-      expect(getTrustInstructions(1.0)).toContain('full access');
+      expect(getTrustInstructions(TrustLevel.SECRET)).toContain('full access');
     });
 
     it('existence only mentions acknowledging only', () => {
-      expect(getTrustInstructions(0.0)).toContain('acknowledge');
+      expect(getTrustInstructions(TrustLevel.PUBLIC)).toContain('acknowledge');
     });
   });
 
   describe('redactSensitiveFields', () => {
     it('clears GPS location data', () => {
       const memory = createTestMemory();
-      const redacted = redactSensitiveFields(memory, 0.75);
+      const redacted = redactSensitiveFields(memory);
 
       expect(redacted.location.gps).toBeNull();
       expect(redacted.location.address).toBeNull();
@@ -224,7 +216,7 @@ describe('TrustEnforcementService', () => {
 
     it('clears context participants and environment', () => {
       const memory = createTestMemory();
-      const redacted = redactSensitiveFields(memory, 0.75);
+      const redacted = redactSensitiveFields(memory);
 
       expect(redacted.context.participants).toBeUndefined();
       expect(redacted.context.environment).toBeUndefined();
@@ -233,14 +225,14 @@ describe('TrustEnforcementService', () => {
 
     it('clears references', () => {
       const memory = createTestMemory({ references: ['https://secret.com'] });
-      const redacted = redactSensitiveFields(memory, 0.75);
+      const redacted = redactSensitiveFields(memory);
 
       expect(redacted.references).toBeUndefined();
     });
 
     it('preserves non-sensitive fields', () => {
       const memory = createTestMemory();
-      const redacted = redactSensitiveFields(memory, 0.75);
+      const redacted = redactSensitiveFields(memory);
 
       expect(redacted.id).toBe(memory.id);
       expect(redacted.content).toBe(memory.content);
@@ -251,7 +243,7 @@ describe('TrustEnforcementService', () => {
     it('does not mutate the original memory', () => {
       const memory = createTestMemory();
       const originalGps = memory.location.gps;
-      redactSensitiveFields(memory, 0.75);
+      redactSensitiveFields(memory);
 
       expect(memory.location.gps).toBe(originalGps);
     });
@@ -259,24 +251,24 @@ describe('TrustEnforcementService', () => {
 
   describe('isTrustSufficient', () => {
     it('returns true when accessor trust equals memory trust', () => {
-      expect(isTrustSufficient(0.5, 0.5)).toBe(true);
+      expect(isTrustSufficient(TrustLevel.CONFIDENTIAL, TrustLevel.CONFIDENTIAL)).toBe(true);
     });
 
     it('returns true when accessor trust exceeds memory trust', () => {
-      expect(isTrustSufficient(0.5, 0.75)).toBe(true);
+      expect(isTrustSufficient(TrustLevel.CONFIDENTIAL, TrustLevel.RESTRICTED)).toBe(true);
     });
 
     it('returns false when accessor trust is below memory trust', () => {
-      expect(isTrustSufficient(0.75, 0.5)).toBe(false);
+      expect(isTrustSufficient(TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL)).toBe(false);
     });
 
-    it('handles boundary at 0', () => {
-      expect(isTrustSufficient(0.0, 0.0)).toBe(true);
+    it('handles boundary at PUBLIC (1)', () => {
+      expect(isTrustSufficient(TrustLevel.PUBLIC, TrustLevel.PUBLIC)).toBe(true);
     });
 
-    it('handles boundary at 1', () => {
-      expect(isTrustSufficient(1.0, 1.0)).toBe(true);
-      expect(isTrustSufficient(1.0, 0.99)).toBe(false);
+    it('handles boundary at SECRET (5)', () => {
+      expect(isTrustSufficient(TrustLevel.SECRET, TrustLevel.SECRET)).toBe(true);
+      expect(isTrustSufficient(TrustLevel.SECRET, TrustLevel.RESTRICTED)).toBe(false);
     });
   });
 

@@ -3,26 +3,14 @@
  *
  * - query mode (default): memories above trust threshold never returned from Weaviate
  * - prompt mode: all memories returned, formatted/redacted by trust level
- * - hybrid mode: query filter for trust 0.0, prompt filter for rest
+ * - hybrid mode: query filter for PUBLIC, prompt filter for rest
  *
- * Ported from remember-mcp/src/services/trust-enforcement.ts
+ * Uses integer TrustLevel 1–5 scale (higher = more confidential).
  */
 
 import type { Memory } from '../types/memory.types.js';
 import type { TrustEnforcementMode } from '../types/ghost-config.types.js';
 import { TrustLevel, TRUST_LABELS } from '../types/trust.types.js';
-
-/**
- * @deprecated Use TrustLevel from '../types/trust.types.js' instead.
- * Kept temporarily for downstream consumers — will be removed in next major.
- */
-export const TRUST_THRESHOLDS = {
-  FULL_ACCESS: 1.0,
-  PARTIAL_ACCESS: 0.75,
-  SUMMARY_ONLY: 0.5,
-  METADATA_ONLY: 0.25,
-  EXISTENCE_ONLY: 0.0,
-} as const;
 
 // ─── Query-Level Enforcement ───────────────────────────────────────────────
 
@@ -31,10 +19,10 @@ export const TRUST_THRESHOLDS = {
  * Only returns memories where trust_score <= accessorTrustLevel.
  *
  * @param collection - Weaviate collection instance
- * @param accessorTrustLevel - The accessor's trust level (0-1)
+ * @param accessorTrustLevel - The accessor's trust level (1-5)
  * @returns Weaviate filter object
  */
-export function buildTrustFilter(collection: any, accessorTrustLevel: number): any {
+export function buildTrustFilter(collection: any, accessorTrustLevel: TrustLevel): any {
   return collection.filter.byProperty('trust_score').lessOrEqual(accessorTrustLevel);
 }
 
@@ -53,77 +41,86 @@ export interface FormattedMemory {
 /**
  * Format a memory for inclusion in an LLM prompt, redacted by trust level.
  *
- * Trust tiers:
- * - 1.0  Full Access:    full content, all details
- * - 0.75 Partial Access: content with sensitive fields redacted
- * - 0.5  Summary Only:   title + summary, no content
- * - 0.25 Metadata Only:  type, date, tags — no content or summary
- * - 0.0  Existence Only: "A memory exists about this topic"
+ * Trust tiers (accessor level determines what they see):
+ * - SECRET (5):       Full content, all details
+ * - RESTRICTED (4):   Content with sensitive fields redacted
+ * - CONFIDENTIAL (3): Title + summary only
+ * - INTERNAL (2):     Metadata only (type, date, tags)
+ * - PUBLIC (1):       Existence only ("A memory exists about this topic")
  *
- * Trust 1.0 memories are always existence-only for cross-users, regardless of
- * accessor trust level. Use `isSelfAccess = true` to bypass for owner access.
+ * Access rule: accessor_level >= memory_level. Self-access always gets full content.
  *
  * @param memory - The memory to format
- * @param accessorTrustLevel - The accessor's trust level (0-1)
- * @param isSelfAccess - True if the accessor is the memory owner (bypasses trust 1.0 cap)
+ * @param accessorTrustLevel - The accessor's trust level (1-5)
+ * @param isSelfAccess - True if the accessor is the memory owner
  * @returns Formatted memory for prompt inclusion
  */
-export function formatMemoryForPrompt(memory: Memory, accessorTrustLevel: number, isSelfAccess = false): FormattedMemory {
-  // Trust 1.0 = existence-only for cross-users (acknowledged but never revealed)
-  if (!isSelfAccess && memory.trust >= 1.0) {
-    return {
-      memory_id: memory.id,
-      trust_tier: 'Existence Only',
-      content: 'A memory exists about this topic.',
-    };
+export function formatMemoryForPrompt(memory: Memory, accessorTrustLevel: TrustLevel, isSelfAccess = false): FormattedMemory {
+  // Owner always gets full access
+  if (isSelfAccess) {
+    return formatFullAccess(memory);
   }
 
   const tier = getTrustLevelLabel(accessorTrustLevel);
 
-  if (accessorTrustLevel >= TRUST_THRESHOLDS.FULL_ACCESS) {
-    // Full Access — all content
-    const parts = [`[${memory.type}] ${memory.title || 'Untitled'}`];
-    parts.push(memory.content);
-    if (memory.summary) parts.push(`Summary: ${memory.summary}`);
-    if (memory.tags.length > 0) parts.push(`Tags: ${memory.tags.join(', ')}`);
-    if (memory.created_at) parts.push(`Created: ${memory.created_at}`);
-    return { memory_id: memory.id, trust_tier: tier, content: parts.join('\n') };
-  }
-
-  if (accessorTrustLevel >= TRUST_THRESHOLDS.PARTIAL_ACCESS) {
-    // Partial Access — redact sensitive fields
-    const redacted = redactSensitiveFields(memory, accessorTrustLevel);
-    const parts = [`[${redacted.type}] ${redacted.title || 'Untitled'}`];
-    parts.push(redacted.content);
-    if (redacted.tags.length > 0) parts.push(`Tags: ${redacted.tags.join(', ')}`);
-    return { memory_id: memory.id, trust_tier: tier, content: parts.join('\n') };
-  }
-
-  if (accessorTrustLevel >= TRUST_THRESHOLDS.SUMMARY_ONLY) {
-    // Summary Only — title + summary, no content body
-    const parts = [`[${memory.type}] ${memory.title || 'Untitled'}`];
-    if (memory.summary) {
-      parts.push(memory.summary);
-    } else {
-      parts.push('(No summary available)');
+  switch (accessorTrustLevel) {
+    case TrustLevel.SECRET: {
+      // Full Access — all content
+      const parts = [`[${memory.type}] ${memory.title || 'Untitled'}`];
+      parts.push(memory.content);
+      if (memory.summary) parts.push(`Summary: ${memory.summary}`);
+      if (memory.tags.length > 0) parts.push(`Tags: ${memory.tags.join(', ')}`);
+      if (memory.created_at) parts.push(`Created: ${memory.created_at}`);
+      return { memory_id: memory.id, trust_tier: tier, content: parts.join('\n') };
     }
-    return { memory_id: memory.id, trust_tier: tier, content: parts.join('\n') };
-  }
 
-  if (accessorTrustLevel >= TRUST_THRESHOLDS.METADATA_ONLY) {
-    // Metadata Only — type, date, tags
-    const parts = [`[${memory.type}]`];
-    if (memory.created_at) parts.push(`Created: ${memory.created_at}`);
-    if (memory.tags.length > 0) parts.push(`Tags: ${memory.tags.join(', ')}`);
-    return { memory_id: memory.id, trust_tier: tier, content: parts.join('\n') };
-  }
+    case TrustLevel.RESTRICTED: {
+      // Partial Access — redact sensitive fields
+      const redacted = redactSensitiveFields(memory);
+      const parts = [`[${redacted.type}] ${redacted.title || 'Untitled'}`];
+      parts.push(redacted.content);
+      if (redacted.tags.length > 0) parts.push(`Tags: ${redacted.tags.join(', ')}`);
+      return { memory_id: memory.id, trust_tier: tier, content: parts.join('\n') };
+    }
 
-  // Existence Only — minimal hint
-  return {
-    memory_id: memory.id,
-    trust_tier: tier,
-    content: 'A memory exists about this topic.',
-  };
+    case TrustLevel.CONFIDENTIAL: {
+      // Summary Only — title + summary, no content body
+      const parts = [`[${memory.type}] ${memory.title || 'Untitled'}`];
+      if (memory.summary) {
+        parts.push(memory.summary);
+      } else {
+        parts.push('(No summary available)');
+      }
+      return { memory_id: memory.id, trust_tier: tier, content: parts.join('\n') };
+    }
+
+    case TrustLevel.INTERNAL: {
+      // Metadata Only — type, date, tags
+      const parts = [`[${memory.type}]`];
+      if (memory.created_at) parts.push(`Created: ${memory.created_at}`);
+      if (memory.tags.length > 0) parts.push(`Tags: ${memory.tags.join(', ')}`);
+      return { memory_id: memory.id, trust_tier: tier, content: parts.join('\n') };
+    }
+
+    case TrustLevel.PUBLIC:
+    default:
+      // Existence Only — minimal hint
+      return {
+        memory_id: memory.id,
+        trust_tier: tier,
+        content: 'A memory exists about this topic.',
+      };
+  }
+}
+
+/** Format a memory with full access (used for self-access) */
+function formatFullAccess(memory: Memory): FormattedMemory {
+  const parts = [`[${memory.type}] ${memory.title || 'Untitled'}`];
+  parts.push(memory.content);
+  if (memory.summary) parts.push(`Summary: ${memory.summary}`);
+  if (memory.tags.length > 0) parts.push(`Tags: ${memory.tags.join(', ')}`);
+  if (memory.created_at) parts.push(`Created: ${memory.created_at}`);
+  return { memory_id: memory.id, trust_tier: 'Secret', content: parts.join('\n') };
 }
 
 // ─── Shared Utilities ──────────────────────────────────────────────────────
@@ -131,38 +128,34 @@ export function formatMemoryForPrompt(memory: Memory, accessorTrustLevel: number
 /**
  * Get a human-readable label for a trust level.
  */
-export function getTrustLevelLabel(trust: number): string {
-  if (trust >= TRUST_THRESHOLDS.FULL_ACCESS) return 'Full Access';
-  if (trust >= TRUST_THRESHOLDS.PARTIAL_ACCESS) return 'Partial Access';
-  if (trust >= TRUST_THRESHOLDS.SUMMARY_ONLY) return 'Summary Only';
-  if (trust >= TRUST_THRESHOLDS.METADATA_ONLY) return 'Metadata Only';
-  return 'Existence Only';
+export function getTrustLevelLabel(trust: TrustLevel): string {
+  return TRUST_LABELS[trust] ?? 'Public';
 }
 
 /**
  * Get LLM instruction text describing what to reveal at a given trust level.
  */
-export function getTrustInstructions(trust: number): string {
-  if (trust >= TRUST_THRESHOLDS.FULL_ACCESS) {
-    return 'You have full access to this memory. Share all content and details freely.';
+export function getTrustInstructions(trust: TrustLevel): string {
+  switch (trust) {
+    case TrustLevel.SECRET:
+      return 'You have full access to this memory. Share all content and details freely.';
+    case TrustLevel.RESTRICTED:
+      return 'You have partial access. Share the main content but do not reveal sensitive personal details like exact locations, contact information, or financial data.';
+    case TrustLevel.CONFIDENTIAL:
+      return 'You have summary-level access. Share the title and summary only. Do not reveal the full content of this memory.';
+    case TrustLevel.INTERNAL:
+      return 'You have metadata-level access only. You may mention the type, date, and tags, but do not reveal any content or summary.';
+    case TrustLevel.PUBLIC:
+    default:
+      return 'You may only acknowledge that a memory exists about this topic. Do not reveal any details.';
   }
-  if (trust >= TRUST_THRESHOLDS.PARTIAL_ACCESS) {
-    return 'You have partial access. Share the main content but do not reveal sensitive personal details like exact locations, contact information, or financial data.';
-  }
-  if (trust >= TRUST_THRESHOLDS.SUMMARY_ONLY) {
-    return 'You have summary-level access. Share the title and summary only. Do not reveal the full content of this memory.';
-  }
-  if (trust >= TRUST_THRESHOLDS.METADATA_ONLY) {
-    return 'You have metadata-level access only. You may mention the type, date, and tags, but do not reveal any content or summary.';
-  }
-  return 'You may only acknowledge that a memory exists about this topic. Do not reveal any details.';
 }
 
 /**
  * Redact sensitive fields from a memory for partial access.
  * Returns a copy with location, context, and references cleared.
  */
-export function redactSensitiveFields(memory: Memory, _trust: number): Memory {
+export function redactSensitiveFields(memory: Memory): Memory {
   return {
     ...memory,
     // Clear sensitive location data
@@ -183,7 +176,7 @@ export function redactSensitiveFields(memory: Memory, _trust: number): Memory {
  * Check whether an accessor's trust level is sufficient for a memory.
  * Access is granted when accessorTrust >= memoryTrust.
  */
-export function isTrustSufficient(memoryTrust: number, accessorTrust: number): boolean {
+export function isTrustSufficient(memoryTrust: TrustLevel, accessorTrust: TrustLevel): boolean {
   return accessorTrust >= memoryTrust;
 }
 

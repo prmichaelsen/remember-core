@@ -18,7 +18,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   - `GhostConfig.per_user_trust` values typed as `TrustLevel`
   - `AccessInsufficientTrust.required_trust` / `actual_trust` typed as `TrustLevel`
   - `resolveAccessorTrustLevel()` returns `TrustLevel`
-  - `TRUST_THRESHOLDS` deprecated (will be removed in next major)
+  - `GhostSearchContext.accessor_trust_level` typed as `TrustLevel`
+  - `GhostModeContext.accessor_trust_level` typed as `TrustLevel`
+- **BREAKING: Trust enforcement rewritten for integer scale** (task-99, M19)
+  - `formatMemoryForPrompt()` uses integer switch (was float threshold comparisons)
+  - Removed `trust=1.0` existence-only guard for cross-user access (no longer needed — SECRET level naturally restricts)
+  - `getTrustLevelLabel()` uses direct `TRUST_LABELS` lookup (was float threshold cascade)
+  - `getTrustInstructions()` uses switch on `TrustLevel` (was float comparisons)
+  - `buildTrustFilter()` typed as `TrustLevel` param (was `number`)
+  - `isTrustSufficient()` params typed as `TrustLevel` (was `number`)
+  - `redactSensitiveFields()` removed unused `_trust` parameter
+  - `TRUST_THRESHOLDS` removed (was deprecated in task-98)
+  - `formatAccessResultMessage()` uses integer display (was `.toFixed(2)`)
+  - Validation updated: trust range is now 1-5 integers (was 0-1 floats)
+  - `validateGhostConfigUpdate()` validates integer range
+  - `handleSetTrust()` validates integer range
 
 ## [0.27.4] - 2026-03-05
 

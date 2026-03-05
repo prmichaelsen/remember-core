@@ -9,6 +9,7 @@
 
 import type { Logger } from '../utils/logger.js';
 import type { GhostConfig } from '../types/ghost-config.types.js';
+import { isValidTrustLevel } from '../types/trust.types.js';
 import {
   getGhostConfig,
   setGhostConfigFields,
@@ -81,7 +82,7 @@ export async function handleUpdateConfig(
 
 /**
  * Set trust level for a specific user.
- * Validates trust range [0, 1] before persisting.
+ * Validates trust range [1, 5] before persisting.
  */
 export async function handleSetTrust(
   ownerId: string,
@@ -93,8 +94,8 @@ export async function handleSetTrust(
     return { success: false, message: 'Cannot set trust level for yourself.' };
   }
 
-  if (level < 0 || level > 1) {
-    return { success: false, message: `Trust level must be between 0 and 1, got ${level}.` };
+  if (!isValidTrustLevel(level)) {
+    return { success: false, message: `Trust level must be an integer between 1 and 5, got ${level}.` };
   }
 
   await setUserTrust(ownerId, accessorId, level, logger);

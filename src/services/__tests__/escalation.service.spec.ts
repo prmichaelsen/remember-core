@@ -6,6 +6,7 @@ import {
   isMemoryBlocked,
   resetBlock,
 } from '../access-control.service.js';
+import { TrustLevel } from '../../types/trust.types.js';
 
 describe('EscalationService', () => {
   let store: InMemoryEscalationStore;
@@ -74,19 +75,19 @@ describe('EscalationService', () => {
   describe('escalation flow via handleInsufficientTrust', () => {
     it('first attempt: insufficient_trust with penalty', async () => {
       const result = await handleInsufficientTrust(
-        'owner', 'accessor', 'mem', 0.75, 0.5, store
+        'owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store
       );
       expect(result.status).toBe('insufficient_trust');
       if (result.status === 'insufficient_trust') {
-        expect(result.actual_trust).toBe(0.5 - TRUST_PENALTY);
+        expect(result.actual_trust).toBe(Math.max(1, TrustLevel.CONFIDENTIAL - TRUST_PENALTY));
         expect(result.attempts_remaining).toBe(MAX_ATTEMPTS_BEFORE_BLOCK - 1);
       }
     });
 
     it('second attempt: insufficient_trust with reduced attempts remaining', async () => {
-      await handleInsufficientTrust('owner', 'accessor', 'mem', 0.75, 0.5, store);
+      await handleInsufficientTrust('owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store);
       const result = await handleInsufficientTrust(
-        'owner', 'accessor', 'mem', 0.75, 0.5, store
+        'owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store
       );
       if (result.status === 'insufficient_trust') {
         expect(result.attempts_remaining).toBe(MAX_ATTEMPTS_BEFORE_BLOCK - 2);
@@ -94,10 +95,10 @@ describe('EscalationService', () => {
     });
 
     it('third attempt: blocked', async () => {
-      await handleInsufficientTrust('owner', 'accessor', 'mem', 0.75, 0.5, store);
-      await handleInsufficientTrust('owner', 'accessor', 'mem', 0.75, 0.5, store);
+      await handleInsufficientTrust('owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store);
+      await handleInsufficientTrust('owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store);
       const result = await handleInsufficientTrust(
-        'owner', 'accessor', 'mem', 0.75, 0.5, store
+        'owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store
       );
       expect(result.status).toBe('blocked');
       if (result.status === 'blocked') {
@@ -106,21 +107,12 @@ describe('EscalationService', () => {
       }
     });
 
-    it('trust floor at 0 (never negative)', async () => {
+    it('trust floor at 1 (never below PUBLIC)', async () => {
       const result = await handleInsufficientTrust(
-        'owner', 'accessor', 'mem', 0.75, 0.05, store
+        'owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.PUBLIC, store
       );
       if (result.status === 'insufficient_trust') {
-        expect(result.actual_trust).toBe(0);
-      }
-    });
-
-    it('trust floor at 0 for zero trust', async () => {
-      const result = await handleInsufficientTrust(
-        'owner', 'accessor', 'mem', 0.75, 0.0, store
-      );
-      if (result.status === 'insufficient_trust') {
-        expect(result.actual_trust).toBe(0);
+        expect(result.actual_trust).toBeGreaterThanOrEqual(1);
       }
     });
   });
@@ -134,7 +126,7 @@ describe('EscalationService', () => {
     it('returns true after block is set', async () => {
       // Trigger block via 3 failed attempts
       for (let i = 0; i < MAX_ATTEMPTS_BEFORE_BLOCK; i++) {
-        await handleInsufficientTrust('owner', 'accessor', 'mem', 0.75, 0.5, store);
+        await handleInsufficientTrust('owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store);
       }
       const result = await isMemoryBlocked('owner', 'accessor', 'mem', store);
       expect(result).toBe(true);
@@ -145,7 +137,7 @@ describe('EscalationService', () => {
     it('clears an existing block', async () => {
       // Set a block
       for (let i = 0; i < MAX_ATTEMPTS_BEFORE_BLOCK; i++) {
-        await handleInsufficientTrust('owner', 'accessor', 'mem', 0.75, 0.5, store);
+        await handleInsufficientTrust('owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store);
       }
       expect(await isMemoryBlocked('owner', 'accessor', 'mem', store)).toBe(true);
 

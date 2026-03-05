@@ -8,6 +8,7 @@ import type {
   AccessResult,
   AccessResultStatus,
 } from '../access-result.types.js';
+import { TrustLevel } from '../trust.types.js';
 
 describe('AccessResult types', () => {
   describe('discriminated union narrowing', () => {
@@ -27,13 +28,13 @@ describe('AccessResult types', () => {
       const result: AccessResult = {
         status: 'insufficient_trust',
         memory_id: 'mem-1',
-        required_trust: 0.75,
-        actual_trust: 0.25,
+        required_trust: TrustLevel.RESTRICTED,
+        actual_trust: TrustLevel.INTERNAL,
         attempts_remaining: 2,
       };
       if (result.status === 'insufficient_trust') {
-        expect(result.required_trust).toBe(0.75);
-        expect(result.actual_trust).toBe(0.25);
+        expect(result.required_trust).toBe(TrustLevel.RESTRICTED);
+        expect(result.actual_trust).toBe(TrustLevel.INTERNAL);
         expect(result.attempts_remaining).toBe(2);
       }
     });
@@ -90,7 +91,7 @@ describe('AccessResult types', () => {
     it('handles all 6 variants in a switch', () => {
       const variants: AccessResult[] = [
         { status: 'granted', memory: { id: '1' } as any, access_level: 'owner' },
-        { status: 'insufficient_trust', memory_id: '1', required_trust: 0.5, actual_trust: 0.25, attempts_remaining: 2 },
+        { status: 'insufficient_trust', memory_id: '1', required_trust: TrustLevel.CONFIDENTIAL, actual_trust: TrustLevel.INTERNAL, attempts_remaining: 2 },
         { status: 'blocked', memory_id: '1', reason: 'test', blocked_at: '2026-01-01' },
         { status: 'no_permission', owner_user_id: 'o', accessor_user_id: 'a' },
         { status: 'not_found', memory_id: '1' },

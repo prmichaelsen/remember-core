@@ -5,7 +5,7 @@
 [![Publish](https://github.com/prmichaelsen/remember-core/actions/workflows/publish.yml/badge.svg)](https://github.com/prmichaelsen/remember-core/actions/workflows/publish.yml)
 [![npm downloads](https://img.shields.io/npm/dm/@prmichaelsen/remember-core.svg)](https://www.npmjs.com/package/@prmichaelsen/remember-core)
 
-Transport-agnostic core SDK for Remember. Extracts business logic from remember-mcp so both remember-mcp-server (MCP transport) and remember-rest-server (REST transport) can share the same services.
+Transport-agnostic core SDK for Remember. Extracts business logic from [remember-mcp](https://github.com/prmichaelsen/remember-mcp) so both the MCP server and [remember-rest-service](https://github.com/prmichaelsen/remember-rest-service) (REST transport) can share the same services.
 
 ## Installation
 
@@ -92,7 +92,7 @@ const results = await memoryService.search({
 
 ### Client SDKs
 
-Two typed REST client SDKs wrapping the remember-rest-service API. Both are server-side only (browser guard). Supabase-style `{ data, error }` responses with `.throwOnError()`.
+Two typed REST client SDKs wrapping the [remember-rest-service](https://github.com/prmichaelsen/remember-rest-service) API. Both are server-side only (browser guard). Supabase-style `{ data, error }` responses with `.throwOnError()`.
 
 **Svc Client** (`@prmichaelsen/remember-core/clients/svc/v1`) — 1:1 mirror of `/api/svc/v1/` routes, 29 methods across 7 resource groups:
 
@@ -134,7 +134,7 @@ npm run typecheck  # Type checking
 npm run build      # TypeScript compilation
 ```
 
-## Migration from remember-mcp
+## Migration from [remember-mcp](https://github.com/prmichaelsen/remember-mcp)
 
 See [docs/migration-guide.md](docs/migration-guide.md) for instructions on replacing inline tool handler logic with remember-core service calls.
 
@@ -156,12 +156,19 @@ remember-core (this package)
   ├── app/           App client (compound use-case operations, 5 methods)
   └── testing/       Mock infrastructure for consumers
 
-remember-rest-service (server)
+remember-rest-service (server)        github.com/prmichaelsen/remember-rest-service
   └── REST routes wrapping remember-core services
 
-remember-mcp-server (consumer)
+remember-mcp (consumer)               github.com/prmichaelsen/remember-mcp
   └── MCP tool handlers → thin adapters calling remember-core services
 ```
+
+## Related Projects
+
+| Project | Description |
+|---------|-------------|
+| [remember-mcp](https://github.com/prmichaelsen/remember-mcp) | MCP server — gives AI agents persistent memory via the Model Context Protocol |
+| [remember-rest-service](https://github.com/prmichaelsen/remember-rest-service) | REST API server — exposes remember-core services over HTTP |
 
 ## License
 

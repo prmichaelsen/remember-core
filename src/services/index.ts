@@ -246,3 +246,8 @@ export {
   type RemServiceDeps,
   type RunCycleResult,
 } from './rem.service.js';
+
+// File extraction
+export type { ExtractionResult, FileExtractor } from './extractors/index.js';
+export { ExtractorRegistry, createDefaultRegistry } from './extractors/index.js';
+export { downloadFile } from './extractors/index.js';

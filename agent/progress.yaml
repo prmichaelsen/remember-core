@@ -257,6 +257,22 @@ milestones:
       See: agent/milestones/milestone-16-job-tracking-system.md
       See: agent/design/local.job-tracking-system.md
 
+  - id: M17
+    name: File Format Extraction
+    status: not_started
+    progress: 0
+    estimated_weeks: 2-3
+    tasks_completed: 0
+    tasks_total: 8
+    notes: |
+      Pluggable file-to-text extraction pipeline for PDF, DOCX, images (OCR),
+      HTML, and structured data. Extractors behind FileExtractor interface with
+      ExtractorRegistry. Integration into ImportJobWorker via signed HTTPS URLs.
+      Hybrid PDF strategy: unpdf (text-layer) + Google Document AI (scanned).
+      DOCX via mammoth + Turndown. Images via Google Vision API.
+      See: agent/milestones/milestone-17-file-format-extraction.md
+      See: agent/design/local.file-format-extraction.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1028,7 +1044,8 @@ tasks:
         with TTL. The client is already a singleton — this caches collection readiness.
     - id: task-84
       name: Wire Async Import Endpoint (202 + job_id)
-      status: not_started
+      status: completed
+      completed_date: 2026-03-05
       file: agent/tasks/unassigned/task-84-wire-async-import-endpoint.md
       estimated_hours: 2-3
       dependencies: task-76, task-77
@@ -1204,11 +1221,85 @@ tasks:
         Fixed HttpClient.request() to append options.params as URL query string.
         3 new tests. 626 total passing.
 
+  milestone_17:
+    - id: task-85
+      name: Extractor Infrastructure
+      status: not_started
+      file: agent/tasks/milestone-17-file-format-extraction/task-85-extractor-infrastructure.md
+      estimated_hours: 2-3
+      dependencies: null
+      notes: |
+        FileExtractor interface, ExtractionResult type, ExtractorRegistry,
+        downloadFile() utility (plain fetch with signed URLs), barrel exports.
+    - id: task-86
+      name: Plaintext and HTML Extractors
+      status: not_started
+      file: agent/tasks/milestone-17-file-format-extraction/task-86-plaintext-html-extractors.md
+      estimated_hours: 1-2
+      dependencies: task-85
+      notes: |
+        PlaintextExtractor (TXT, MD, CSV, JSON, YAML passthrough).
+        HtmlExtractor (HTML to Markdown via Turndown).
+    - id: task-87
+      name: PDF Extractor
+      status: not_started
+      file: agent/tasks/milestone-17-file-format-extraction/task-87-pdf-extractor.md
+      estimated_hours: 3-4
+      dependencies: task-85
+      notes: |
+        Hybrid PDF extraction: unpdf for text-layer PDFs, Google Document AI
+        fallback for scanned/image-only PDFs. DocumentAiClient interface.
+    - id: task-88
+      name: DOCX Extractor
+      status: not_started
+      file: agent/tasks/milestone-17-file-format-extraction/task-88-docx-extractor.md
+      estimated_hours: 2-3
+      dependencies: task-85
+      notes: |
+        DOCX to Markdown via mammoth + Turndown. Tables preserved as
+        Markdown tables. Headings preserved for section-aware chunking.
+    - id: task-89
+      name: Image Extractor
+      status: not_started
+      file: agent/tasks/milestone-17-file-format-extraction/task-89-image-extractor.md
+      estimated_hours: 2-3
+      dependencies: task-85
+      notes: |
+        Image OCR via Google Vision API. VisionClient interface.
+        Supports PNG, JPEG, WebP, GIF, TIFF.
+    - id: task-90
+      name: Import Pipeline Integration
+      status: not_started
+      file: agent/tasks/milestone-17-file-format-extraction/task-90-import-pipeline-integration.md
+      estimated_hours: 3-4
+      dependencies: task-85
+      notes: |
+        Update ImportItem with file_url/mime_type. Add extraction steps to
+        ImportJobWorker. Pre-import MIME type validation (400 before 202).
+    - id: task-91
+      name: Metadata and Enhanced Chunking
+      status: not_started
+      file: agent/tasks/milestone-17-file-format-extraction/task-91-metadata-enhanced-chunking.md
+      estimated_hours: 2-3
+      dependencies: task-90
+      notes: |
+        source:file_import tagging. Document metadata as tags. Page numbers
+        in chunk markers. Best-effort section-aware chunking on headings.
+    - id: task-92
+      name: OpenAPI Spec and Documentation
+      status: not_started
+      file: agent/tasks/milestone-17-file-format-extraction/task-92-openapi-spec-documentation.md
+      estimated_hours: 2-3
+      dependencies: task-90
+      notes: |
+        Update OpenAPI spec with file_url/mime_type. Add peer dependencies.
+        Regenerate SVC client types. Update barrel exports. MIME whitelist.
+
 documentation:
-  design_documents: 11
-  milestone_documents: 12
+  design_documents: 12
+  milestone_documents: 13
   pattern_documents: 25
-  task_documents: 76
+  task_documents: 84
 
 progress:
   planning: 100
@@ -1216,6 +1307,15 @@ progress:
   overall: 100
 
 recent_work:
+  - date: 2026-03-05
+    description: |
+      Planned M17 — File Format Extraction
+    items:
+      - "Created design doc: agent/design/local.file-format-extraction.md"
+      - "Created clarifications 6-7: requirements + tradeoff decisions"
+      - "Created milestone-17 with 8 tasks (task-85 through task-92)"
+      - "Task-84 marked complete (async import endpoint already wired)"
+      - "Key decisions: signed URLs, hybrid PDF (unpdf + Document AI), mammoth + Turndown, Vision API OCR, peer deps"
   - date: 2026-03-05
     description: |
       Updated progress.yaml — M16 retroactively marked complete (was implemented 2026-03-04 but tracking was stale)

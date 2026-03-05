@@ -21,6 +21,8 @@ import { CollectionType, getCollectionName } from '../collections/dot-notation.j
 import { generateCompositeId, compositeIdToUuid } from '../collections/composite-ids.js';
 import { getSpaceConfig } from './space-config.service.js';
 import { canModerate, canModerateAny } from '../utils/auth-helpers.js';
+import { ValidationError } from '../errors/app-errors.js';
+import type { ModerationClient } from './moderation.service.js';
 
 // ─── Shared Types ───────────────────────────────────────────────────────
 
@@ -224,13 +226,31 @@ export interface QuerySpaceResult {
  * @param logger - Logger instance
  */
 export class SpaceService {
+  private moderationClient?: ModerationClient;
+
   constructor(
     private weaviateClient: any,
     private userCollection: any,
     private userId: string,
     private confirmationTokenService: ConfirmationTokenService,
     private logger: Logger,
-  ) {}
+    options?: { moderationClient?: ModerationClient },
+  ) {
+    this.moderationClient = options?.moderationClient;
+  }
+
+  // ── Content moderation helper ────────────────────────────────────────
+
+  private async checkModeration(content: string): Promise<void> {
+    if (!this.moderationClient) return;
+    const result = await this.moderationClient.moderate(content);
+    if (!result.pass) {
+      throw new ValidationError(result.reason, {
+        moderation: ['blocked'],
+        ...(result.category ? { category: [result.category] } : {}),
+      });
+    }
+  }
 
   // ── Publish (phase 1: generate confirmation token) ──────────────────
 
@@ -274,6 +294,9 @@ export class SpaceService {
         );
       }
     }
+
+    // Content moderation check (blocks hateful/extremist content)
+    await this.checkModeration(memory.properties.content as string);
 
     // Generate confirmation token
     const { token } = await this.confirmationTokenService.createRequest(
@@ -379,6 +402,9 @@ export class SpaceService {
     if (spaceIds.length === 0 && groupIds.length === 0) {
       throw new Error('Memory has no published copies to revise. Publish first with publish().');
     }
+
+    // Content moderation check (blocks hateful/extremist content)
+    await this.checkModeration(memory.properties.content as string);
 
     const { token } = await this.confirmationTokenService.createRequest(
       this.userId,

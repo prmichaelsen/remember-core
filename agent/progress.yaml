@@ -1588,9 +1588,10 @@ tasks:
 
     - id: task-112
       name: SpaceService Integration
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-21-content-moderation/task-112-space-service-integration.md
       estimated_hours: 2-3
+      completed_date: 2026-03-05
       dependencies: [task-111]
       notes: |
         Wire ModerationClient into SpaceService publish/revise flows.

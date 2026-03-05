@@ -134,6 +134,7 @@ export const ALL_MEMORY_PROPERTIES = [
   'context_conversation_id', 'context_summary', 'context_timestamp', 'context_app', 'context_url',
   'relationship_ids', 'related_memory_ids', 'relationships', 'memory_ids', 'relationship_count',
   'relationship_type', 'observation', 'strength', 'source',
+  'rating_sum', 'rating_count', 'rating_bayesian',
   'access_count', 'last_accessed_at',
   'tags', 'references', 'created_at', 'updated_at', 'version', 'template_id',
   'space_ids', 'group_ids',

@@ -157,6 +157,20 @@ export function getCollectionRegistryPath(): string {
 }
 
 // ============================================================================
+// MEMORY RATINGS
+// ============================================================================
+
+/**
+ * Get path to a memory's ratings subcollection.
+ * Pattern: {BASE}.memory_ratings/{memoryId}/ratings
+ *
+ * Individual ratings stored as docs with rater userId as docId.
+ */
+export function getMemoryRatingsPath(memoryId: string): string {
+  return `${BASE}.memory_ratings/${memoryId}/ratings`;
+}
+
+// ============================================================================
 // MEMORY INDEX
 // ============================================================================
 

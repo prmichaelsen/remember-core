@@ -258,3 +258,9 @@ export {
   MemoryIndexService,
   type MemoryIndexEntry,
 } from './memory-index.service.js';
+
+// Rating service
+export {
+  RatingService,
+  type RatingServiceParams,
+} from './rating.service.js';

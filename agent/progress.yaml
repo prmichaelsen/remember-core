@@ -1550,7 +1550,7 @@ tasks:
         Rating schemas, Memory schema update. Regenerate types.
     - id: task-108
       name: SVC Client Methods
-      status: not_started
+      status: done
       file: agent/tasks/milestone-20-memory-ratings-system/task-108-svc-client-openapi-spec.md
       estimated_hours: 2-3
       dependencies: [task-107]

@@ -27,6 +27,10 @@ export interface MemoriesResource {
   byTimeSlice(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byDensitySlice(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   import(userId: string, input: Record<string, unknown>): Promise<SdkResponse<{ job_id: string }>>;
+  rate(userId: string, memoryId: string, rating: number): Promise<SdkResponse<unknown>>;
+  retractRating(userId: string, memoryId: string): Promise<SdkResponse<void>>;
+  getMyRating(userId: string, memoryId: string): Promise<SdkResponse<unknown>>;
+  byRating(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
 }
 
 export function createMemoriesResource(http: HttpClient): MemoriesResource {
@@ -72,6 +76,18 @@ export function createMemoriesResource(http: HttpClient): MemoriesResource {
     },
     import(userId, input) {
       return http.request('POST', '/api/svc/v1/memories/import', { userId, body: input });
+    },
+    rate(userId, memoryId, rating) {
+      return http.request('PUT', `/api/svc/v1/memories/${memoryId}/rating`, { userId, body: { rating } });
+    },
+    retractRating(userId, memoryId) {
+      return http.request('DELETE', `/api/svc/v1/memories/${memoryId}/rating`, { userId });
+    },
+    getMyRating(userId, memoryId) {
+      return http.request('GET', `/api/svc/v1/memories/${memoryId}/rating`, { userId });
+    },
+    byRating(userId, input) {
+      return http.request('POST', '/api/svc/v1/memories/by-rating', { userId, body: input });
     },
   };
 }

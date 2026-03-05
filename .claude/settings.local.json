@@ -39,7 +39,8 @@
       "Bash(npm info:*)",
       "Bash(npx vitest:*)",
       "Bash(find:*)",
-      "Bash(./agent/scripts/acp.sessions.sh:*)"
+      "Bash(./agent/scripts/acp.sessions.sh:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

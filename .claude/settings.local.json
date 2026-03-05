@@ -38,7 +38,8 @@
       "Bash(npm publish:*)",
       "Bash(npm info:*)",
       "Bash(npx vitest:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(./agent/scripts/acp.sessions.sh:*)"
     ]
   }
 }

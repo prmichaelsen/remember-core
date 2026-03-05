@@ -105,6 +105,11 @@ const COMMON_MEMORY_PROPERTIES = [
   { name: 'memory_ids', dataType: configure.dataType.TEXT_ARRAY },
   { name: 'relationship_count', dataType: configure.dataType.INT },
 
+  // Rating aggregates (denormalized from Firestore individual ratings)
+  { name: 'rating_sum', dataType: configure.dataType.INT },
+  { name: 'rating_count', dataType: configure.dataType.INT },
+  { name: 'rating_bayesian', dataType: configure.dataType.NUMBER },
+
   // Access tracking
   { name: 'access_count', dataType: configure.dataType.NUMBER },
   { name: 'last_accessed_at', dataType: configure.dataType.DATE },

@@ -133,4 +133,42 @@ describe('MemoriesResource', () => {
       body: { items: [{ content: 'bulk text' }] },
     });
   });
+
+  it('rate calls PUT /api/svc/v1/memories/:id/rating', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.rate('user1', 'mem-123', 4);
+
+    expect(http.request).toHaveBeenCalledWith('PUT', '/api/svc/v1/memories/mem-123/rating', {
+      userId: 'user1',
+      body: { rating: 4 },
+    });
+  });
+
+  it('retractRating calls DELETE /api/svc/v1/memories/:id/rating', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.retractRating('user1', 'mem-123');
+
+    expect(http.request).toHaveBeenCalledWith('DELETE', '/api/svc/v1/memories/mem-123/rating', {
+      userId: 'user1',
+    });
+  });
+
+  it('getMyRating calls GET /api/svc/v1/memories/:id/rating', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.getMyRating('user1', 'mem-123');
+
+    expect(http.request).toHaveBeenCalledWith('GET', '/api/svc/v1/memories/mem-123/rating', {
+      userId: 'user1',
+    });
+  });
+
+  it('byRating calls POST /api/svc/v1/memories/by-rating', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byRating('user1', { direction: 'desc', limit: 10 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-rating', {
+      userId: 'user1',
+      body: { direction: 'desc', limit: 10 },
+    });
+  });
 });

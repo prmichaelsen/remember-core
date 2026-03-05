@@ -108,6 +108,12 @@ export interface Memory {
   relationships: string[]; // IDs of relationship documents
   relationship_count: number; // Denormalized count for sorting
 
+  // Rating aggregates (denormalized from Firestore individual ratings)
+  rating_sum: number;          // Cumulative sum of all 1-5 ratings
+  rating_count: number;        // Number of ratings received
+  rating_bayesian: number;     // Pre-computed (rating_sum + 15) / (rating_count + 5)
+  rating_avg: number | null;   // Derived: count >= 5 ? sum / count : null
+
   // Access Tracking (for weight calculation)
   access_count: number;
   last_accessed_at?: string; // ISO 8601 datetime

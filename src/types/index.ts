@@ -144,6 +144,24 @@ export {
   getPreferencesSchema,
 } from './preferences.types.js';
 
+// Rating types
+export type {
+  MemoryRating,
+  RateMemoryInput,
+  RatingResult,
+  RatingModeRequest,
+  RatingModeResult,
+} from './rating.types.js';
+
+export {
+  RATING_PRIOR_AVG,
+  RATING_PRIOR_COUNT,
+  RATING_MIN_THRESHOLD,
+  computeBayesianScore,
+  computeRatingAvg,
+  isValidRating,
+} from './rating.types.js';
+
 // Space types (ported from remember-mcp)
 export type {
   SpaceMemory,

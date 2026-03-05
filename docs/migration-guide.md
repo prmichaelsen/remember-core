@@ -585,3 +585,67 @@ try {
   // e is a RememberError with .code, .message, .status
 }
 ```
+
+## Memory Ratings (v0.31.0+)
+
+### RatingService
+
+Rate memories on a 1-5 star scale. Individual ratings stored in Firestore, aggregates denormalized on Weaviate Memory objects.
+
+```typescript
+import { RatingService, MemoryIndexService } from '@prmichaelsen/remember-core/services';
+
+const ratingService = new RatingService({
+  weaviateClient,
+  memoryIndexService,
+  logger,
+});
+
+// Rate a memory (1-5 stars, idempotent upsert)
+const result = await ratingService.rate({ memoryId: 'mem-123', userId: 'rater1', rating: 4 });
+// { previousRating: null, newRating: 4, ratingCount: 1, ratingAvg: null }
+
+// Change an existing rating
+const updated = await ratingService.rate({ memoryId: 'mem-123', userId: 'rater1', rating: 5 });
+// { previousRating: 4, newRating: 5, ratingCount: 1, ratingAvg: null }
+
+// Retract a rating
+await ratingService.retract('mem-123', 'rater1');
+
+// Get current user's rating
+const myRating = await ratingService.getUserRating('mem-123', 'rater1');
+// { rating: 5, created_at: '...', updated_at: '...' } or null
+```
+
+### byRating Sort Mode
+
+Sort memories by Bayesian average rating:
+
+```typescript
+const results = await memoryService.byRating({ direction: 'desc', limit: 20 });
+```
+
+### SVC Client
+
+```typescript
+// Rate
+const { data } = await client.memories.rate('user1', 'mem-123', 4);
+
+// Retract
+await client.memories.retractRating('user1', 'mem-123');
+
+// Get my rating
+const { data: rating } = await client.memories.getMyRating('user1', 'mem-123');
+
+// Sort by rating
+const { data: sorted } = await client.memories.byRating('user1', { direction: 'desc', limit: 20 });
+```
+
+### REST Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| PUT | `/api/svc/v1/memories/:id/rating` | Submit/update a rating (body: `{ rating: 1-5 }`) |
+| DELETE | `/api/svc/v1/memories/:id/rating` | Retract a rating |
+| GET | `/api/svc/v1/memories/:id/rating` | Get current user's rating |
+| POST | `/api/svc/v1/memories/by-rating` | Sort by Bayesian average |

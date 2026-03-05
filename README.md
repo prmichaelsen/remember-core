@@ -55,12 +55,14 @@ const results = await memoryService.search({
 | `@prmichaelsen/remember-core/testing` | Weaviate mock, test data generator |
 | `@prmichaelsen/remember-core/app` | App client — use-case REST wrapper (profiles, ghost) |
 | `@prmichaelsen/remember-core/rem` | REM engine — background relationship discovery |
-| `@prmichaelsen/remember-core/clients/svc/v1` | Svc client — 1:1 REST route mirror (29 methods) |
+| `@prmichaelsen/remember-core/clients/svc/v1` | Svc client — 1:1 REST route mirror (39 methods) |
 | `@prmichaelsen/remember-core/search` | Time-slice search — chronological text search via parallel bucketed queries |
 
 ## Core Services
 
-**MemoryService** — 6 operations: create, search (hybrid), findSimilar (vector), query (semantic), update, delete (soft).
+**MemoryService** — 7 operations: create, search (hybrid), findSimilar (vector), query (semantic), update, delete (soft), byRating (Bayesian sort).
+
+**RatingService** — 3 operations: rate (1-5 stars, idempotent upsert), retract, getUserRating. Individual ratings in Firestore, aggregates denormalized on Weaviate Memory objects.
 
 **RelationshipService** — 5 operations: create, search, update, delete, findByMemoryIds. Relationships have a `source` field (`'user' | 'rem' | 'rule'`) indicating origin.
 
@@ -94,7 +96,7 @@ const results = await memoryService.search({
 
 Two typed REST client SDKs wrapping the [remember-rest-service](https://github.com/prmichaelsen/remember-rest-service) API. Both are server-side only (browser guard). Supabase-style `{ data, error }` responses with `.throwOnError()`.
 
-**Svc Client** (`@prmichaelsen/remember-core/clients/svc/v1`) — 1:1 mirror of `/api/svc/v1/` routes, 29 methods across 7 resource groups:
+**Svc Client** (`@prmichaelsen/remember-core/clients/svc/v1`) — 1:1 mirror of `/api/svc/v1/` routes, 39 methods across 7 resource groups:
 
 ```typescript
 import { createSvcClient } from '@prmichaelsen/remember-core/clients/svc/v1';
@@ -149,10 +151,10 @@ remember-core (this package)
   ├── database/      Weaviate + Firestore initialization
   ├── collections/   Weaviate collection utilities
   ├── utils/         Logger, filters, auth helpers
-  ├── services/      Business logic (5 core + 4 trust/ghost service modules)
+  ├── services/      Business logic (6 core + 4 trust/ghost service modules)
   ├── rem/           REM engine (background relationship discovery)
   ├── clients/       Shared HTTP transport, SdkResponse, browser guard
-  │   └── svc/v1/   Svc client (1:1 REST route mirror, 29 methods)
+  │   └── svc/v1/   Svc client (1:1 REST route mirror, 39 methods)
   ├── app/           App client (compound use-case operations, 5 methods)
   └── testing/       Mock infrastructure for consumers
 

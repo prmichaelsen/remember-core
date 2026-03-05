@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.31.0] - 2026-03-05
+
+### Added
+- **Memory Ratings System** (M20)
+  - `RatingService`: rate, retract, getUserRating with Firestore individual ratings + Weaviate aggregate sync
+  - `byRating` sort mode on MemoryService (Bayesian averaging via `rating_bayesian`)
+  - 3 new Memory properties: `rating_sum`, `rating_count`, `rating_bayesian`
+  - Derived `rating_avg` (null when < 5 ratings, computed at read time)
+  - REST endpoints: PUT/DELETE/GET `/api/svc/v1/memories/:id/rating`, POST `/api/svc/v1/memories/by-rating`
+  - SVC client: `memories.rate()`, `retractRating()`, `getMyRating()`, `byRating()`
+  - Self-rating and ghost-mode rating prevention
+  - Rating types: `MemoryRating`, `RateMemoryInput`, `RatingResult`, `RatingModeRequest`, `RatingModeResult`
+  - Bayesian helpers: `computeBayesianScore()`, `computeRatingAvg()`, `isValidRating()`
+  - 20 new tests (746 total, 59 suites)
+
 ## [0.30.1] - 2026-03-05
 
 ### Added

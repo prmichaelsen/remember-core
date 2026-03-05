@@ -1568,7 +1568,7 @@ tasks:
         byRating sort tests, SVC client rating tests. Colocated .spec.ts.
     - id: task-110
       name: Documentation
-      status: not_started
+      status: done
       file: agent/tasks/milestone-20-memory-ratings-system/task-110-documentation.md
       estimated_hours: 1-2
       dependencies: [task-109]

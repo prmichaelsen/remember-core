@@ -162,6 +162,19 @@ export function createMockCollection() {
     },
 
     filter: {
+      byId() {
+        return {
+          equal(value: string) {
+            return { _type: 'byId_equal', value };
+          },
+          notEqual(value: string) {
+            return { _type: 'byId_notEqual', value };
+          },
+          containsAny(values: string[]) {
+            return { _type: 'byId_containsAny', values };
+          },
+        };
+      },
       byProperty(name: string) {
         const createChainableFilter = (filterObj: any) => {
           return {
@@ -330,6 +343,12 @@ function applyFilter(objects: MockWeaviateObject[], filter: MockFilter): MockWea
         const val = obj.properties[filter.field!];
         return filter.value ? (val === null || val === undefined) : (val !== null && val !== undefined);
       });
+    case 'byId_equal':
+      return objects.filter((obj) => obj.uuid === filter.value);
+    case 'byId_notEqual':
+      return objects.filter((obj) => obj.uuid !== filter.value);
+    case 'byId_containsAny':
+      return objects.filter((obj) => filter.values!.includes(obj.uuid));
     case 'and':
       return (filter.operands || []).reduce(
         (remaining, operand) => applyFilter(remaining, operand),

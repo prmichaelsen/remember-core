@@ -1159,6 +1159,11 @@ components:
           items:
             type: string
           description: Filter to memories in these relationships (resolved to memory_ids by caller)
+        memory_ids:
+          type: array
+          items:
+            type: string
+          description: Pre-resolved set of memory IDs to filter by (e.g. from relationship_ids)
 
     GhostSearchContext:
       type: object

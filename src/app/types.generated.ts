@@ -580,6 +580,8 @@ export interface components {
             has_relationships?: boolean;
             /** @description Filter to memories in these relationships */
             relationship_ids?: string[];
+            /** @description Pre-resolved set of memory IDs to filter by (e.g. from relationship_ids) */
+            memory_ids?: string[];
         };
         /** @enum {string} */
         ModerationAction: "approve" | "reject" | "remove";
@@ -1049,6 +1051,8 @@ export interface components {
             /** @description Full memory document */
             memory: Record<string, never>;
             relationships?: components["schemas"]["RelationshipWithPreviews"][];
+            /** @description Similar memories found via vector search (when includeSimilar=true) */
+            similar_memories?: Record<string, never>[];
         };
         RelationshipMetadata: {
             id: string;
@@ -1613,6 +1617,10 @@ export interface operations {
                 includeRelationships?: boolean;
                 /** @description Max memory previews per relationship */
                 relationshipMemoryLimit?: number;
+                /** @description Whether to include similar memories via vector search */
+                includeSimilar?: boolean;
+                /** @description Max similar memories to return */
+                similarLimit?: number;
             };
             header?: never;
             path: {
@@ -1623,7 +1631,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Memory with relationship previews */
+            /** @description Memory with relationship previews and optional similar memories */
             200: {
                 headers: {
                     [name: string]: unknown;

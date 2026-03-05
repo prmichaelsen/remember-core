@@ -626,6 +626,8 @@ export interface components {
             relationship_count_max?: number;
             /** @description Filter to memories in these relationships (resolved to memory_ids by caller) */
             relationship_ids?: string[];
+            /** @description Pre-resolved set of memory IDs to filter by (e.g. from relationship_ids) */
+            memory_ids?: string[];
         };
         GhostSearchContext: {
             accessor_trust_level: number;

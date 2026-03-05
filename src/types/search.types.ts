@@ -25,6 +25,7 @@ export interface SearchFilters {
   relationship_count_min?: number;  // inclusive lower bound
   relationship_count_max?: number;  // inclusive upper bound
   relationship_ids?: string[];      // filter to memories in these relationships
+  memory_ids?: string[];            // pre-resolved set of memory IDs to filter by (e.g. from relationship_ids)
 }
 
 /**

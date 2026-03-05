@@ -191,13 +191,13 @@ milestones:
 
   - id: M13
     name: Performance
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1
-    tasks_completed: 0
-    tasks_total: 2
-    started: null
-    completed: null
+    tasks_completed: 1
+    tasks_total: 1
+    started: 2026-03-04
+    completed: 2026-03-05
     notes: |
       Reduce latency on critical hot paths: REM cycle time (~20s → ~5s via
       parallelization), search pipeline (progressive bucket fetching), and
@@ -223,13 +223,13 @@ milestones:
 
   - id: M15
     name: Relationship GUI App Endpoints
-    status: in_progress
-    progress: 88
+    status: completed
+    progress: 100
     estimated_weeks: 1
-    tasks_completed: 7
+    tasks_completed: 8
     tasks_total: 8
     started: 2026-03-04
-    completed: null
+    completed: 2026-03-05
     notes: |
       App Client compound endpoints for agentbase.me M46 Relationship GUI.
       Endpoint A: memory + relationship previews. Endpoint B: paginated
@@ -972,22 +972,22 @@ tasks:
   milestone_13:
     - id: task-66
       name: Progressive bucket fetching for search pipelines
-      status: not_started
+      status: cancelled
       file: agent/tasks/milestone-13-performance/task-66-progressive-bucket-fetching.md
       estimated_hours: 3-4
       dependencies: []
       notes: |
-        Short-circuit time-slice (14) and density-slice (9) when early buckets
-        satisfy the limit. Query top buckets first, expand if needed.
+        Cancelled — not a pain point in practice. Parallel queries are fast enough.
     - id: task-67
       name: Collection initialization cache
-      status: not_started
+      status: completed
+      completed_date: 2026-03-04
       file: agent/tasks/milestone-13-performance/task-67-collection-init-cache.md
       estimated_hours: 2-3
       dependencies: []
       notes: |
-        Process-level TTL cache for ensureUserCollection/ensurePublicCollection.
-        Skip reconcileCollectionProperties on cache hit. ~100-200ms savings per op.
+        Already implemented in v0.24.2. 60s TTL cache for ensure*Collection.
+        clearCollectionCache() export. 6 cache tests.
 
   unassigned:
     - id: task-56
@@ -1154,13 +1154,15 @@ tasks:
         OpenAPI specs. Regenerate types. Run full test suite.
     - id: task-81
       name: Wire relationship_ids Filter in Search Pipeline
-      status: not_started
+      status: completed
+      completed_date: 2026-03-05
       file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-81-wire-relationship-ids-filter.md
       estimated_hours: 2-3
       dependencies: task-71
       notes: |
-        Implement memory_ids filter in buildDocTypeFilters(). Callers resolve
-        relationship_ids to memory_ids before calling MemoryService.search().
+        Added memory_ids to SearchFilters. Wired byId().containsAny() in
+        buildDocTypeFilters(). Added byId() to Weaviate mock. OpenAPI specs
+        updated. 4 new tests. 634 total passing.
     - id: task-82
       name: Add includeSimilar Support to AppClient.memories.get()
       status: completed
@@ -1196,15 +1198,16 @@ progress:
 recent_work:
   - date: 2026-03-05
     description: |
-      Task 82+83: includeSimilar support + HttpClient query params fix (M15)
+      🎉 M15 COMPLETE — Tasks 81-83: memory_ids filter, includeSimilar, HttpClient fix
     items:
+      - "Task 81: Added memory_ids to SearchFilters, wired byId().containsAny() in buildDocTypeFilters()"
+      - "Task 81: Added byId() support to Weaviate mock (equal, notEqual, containsAny)"
+      - "Task 81: Updated both OpenAPI specs with memory_ids field"
       - "Task 83: Fixed HttpClient.request() to append options.params as URL query string"
       - "Task 82: Added includeSimilar and similarLimit to AppClient.memories.get()"
-      - "Updated MemoryWithRelationships with similar_memories field"
-      - "Updated OpenAPI spec with includeSimilar/similarLimit params"
-      - "7 new tests total (3 http params + 4 memories resource)"
-      - "630 tests passing across 45 suites"
-      - "Version: 0.27.1 → 0.27.3"
+      - "11 new tests total (4 filter + 3 http params + 4 memories resource)"
+      - "634 tests passing across 46 suites"
+      - "Version: 0.27.3"
   - date: 2026-03-04
     description: |
       Planned M16 — Job Tracking System

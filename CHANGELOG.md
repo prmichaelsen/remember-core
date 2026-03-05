@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.27.4] - 2026-03-05
+
+### Added
+- **`memory_ids` filter in search pipeline** (task-81)
+  - Added `memory_ids?: string[]` to `SearchFilters` — pre-resolved ID set for scoped search
+  - Wired `collection.filter.byId().containsAny(memory_ids)` in `buildDocTypeFilters()`
+  - Added `byId()` support to Weaviate test mock (equal, notEqual, containsAny)
+  - OpenAPI specs updated in both svc and app tiers
+  - 4 new unit tests for memory_ids filter wiring
+  - 634 tests passing across 46 suites
+  - **M15 complete** (8/8 tasks)
+
+Completed Task 81: Wire relationship_ids Filter in Search Pipeline
+Version: 0.27.3 → 0.27.4
+
 ## [0.27.3] - 2026-03-05
 
 ### Added

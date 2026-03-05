@@ -143,6 +143,13 @@ function buildDocTypeFilters(
     );
   }
 
+  // Memory IDs (pre-resolved from relationship_ids by caller)
+  if (filters?.memory_ids && filters.memory_ids.length > 0) {
+    filterList.push(
+      collection.filter.byId().containsAny(filters.memory_ids),
+    );
+  }
+
   return combineFiltersWithAnd(filterList);
 }
 

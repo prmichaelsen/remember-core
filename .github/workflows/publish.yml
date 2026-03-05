@@ -49,6 +49,16 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Notify remember-mcp
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          gh api repos/prmichaelsen/remember-mcp/dispatches \
+            -f event_type=dependency-update \
+            -f "client_payload[package]=@prmichaelsen/remember-core" \
+            -f "client_payload[version]=${{ steps.version.outputs.version }}"
+        env:
+          GH_TOKEN: ${{ secrets.REPO_DISPATCH_TOKEN }}
+
       - name: Summary
         if: steps.version.outputs.changed == 'true'
         run: echo "Published @prmichaelsen/remember-core@${{ steps.version.outputs.version }} to npm"

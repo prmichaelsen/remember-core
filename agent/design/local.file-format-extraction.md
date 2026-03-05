@@ -11,7 +11,7 @@
 
 The import pipeline today accepts only raw text strings. Users want to import files in various formats — PDFs, Word documents, images, HTML pages, and structured data. This design adds a pluggable extraction layer to remember-core that converts file content to text before feeding it into the existing chunking and memory creation pipeline.
 
-Extraction lives in remember-core as a set of format-specific extractors behind a common interface. The `ImportJobWorker` gains an extraction step that downloads files from GCS URLs, extracts text, then proceeds with the existing chunk-and-import flow. Extraction libraries are optional peer dependencies to keep the core package lightweight.
+Extraction lives in remember-core as a set of format-specific extractors behind a common interface. The `ImportJobWorker` gains an extraction step that downloads files via signed HTTPS URLs, extracts text, then proceeds with the existing chunk-and-import flow. Extraction libraries are optional peer dependencies to keep the core package lightweight.
 
 ---
 
@@ -31,9 +31,10 @@ Extraction lives in remember-core as a set of format-specific extractors behind 
 ```
 Consumer (agentbase.me)
   |
-  ├─ Upload file to GCS "unscanned" bucket
+  ├─ Upload file to GCS bucket
+  ├─ Generate signed download URL (1-hour TTL)
   ├─ POST /api/svc/v1/memories/import
-  │    body: { items: [{ file_url: "gs://...", mime_type: "application/pdf" }] }
+  │    body: { items: [{ file_url: "https://storage.googleapis.com/...?X-Goog-Signature=...", mime_type: "application/pdf" }] }
   │    → 202 Accepted { job_id }
   |
   └─ Poll GET /api/svc/v1/jobs/:id
@@ -41,7 +42,7 @@ Consumer (agentbase.me)
 ImportJobWorker (Cloud Run Job)
   |
   ├─ Step 0: Validate file type (MIME whitelist)
-  ├─ Step 1: Download file from GCS URL
+  ├─ Step 1: Download file via signed URL (plain HTTP GET)
   ├─ Step 2: Extract text via FileExtractor
   │    ├─ PDF (text-layer)  → unpdf
   │    ├─ PDF (scanned)     → Google Document AI (fallback)
@@ -61,7 +62,7 @@ ImportJobWorker (Cloud Run Job)
 | Decision | Outcome | Rationale |
 |----------|---------|-----------|
 | Extraction location | remember-core | Single source of truth, transport-agnostic |
-| Input mechanism | GCS file URLs | Consumer uploads to cloud storage, passes URL reference. No multipart/form-data on REST endpoint |
+| Input mechanism | Signed HTTPS URLs | Consumer uploads to cloud storage, generates a time-limited signed download URL, passes it to import endpoint. Worker downloads via plain HTTP GET — no GCS credentials needed. Storage-agnostic (any HTTPS URL works) |
 | PDF text-layer | unpdf (npm) | Modern, ESM, TypeScript, Cloud Run-friendly, free, in-process |
 | PDF scanned | Google Document AI (fallback) | 98% OCR accuracy, GCP-native, $1.50/1K pages |
 | DOCX | mammoth + Turndown | Only viable Node.js option, well-maintained, good Markdown output |
@@ -84,7 +85,8 @@ ImportJobWorker (Cloud Run Job)
 ### Alternatives Considered
 
 - **Consumer-side extraction**: Let agentbase.me parse files before calling import. Rejected — duplicates logic across consumers, remember-core already owns import orchestration.
-- **Multipart file upload**: REST endpoint accepts file bytes directly. Rejected — GCS URL reference is simpler, avoids request size limits, and fits the existing async job pattern.
+- **Multipart file upload**: REST endpoint accepts file bytes directly. Rejected — signed URL reference is simpler, avoids request size limits, and fits the existing async job pattern.
+- **Direct GCS `gs://` URLs**: Worker would need GCS credentials to access consumer's bucket. Rejected — signed HTTPS URLs are storage-agnostic and require no cross-project IAM configuration.
 - **Regular dependencies**: Bundle extraction libraries with every install. Rejected — adds ~3.5MB to all consumers, most don't use import.
 - **Separate subpath export** (`remember-core/import`): Clean separation but adds package.json complexity. Rejected in favor of simpler peer dependency pattern already used for `jsonwebtoken`.
 - **tesseract.js for OCR**: Free local alternative. Rejected — ~85% accuracy vs 98% for Google Vision, high memory usage, poor on handwriting.
@@ -262,7 +264,7 @@ export function createDefaultRegistry(deps?: {
 export interface ImportItem {
   /** Raw text content (existing — for backward compatibility) */
   content?: string;
-  /** GCS file URL for file-based import (new) */
+  /** Signed HTTPS URL for file-based import (new) */
   file_url?: string;
   /** MIME type of the file (required when file_url is provided) */
   mime_type?: string;
@@ -286,8 +288,8 @@ execute(jobId, userId, params):
         job.fail({ code: 'unsupported_format', message: `${item.mime_type} not supported` })
         return
 
-      // Step 1: Download from GCS
-      buffer = await downloadFromGcs(item.file_url)
+      // Step 1: Download via signed URL
+      buffer = await downloadFile(item.file_url)
 
       // Step 2: Extract text
       extractor = registry.getExtractor(item.mime_type)
@@ -394,19 +396,24 @@ const ALLOWED_MIME_TYPES = [
 
 Consumers that use file import install these. Consumers that only use text import don't need them. Runtime errors are caught in `createDefaultRegistry()` and logged as warnings.
 
-### 11. GCS Download Utility
+### 11. File Download Utility
 
 ```typescript
-// src/services/extractors/gcs.ts
+// src/services/extractors/download.ts
 
-export async function downloadFromGcs(fileUrl: string): Promise<Buffer> {
-  // Parse gs:// URL or https://storage.googleapis.com/... URL
-  // Use @google-cloud/storage or fetch with IAM auth
-  // Returns file content as Buffer
+export async function downloadFile(fileUrl: string): Promise<Buffer> {
+  // Plain HTTP GET — works with any signed URL (GCS, S3, Azure, etc.)
+  const response = await fetch(fileUrl);
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+  }
+  return Buffer.from(await response.arrayBuffer());
 }
 ```
 
-This depends on `@google-cloud/storage` or uses the REST API with ADC (Application Default Credentials) from Cloud Run.
+No cloud SDK required — signed URLs are just HTTPS endpoints. The consumer (agentbase.me) generates a time-limited signed URL from its own GCS credentials. The worker downloads via plain `fetch()`. This makes remember-core completely storage-agnostic.
+
+**Signed URL TTL**: Consumer should generate URLs with at least 1-hour expiry to allow for job queue delay + processing time.
 
 ### 12. File Structure
 
@@ -424,8 +431,8 @@ src/services/extractors/
   html.extractor.spec.ts      # Unit tests
   plaintext.extractor.ts      # PlaintextExtractor (passthrough)
   plaintext.extractor.spec.ts # Unit tests
-  gcs.ts                      # GCS download utility
-  gcs.spec.ts                 # Unit tests
+  download.ts                 # File download utility (plain fetch)
+  download.spec.ts            # Unit tests
   index.ts                    # Barrel exports
 
 src/services/
@@ -447,7 +454,7 @@ ImportItem:
       description: Raw text content (mutually exclusive with file_url)
     file_url:
       type: string
-      description: GCS URL for file-based import (mutually exclusive with content)
+      description: Signed HTTPS URL for file download (mutually exclusive with content)
     mime_type:
       type: string
       description: MIME type of the file (required when file_url is provided)
@@ -474,7 +481,7 @@ ImportItem:
 
 - **Peer dependency complexity** — consumers must install `unpdf`, `mammoth`, `turndown` to use file import. Runtime errors if deps missing. Mitigated by clear error messages and documentation.
 - **Cloud API costs** — Document AI ($1.50/1K pages) and Vision API ($1.50/1K images) add cost for scanned PDFs and images. Mitigated by free tiers (1K/month each) and hybrid strategy (unpdf handles most PDFs for free).
-- **GCS coupling** — file URLs must be GCS references. Consumers must upload to GCS before calling import. Could be generalized to support HTTP URLs later.
+- **Signed URL expiry** — if the job is delayed beyond the URL's TTL, download fails. Mitigated by recommending 1-hour TTL and failing the job with a clear `download_expired` error code.
 - **mammoth limitations** — won't preserve embedded charts, SmartArt, or complex nested tables from DOCX. Good enough for typical documents (text, headings, lists, basic tables).
 - **No malware scanning** — files are transient but a crafted PDF could exploit the parser. Mitigated by using well-audited libraries (unpdf/PDF.js backed by Mozilla). Revisit if threat model changes.
 - **Section-aware chunking complexity** — may be non-trivial for some document formats. Falls back to paragraph splitting if too complex.
@@ -488,13 +495,12 @@ ImportItem:
 - `mammoth` (~2MB) — DOCX to HTML conversion
 - `turndown` (~0.5MB) — HTML to Markdown conversion
 
-### Existing Dependencies (already in stack)
-- `@google-cloud/storage` — GCS file download (already used by remember-rest-server)
+### Cloud APIs (already in stack)
 - Google Vision API — image OCR (already set up)
 - Google Document AI — scanned PDF OCR (may need processor setup)
 
 ### No New Required Dependencies
-All extraction libraries are optional peer dependencies.
+All extraction libraries are optional peer dependencies. File download uses native `fetch()` — no cloud SDK needed.
 
 ---
 
@@ -506,7 +512,8 @@ All extraction libraries are optional peer dependencies.
 - **Unit: ImportJobWorker extraction steps** — mock extractors, verify step tracking, verify extraction failure sets correct job error
 - **Unit: Pre-import validation** — unsupported MIME type returns 400, missing mime_type returns 400, missing both content and file_url returns 400
 - **Unit: Section-aware chunking** — verify heading-based splits, verify fallback to paragraph splitting
-- **Integration** — end-to-end: upload file to GCS, call import, verify memories created with correct content and metadata tags
+- **Unit: downloadFile** — mock fetch, verify Buffer returned, verify error on non-200, verify error on expired signed URL
+- **Integration** — end-to-end: upload file, generate signed URL, call import, verify memories created with correct content and metadata tags
 - **Edge cases** — zero-byte file, password-protected PDF, DOCX with only images, image with no text, CSV with 10K rows
 
 ---
@@ -521,7 +528,7 @@ All extraction libraries are optional peer dependencies.
 6. **Update OpenAPI spec** — add file_url/mime_type to ImportInput schema
 7. **Regenerate SVC client types** — `npm run generate:types:svc`
 8. **Add pre-import validation** — MIME whitelist check in route handler
-9. **Update agentbase.me** — file attachment in chat, upload to GCS, pass URL to import endpoint
+9. **Update agentbase.me** — file attachment in chat, upload to GCS, generate signed URL, pass to import endpoint
 10. **Set up Google Document AI processor** — if not already provisioned in GCP project
 
 ---
@@ -531,7 +538,7 @@ All extraction libraries are optional peer dependencies.
 - **EPUB support** — ZIP of HTML files, relatively easy to add since HTML extraction already exists
 - **Semantic chunking** — use LLM to split on topic boundaries instead of token count
 - **Malware scanning** — ClamAV on Cloud Run if files start being stored persistently
-- **HTTP URL support** — accept arbitrary HTTP URLs (not just GCS) for file download
+- **URL validation** — optionally restrict allowed URL domains (e.g., only `storage.googleapis.com`) to prevent SSRF
 - **Batch extraction** — process multiple files in parallel within a single job
 - **Format-specific chunk strategies** — different chunk sizes or strategies per format (e.g., smaller chunks for dense academic papers)
 - **Content deduplication** — detect if imported file content already exists as memories

@@ -3,6 +3,7 @@ import { PlaintextExtractor } from './plaintext.extractor.js';
 import { HtmlExtractor } from './html.extractor.js';
 import { PdfExtractor } from './pdf.extractor.js';
 import type { DocumentAiClient, Logger } from './pdf.extractor.js';
+import { DocxExtractor } from './docx.extractor.js';
 
 export class ExtractorRegistry {
   private extractors: FileExtractor[] = [];
@@ -32,5 +33,6 @@ export function createDefaultRegistry(deps?: {
   registry.register(new PlaintextExtractor());
   registry.register(new HtmlExtractor());
   registry.register(new PdfExtractor(deps?.documentAiClient, deps?.logger));
+  registry.register(new DocxExtractor());
   return registry;
 }

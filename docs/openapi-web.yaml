@@ -479,9 +479,23 @@ paths:
             maximum: 10
             default: 5
           description: Max memory previews per relationship
+        - name: includeSimilar
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Whether to include similar memories via vector search
+        - name: similarLimit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 5
+          description: Max similar memories to return
       responses:
         '200':
-          description: Memory with relationship previews
+          description: Memory with relationship previews and optional similar memories
           content:
             application/json:
               schema:
@@ -2238,6 +2252,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RelationshipWithPreviews'
+        similar_memories:
+          type: array
+          items:
+            type: object
+          description: Similar memories found via vector search (when includeSimilar=true)
 
     RelationshipMetadata:
       type: object

@@ -69,4 +69,58 @@ describe('MemoriesResource', () => {
     const call = (http.request as jest.Mock).mock.calls[0];
     expect(call[2].params).toEqual({});
   });
+
+  it('passes includeSimilar=true when set', async () => {
+    const resource = createMemoriesResource(http);
+    await resource.get('user1', 'mem-123', { includeSimilar: true });
+
+    expect(http.request).toHaveBeenCalledWith(
+      'GET',
+      '/api/app/v1/memories/mem-123',
+      { userId: 'user1', params: { includeSimilar: 'true' } },
+    );
+  });
+
+  it('passes similarLimit as query param', async () => {
+    const resource = createMemoriesResource(http);
+    await resource.get('user1', 'mem-123', { includeSimilar: true, similarLimit: 10 });
+
+    expect(http.request).toHaveBeenCalledWith(
+      'GET',
+      '/api/app/v1/memories/mem-123',
+      { userId: 'user1', params: { includeSimilar: 'true', similarLimit: '10' } },
+    );
+  });
+
+  it('passes all options together', async () => {
+    const resource = createMemoriesResource(http);
+    await resource.get('user1', 'mem-123', {
+      includeRelationships: true,
+      relationshipMemoryLimit: 3,
+      includeSimilar: true,
+      similarLimit: 8,
+    });
+
+    expect(http.request).toHaveBeenCalledWith(
+      'GET',
+      '/api/app/v1/memories/mem-123',
+      {
+        userId: 'user1',
+        params: {
+          includeRelationships: 'true',
+          relationshipMemoryLimit: '3',
+          includeSimilar: 'true',
+          similarLimit: '8',
+        },
+      },
+    );
+  });
+
+  it('does not set includeSimilar when false', async () => {
+    const resource = createMemoriesResource(http);
+    await resource.get('user1', 'mem-123', { includeSimilar: false });
+
+    const call = (http.request as jest.Mock).mock.calls[0];
+    expect(call[2].params).toEqual({});
+  });
 });

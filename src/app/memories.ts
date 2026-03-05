@@ -26,6 +26,7 @@ export interface RelationshipWithPreviews {
 export interface MemoryWithRelationships {
   memory: unknown;
   relationships?: RelationshipWithPreviews[];
+  similar_memories?: unknown[];
 }
 
 export interface MemoriesResource {
@@ -35,6 +36,8 @@ export interface MemoriesResource {
     options?: {
       includeRelationships?: boolean;
       relationshipMemoryLimit?: number;
+      includeSimilar?: boolean;
+      similarLimit?: number;
     },
   ): Promise<SdkResponse<MemoryWithRelationships>>;
 }
@@ -47,6 +50,8 @@ export function createMemoriesResource(http: HttpClient): MemoriesResource {
       if (options?.relationshipMemoryLimit != null) {
         params.relationshipMemoryLimit = String(options.relationshipMemoryLimit);
       }
+      if (options?.includeSimilar) params.includeSimilar = 'true';
+      if (options?.similarLimit != null) params.similarLimit = String(options.similarLimit);
 
       return http.request('GET', `/api/app/v1/memories/${memoryId}`, {
         userId,

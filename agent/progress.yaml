@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.27.2
+  version: 0.27.3
   started: 2026-02-27
   status: in_progress
   current_milestone: M13
@@ -224,9 +224,9 @@ milestones:
   - id: M15
     name: Relationship GUI App Endpoints
     status: in_progress
-    progress: 86
+    progress: 88
     estimated_weeks: 1
-    tasks_completed: 6
+    tasks_completed: 7
     tasks_total: 8
     started: 2026-03-04
     completed: null
@@ -1163,13 +1163,14 @@ tasks:
         relationship_ids to memory_ids before calling MemoryService.search().
     - id: task-82
       name: Add includeSimilar Support to AppClient.memories.get()
-      status: not_started
+      status: completed
+      completed_date: 2026-03-05
       file: agent/tasks/milestone-15-relationship-gui-app-endpoints/task-82-app-memories-include-similar.md
       estimated_hours: 1-2
       dependencies: task-73
       notes: |
-        Add includeSimilar and similarLimit options to MemoriesResource.get().
-        Update OpenAPI spec. Add unit tests.
+        Added includeSimilar and similarLimit options to MemoriesResource.get().
+        Updated OpenAPI spec. 4 new tests. 630 total passing.
     - id: task-83
       name: Fix HttpClient Query Params Not Appended to URL
       status: completed
@@ -1195,13 +1196,15 @@ progress:
 recent_work:
   - date: 2026-03-05
     description: |
-      Task 83: Fix HttpClient query params bug (M15)
+      Task 82+83: includeSimilar support + HttpClient query params fix (M15)
     items:
-      - "Fixed HttpClient.request() to append options.params as URL query string"
-      - "Empty/undefined params do not add trailing ?"
-      - "3 new unit tests for params serialization"
-      - "626 tests passing across 45 suites"
-      - "Version: 0.27.1 → 0.27.2"
+      - "Task 83: Fixed HttpClient.request() to append options.params as URL query string"
+      - "Task 82: Added includeSimilar and similarLimit to AppClient.memories.get()"
+      - "Updated MemoryWithRelationships with similar_memories field"
+      - "Updated OpenAPI spec with includeSimilar/similarLimit params"
+      - "7 new tests total (3 http params + 4 memories resource)"
+      - "630 tests passing across 45 suites"
+      - "Version: 0.27.1 → 0.27.3"
   - date: 2026-03-04
     description: |
       Planned M16 — Job Tracking System

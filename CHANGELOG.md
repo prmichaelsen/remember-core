@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.27.3] - 2026-03-05
+
+### Added
+- **`includeSimilar` and `similarLimit` options** on `AppClient.memories.get()` (task-82)
+  - `MemoryWithRelationships` response includes optional `similar_memories` field
+  - SDK passes `includeSimilar` and `similarLimit` as query params
+  - OpenAPI spec updated with new endpoint parameters and response schema
+  - 4 new unit tests for includeSimilar/similarLimit behavior
+
+Completed Task 82: Add includeSimilar Support to AppClient.memories.get()
+Version: 0.27.2 → 0.27.3
+
 ## [0.27.2] - 2026-03-05
 
 ### Fixed

@@ -23,7 +23,6 @@ import {
 } from '../utils/filters.js';
 import { buildTrustFilter } from './trust-enforcement.service.js';
 import type { MemoryIndexService } from './memory-index.service.js';
-import { CollectionType, getCollectionName } from '../collections/dot-notation.js';
 
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
@@ -232,15 +231,13 @@ export class MemoryService {
 
   /**
    * Resolve any memory by UUID alone using the Firestore index.
-   * Falls back to legacy 2-try resolution for unindexed memories.
-   * Requires `weaviateClient` in constructor options.
+   * Requires `memoryIndex` and `weaviateClient` in constructor options.
    */
   async resolveById(memoryId: string): Promise<ResolveByIdResult> {
     if (!this.options?.weaviateClient) {
       throw new Error('resolveById requires weaviateClient in options');
     }
 
-    // 1. Try index lookup
     if (this.options?.memoryIndex) {
       const collectionName = await this.options.memoryIndex.lookup(memoryId);
       if (collectionName) {
@@ -253,31 +250,6 @@ export class MemoryService {
           };
         }
       }
-    }
-
-    // 2. Fallback: legacy resolution (for unindexed memories)
-    return this.legacyResolve(memoryId);
-  }
-
-  /**
-   * Legacy cross-collection fallback for unindexed memories.
-   * Tries user's own collection first, then returns null.
-   * @deprecated Will be removed after backfill migration (task-96).
-   */
-  private async legacyResolve(memoryId: string): Promise<ResolveByIdResult> {
-    const userColName = getCollectionName(CollectionType.USERS, this.userId);
-    const userCol = this.options!.weaviateClient.collections.get(userColName);
-
-    try {
-      const existing = await fetchMemoryWithAllProperties(userCol, memoryId);
-      if (existing?.properties) {
-        return {
-          memory: { id: existing.uuid, ...existing.properties },
-          collectionName: userColName,
-        };
-      }
-    } catch (err) {
-      this.logger.debug?.(`[MemoryService] Legacy resolve failed in ${userColName}: ${err}`);
     }
 
     return { memory: null, collectionName: null };

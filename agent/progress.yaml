@@ -276,14 +276,13 @@ milestones:
 
   - id: M18
     name: Memory Index Lookup Table
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1
-    tasks_completed: 2
+    tasks_completed: 5
     tasks_total: 5
-    progress: 40
     started: 2026-03-05
-    completed: null
+    completed: 2026-03-05
     notes: |
       Firestore lookup table mapping memory UUIDs to Weaviate collection names.
       Replaces MemoryResolutionService 2-try fallback with O(1) index reads.
@@ -1379,14 +1378,15 @@ tasks:
         5 tests verifying index writes, idempotency, multi-collection-type, lookup.
     - id: task-97
       name: Deprecate MemoryResolutionService
-      status: not_started
+      status: complete
       file: agent/tasks/milestone-18-memory-index-lookup/task-97-deprecate-memory-resolution-service.md
       estimated_hours: 2-3
       dependencies: [task-95, task-96]
       notes: |
-        Delete MemoryResolutionService. Remove MemorySource type.
-        Migrate all callers to MemoryService.getById().
-        Remove legacy fallback from getById.
+        Deleted memory-resolution.service.ts and its spec.
+        Removed MemoryResolutionService, MemorySource, ResolvedMemory exports from barrel.
+        Removed legacyResolve() from MemoryService — resolveById now returns null on index miss.
+        Updated 2 tests to reflect no-fallback behavior. Build clean, 53 tests pass.
 
 documentation:
   design_documents: 13

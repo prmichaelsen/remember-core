@@ -162,13 +162,6 @@ export {
   type TrustResult,
 } from './ghost-config-handler.service.js';
 
-// Memory resolution (cross-collection fallback)
-export {
-  MemoryResolutionService,
-  type MemorySource,
-  type ResolvedMemory,
-} from './memory-resolution.service.js';
-
 // Job tracking system
 export {
   type Job,

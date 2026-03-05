@@ -1541,7 +1541,7 @@ tasks:
         Follows byTime/byDensity pattern. Desc/asc, pagination, filters.
     - id: task-107
       name: REST Endpoints (OpenAPI Spec)
-      status: not_started
+      status: done
       file: agent/tasks/milestone-20-memory-ratings-system/task-107-rest-endpoints.md
       estimated_hours: 2-3
       dependencies: [task-105]

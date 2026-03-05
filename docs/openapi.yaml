@@ -163,6 +163,92 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
 
+  /api/svc/v1/memories/{memoryId}/rating:
+    put:
+      tags: [memories]
+      summary: Submit or update a rating for a memory
+      operationId: rateMemory
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RateMemoryRequest'
+      responses:
+        '200':
+          description: Rating submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatingResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Cannot rate own memory or ghost mode
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags: [memories]
+      summary: Retract a previously submitted rating
+      operationId: retractRating
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+      responses:
+        '204':
+          description: Rating retracted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    get:
+      tags: [memories]
+      summary: Get the current user's rating for a memory
+      operationId: getMyRating
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+      responses:
+        '200':
+          description: User's rating
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRatingResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/svc/v1/memories/by-rating:
+    post:
+      tags: [memories]
+      summary: Fetch memories sorted by Bayesian average rating
+      operationId: memoriesByRating
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingModeRequest'
+      responses:
+        '200':
+          description: Rating-sorted memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatingModeResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /api/svc/v1/memories/search:
     post:
       tags: [memories]
@@ -1495,6 +1581,87 @@ components:
           $ref: '#/components/schemas/GhostSearchContext'
 
     DensityModeResult:
+      type: object
+      required: [memories, total, offset, limit]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    # ----------------------------------------------------------
+    # Rating
+    # ----------------------------------------------------------
+    RateMemoryRequest:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+
+    RatingResponse:
+      type: object
+      required: [previousRating, newRating, ratingCount, ratingAvg]
+      properties:
+        previousRating:
+          type: integer
+          nullable: true
+        newRating:
+          type: integer
+        ratingCount:
+          type: integer
+        ratingAvg:
+          type: number
+          nullable: true
+
+    UserRatingResponse:
+      type: object
+      required: [rating, created_at, updated_at]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RatingModeRequest:
+      type: object
+      properties:
+        direction:
+          type: string
+          enum: [desc, asc]
+          default: desc
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    RatingModeResult:
       type: object
       required: [memories, total, offset, limit]
       properties:

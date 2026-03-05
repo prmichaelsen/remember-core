@@ -73,6 +73,42 @@ export interface paths {
         patch: operations["updateMemory"];
         trace?: never;
     };
+    "/api/svc/v1/memories/{memoryId}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the current user's rating for a memory */
+        get: operations["getMyRating"];
+        /** Submit or update a rating for a memory */
+        put: operations["rateMemory"];
+        post?: never;
+        /** Retract a previously submitted rating */
+        delete: operations["retractRating"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/memories/by-rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fetch memories sorted by Bayesian average rating */
+        post: operations["memoriesByRating"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/memories/search": {
         parameters: {
             query?: never;
@@ -791,6 +827,44 @@ export interface components {
             offset: number;
             limit: number;
         };
+        RateMemoryRequest: {
+            rating: number;
+        };
+        RatingResponse: {
+            previousRating: number | null;
+            newRating: number;
+            ratingCount: number;
+            ratingAvg: number | null;
+        };
+        UserRatingResponse: {
+            rating: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        RatingModeRequest: {
+            /**
+             * @default desc
+             * @enum {string}
+             */
+            direction: "desc" | "asc";
+            /** @default 10 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            filters?: components["schemas"]["SearchFilters"];
+            deleted_filter?: components["schemas"]["DeletedFilter"];
+            ghost_context?: components["schemas"]["GhostSearchContext"];
+        };
+        RatingModeResult: {
+            memories: {
+                [key: string]: unknown;
+            }[];
+            total: number;
+            offset: number;
+            limit: number;
+        };
         TimeSliceSearchInput: {
             query: string;
             /** @default 10 */
@@ -1418,6 +1492,118 @@ export interface operations {
             400: components["responses"]["ValidationError"];
             401: components["responses"]["UnauthorizedError"];
             404: components["responses"]["NotFoundError"];
+        };
+    };
+    getMyRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Memory UUID */
+                memoryId: components["parameters"]["memoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User's rating */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserRatingResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    rateMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Memory UUID */
+                memoryId: components["parameters"]["memoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RateMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Rating submitted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingResponse"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+            /** @description Cannot rate own memory or ghost mode */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    retractRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Memory UUID */
+                memoryId: components["parameters"]["memoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rating retracted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    memoriesByRating: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Rating-sorted memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
         };
     };
     searchMemories: {

@@ -1026,6 +1026,17 @@ tasks:
         Cache ensureUserCollection() results so repeated requests for the same user
         skip Weaviate existence check and schema reconciliation. Process-level cache
         with TTL. The client is already a singleton — this caches collection readiness.
+    - id: task-84
+      name: Wire Async Import Endpoint (202 + job_id)
+      status: not_started
+      file: agent/tasks/unassigned/task-84-wire-async-import-endpoint.md
+      estimated_hours: 2-3
+      dependencies: task-76, task-77
+      notes: |
+        REST server import route still calls synchronous ImportService.import().
+        Wire it to create a job via JobService, dispatch ImportJobWorker, and
+        return 202 + { job_id }. All infrastructure exists (M16) — just needs
+        route handler update. agentbase.me already handles both response shapes.
 
   milestone_14:
     - id: task-68

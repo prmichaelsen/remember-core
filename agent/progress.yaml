@@ -279,9 +279,9 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1
-    tasks_completed: 1
+    tasks_completed: 2
     tasks_total: 5
-    progress: 20
+    progress: 40
     started: 2026-03-05
     completed: null
     notes: |
@@ -1345,13 +1345,16 @@ tasks:
         9 unit tests passing. Exported from services barrel.
     - id: task-94
       name: Wire Index Write into MemoryService.create
-      status: not_started
+      status: completed
+      completed_date: 2026-03-05
       file: agent/tasks/milestone-18-memory-index-lookup/task-94-wire-index-write.md
       estimated_hours: 2-3
+      actual_hours: 0.15
       dependencies: task-93
       notes: |
-        Add optional MemoryIndexService to MemoryService constructor.
-        Wire index write into create() after Weaviate insert.
+        Optional MemoryIndexService in constructor options.
+        Index write after Weaviate insert, non-fatal on failure.
+        3 new tests. Mock collection gets .name property.
     - id: task-95
       name: Add MemoryService.getById with Index Lookup
       status: not_started

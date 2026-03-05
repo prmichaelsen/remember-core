@@ -554,4 +554,40 @@ describe('MemoryService', () => {
       expect(isolated!.relationship_count).toBe(0);
     });
   });
+
+  describe('create with memoryIndex', () => {
+    it('calls memoryIndex.index() after successful create', async () => {
+      const mockIndex = { index: jest.fn().mockResolvedValue(undefined), lookup: jest.fn() };
+      const indexedService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockIndex as any,
+      });
+
+      const result = await indexedService.create({ content: 'indexed memory' });
+
+      expect(mockIndex.index).toHaveBeenCalledWith(
+        result.memory_id,
+        collection.name,
+      );
+    });
+
+    it('succeeds even when index write fails', async () => {
+      const mockIndex = {
+        index: jest.fn().mockRejectedValue(new Error('Firestore down')),
+        lookup: jest.fn(),
+      };
+      const indexedService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockIndex as any,
+      });
+
+      const result = await indexedService.create({ content: 'still works' });
+
+      expect(result.memory_id).toBeDefined();
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Index write failed'));
+    });
+
+    it('works without memoryIndex (backwards compat)', async () => {
+      const result = await service.create({ content: 'no index' });
+      expect(result.memory_id).toBeDefined();
+    });
+  });
 });

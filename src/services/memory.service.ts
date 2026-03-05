@@ -22,6 +22,7 @@ import {
   type DeletedFilter,
 } from '../utils/filters.js';
 import { buildTrustFilter } from './trust-enforcement.service.js';
+import type { MemoryIndexService } from './memory-index.service.js';
 
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
@@ -189,6 +190,9 @@ export class MemoryService {
     private collection: any,
     private userId: string,
     private logger: Logger,
+    private options?: {
+      memoryIndex?: MemoryIndexService;
+    },
   ) {}
 
   /**
@@ -258,6 +262,16 @@ export class MemoryService {
 
     const memoryId = await this.collection.data.insert({ properties });
     this.logger.info('Memory created', { memoryId, userId: this.userId });
+
+    // Index memory UUID → collection name for cross-collection resolution
+    if (this.options?.memoryIndex) {
+      try {
+        const collectionName = this.collection.name;
+        await this.options.memoryIndex.index(memoryId, collectionName);
+      } catch (err) {
+        this.logger.warn?.(`[MemoryService] Index write failed for ${memoryId}: ${err}`);
+      }
+    }
 
     return { memory_id: memoryId, created_at: now };
   }

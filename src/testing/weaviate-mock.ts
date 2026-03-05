@@ -24,6 +24,9 @@ export function createMockCollection() {
     /** Direct access to the in-memory store for assertions. */
     _store: store,
 
+    /** Collection name (mirrors Weaviate collection.name) */
+    name: 'Memory_users_mock',
+
     data: {
       async insert(opts: { id?: string; properties: Record<string, any> }): Promise<string> {
         const id = opts.id ?? randomUUID();

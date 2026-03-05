@@ -4,6 +4,8 @@ import { HtmlExtractor } from './html.extractor.js';
 import { PdfExtractor } from './pdf.extractor.js';
 import type { DocumentAiClient, Logger } from './pdf.extractor.js';
 import { DocxExtractor } from './docx.extractor.js';
+import { ImageExtractor } from './image.extractor.js';
+import type { VisionClient } from './image.extractor.js';
 
 export class ExtractorRegistry {
   private extractors: FileExtractor[] = [];
@@ -27,6 +29,7 @@ export class ExtractorRegistry {
  */
 export function createDefaultRegistry(deps?: {
   documentAiClient?: DocumentAiClient;
+  visionClient?: VisionClient;
   logger?: Logger;
 }): ExtractorRegistry {
   const registry = new ExtractorRegistry();
@@ -34,5 +37,8 @@ export function createDefaultRegistry(deps?: {
   registry.register(new HtmlExtractor());
   registry.register(new PdfExtractor(deps?.documentAiClient, deps?.logger));
   registry.register(new DocxExtractor());
+  if (deps?.visionClient) {
+    registry.register(new ImageExtractor(deps.visionClient));
+  }
   return registry;
 }

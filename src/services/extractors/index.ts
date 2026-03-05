@@ -6,3 +6,5 @@ export { HtmlExtractor } from './html.extractor.js';
 export { PdfExtractor } from './pdf.extractor.js';
 export type { DocumentAiClient, Logger } from './pdf.extractor.js';
 export { DocxExtractor } from './docx.extractor.js';
+export { ImageExtractor } from './image.extractor.js';
+export type { VisionClient } from './image.extractor.js';

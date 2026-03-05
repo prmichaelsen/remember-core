@@ -37,7 +37,8 @@
       "Bash(npm version:*)",
       "Bash(npm publish:*)",
       "Bash(npm info:*)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(find:*)"
     ]
   }
 }

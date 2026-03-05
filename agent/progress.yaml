@@ -326,6 +326,22 @@ milestones:
       See: agent/milestones/milestone-20-memory-ratings-system.md
       See: agent/design/local.memory-ratings.md
 
+  - id: M21
+    name: Content Moderation
+    status: not_started
+    progress: 0
+    estimated_weeks: 1.5
+    tasks_completed: 0
+    tasks_total: 4
+    notes: |
+      LLM-based content moderation gate for space publish/revise.
+      ModerationService using Haiku for pass/fail classification.
+      Blocks: hate speech, extremism, violence incitement, CSAM, self-harm.
+      Allows: edgy content, dark humor, political opinions, profanity.
+      Fail-closed, in-memory cache, ValidationError propagation.
+      See: agent/milestones/milestone-21-content-moderation.md
+      See: agent/design/local.content-moderation.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1559,11 +1575,48 @@ tasks:
       notes: |
         CHANGELOG, README, migration guide updates. Version bump to 0.31.0.
 
+  milestone_21:
+    - id: task-111
+      name: ModerationService
+      status: not_started
+      file: agent/tasks/milestone-21-content-moderation/task-111-moderation-service.md
+      estimated_hours: 3-4
+      dependencies: []
+      notes: |
+        Core service: Haiku client, moderation prompt, content hash cache, mock client.
+
+    - id: task-112
+      name: SpaceService Integration
+      status: not_started
+      file: agent/tasks/milestone-21-content-moderation/task-112-space-service-integration.md
+      estimated_hours: 2-3
+      dependencies: [task-111]
+      notes: |
+        Wire ModerationClient into SpaceService publish/revise flows.
+
+    - id: task-113
+      name: Unit Tests
+      status: not_started
+      file: agent/tasks/milestone-21-content-moderation/task-113-unit-tests.md
+      estimated_hours: 2-3
+      dependencies: [task-111, task-112]
+      notes: |
+        ModerationService tests (mock HTTP) + SpaceService moderation tests (mock client).
+
+    - id: task-114
+      name: Documentation
+      status: not_started
+      file: agent/tasks/milestone-21-content-moderation/task-114-documentation.md
+      estimated_hours: 1-2
+      dependencies: [task-113]
+      notes: |
+        CHANGELOG, OpenAPI specs, README. Version bump.
+
 documentation:
-  design_documents: 13
-  milestone_documents: 16
+  design_documents: 14
+  milestone_documents: 17
   pattern_documents: 25
-  task_documents: 101
+  task_documents: 105
 
 progress:
   planning: 100
@@ -1571,6 +1624,16 @@ progress:
   overall: 95
 
 recent_work:
+  - date: 2026-03-05
+    description: |
+      Planned M21 — Content Moderation
+    items:
+      - "Created milestone-21-content-moderation.md"
+      - "Created 4 tasks (task-111 through task-114)"
+      - "Design doc: agent/design/local.content-moderation.md"
+      - "Clarifications 11-12 complete (scope/policy + pass/fail examples)"
+      - "Source: agentbase.me draft content-moderation.draft.md"
+      - "Scope: ModerationService (Haiku), SpaceService integration, tests, docs"
   - date: 2026-03-05
     description: |
       Planned M20 — Memory Ratings System

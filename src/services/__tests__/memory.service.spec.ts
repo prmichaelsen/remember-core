@@ -1,5 +1,6 @@
 import { MemoryService } from '../memory.service.js';
 import { createMockCollection, createMockLogger } from '../../testing/weaviate-mock.js';
+import { TrustLevel } from '../../types/trust.types.js';
 
 describe('MemoryService', () => {
   let collection: ReturnType<typeof createMockCollection>;
@@ -44,10 +45,10 @@ describe('MemoryService', () => {
     });
 
     it('applies custom weight and trust', async () => {
-      const result = await service.create({ content: 'test', weight: 0.9, trust: 0.8 });
+      const result = await service.create({ content: 'test', weight: 0.9, trust: TrustLevel.RESTRICTED });
       const stored = collection._store.get(result.memory_id);
       expect(stored!.properties.weight).toBe(0.9);
-      expect(stored!.properties.trust_score).toBe(0.8);
+      expect(stored!.properties.trust_score).toBe(TrustLevel.RESTRICTED);
     });
 
     it('stores tags and references', async () => {

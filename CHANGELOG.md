@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.30.1] - 2026-03-05
+
+### Added
+- Weaviate trust score migration script (`scripts/migrations/migrate-trust-scores.ts`)
+  - Batch converts float 0-1 trust_score to integer 1-5 across all Memory_ collections
+  - `--dry-run` mode, idempotent, logs per-tier distribution
+- `normalizeTrustScore()` on `MemoryService.create()` for legacy float callers
+
+### Changed
+- `DEFAULT_PREFERENCES.privacy.default_trust_level` from `0.25` to `2` (Internal)
+- SVC client trust tests use integer trust levels
+- Memory service tests use `TrustLevel.*` constants
+- Design doc `trust-enforcement.md` rewritten for integer 1-5 scale
+- M19 marked complete in progress.yaml
+
 ## [0.30.0] - 2026-03-05
 
 ### Changed

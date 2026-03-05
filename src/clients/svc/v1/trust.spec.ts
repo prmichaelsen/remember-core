@@ -38,11 +38,11 @@ describe('TrustResource', () => {
 
   it('setUserTrust calls POST /api/svc/v1/trust/set-user-trust', async () => {
     const trust = createTrustResource(http);
-    await trust.setUserTrust('user1', { target_user_id: 'user2', trust_level: 0.8 });
+    await trust.setUserTrust('user1', { target_user_id: 'user2', trust_level: 4 });
 
     expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/trust/set-user-trust', {
       userId: 'user1',
-      body: { target_user_id: 'user2', trust_level: 0.8 },
+      body: { target_user_id: 'user2', trust_level: 4 },
     });
   });
 

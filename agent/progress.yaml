@@ -1,10 +1,10 @@
 project:
   name: remember-core
-  version: 0.27.3
+  version: 0.30.1
   started: 2026-02-27
   status: in_progress
-  current_milestone: M18
-  # M14, M15, M16 all completed. M13 (Performance) remains not_started.
+  current_milestone: M19
+  # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
     Extracts transport-agnostic business logic from remember-mcp so both
@@ -293,19 +293,23 @@ milestones:
 
   - id: M19
     name: Trust Level Redesign
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1
-    tasks_completed: 2
+    tasks_completed: 6
     tasks_total: 6
+    started: 2026-03-05
+    completed: 2026-03-05
     notes: |
       Redesign trust system: invert semantics (higher = more confidential),
       switch float 0-1 to integer 1-5, add named labels (Public/Internal/
       Confidential/Restricted/Secret). Drop escalation penalty, keep
       block-after-3. Remove trust=1.0 existence-only special case.
-      Weaviate data migration for existing memories.
+      Read-time normalization for mixed float/integer data.
+      Weaviate data migration script for existing memories.
+      Trust validator updated for integer 1-5 scale.
+      Design docs updated. 726 tests passing.
       See: agent/milestones/milestone-19-trust-level-redesign.md
-      See: agent/drafts/trust-level-thoughts.md
 
 tasks:
   milestone_1:

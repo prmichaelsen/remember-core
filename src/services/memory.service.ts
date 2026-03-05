@@ -281,7 +281,7 @@ export class MemoryService {
       summary: input.title,
       content_type: contentType,
       weight: input.weight ?? 0.5,
-      trust_score: input.trust ?? TrustLevel.INTERNAL,
+      trust_score: normalizeTrustScore(input.trust ?? TrustLevel.INTERNAL),
       confidence: 1.0,
       context_summary: input.context_summary || 'Memory created',
       context_conversation_id: input.context_conversation_id,

@@ -110,7 +110,7 @@ export const DEFAULT_PREFERENCES: Omit<UserPreferences, 'user_id' | 'created_at'
     share_with_memories: true,
   },
   privacy: {
-    default_trust_level: 0.25,
+    default_trust_level: 2,
     allow_cross_user_access: false,
     auto_approve_requests: false,
     audit_logging: true,
@@ -170,7 +170,7 @@ export const PREFERENCE_DESCRIPTIONS = {
     share_with_memories: 'Include location data in memories (default: true)',
   },
   privacy: {
-    default_trust_level: 'Default trust level for new memories, 0-1 (default: 0.25)',
+    default_trust_level: 'Default trust level for new memories, 1-5 integer (1=Public, 5=Secret, default: 2)',
     allow_cross_user_access: 'Allow other users to request access to memories (default: false)',
     auto_approve_requests: 'Automatically approve access requests (default: false)',
     audit_logging: 'Enable audit logging for preference changes (default: true)',

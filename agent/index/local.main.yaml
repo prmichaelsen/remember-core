@@ -116,3 +116,15 @@ local:
         Establishes the error handling convention for SDK-facing code.
         Required when adding new use-case functions.
       applies: acp.proceed, acp.task-create
+
+    - path: agent/design/local.memory-index-lookup.md
+      weight: 0.2
+      kind: design
+      description: |
+        Firestore lookup table mapping memory UUIDs to Weaviate collection names.
+        Replaces MemoryResolutionService guesswork with O(1) index reads.
+      rationale: |
+        Proposed optimization for cross-collection memory resolution.
+        Low weight — only relevant when working on MemoryResolutionService
+        or MemoryService create/delete paths.
+      applies: acp.proceed, acp.task-create

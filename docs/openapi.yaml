@@ -609,7 +609,12 @@ paths:
     post:
       tags: [spaces]
       summary: Publish a memory to shared spaces
-      description: Returns a confirmation token. Call /confirmations/{token}/confirm to execute.
+      description: |
+        Returns a confirmation token. Call /confirmations/{token}/confirm to execute.
+        Content is checked by automated moderation before publishing. If content violates
+        moderation policy (hate speech, extremism, violence incitement, CSAM, self-harm
+        encouragement), a 400 ValidationError is returned with context.fields.moderation=['blocked']
+        and context.fields.category indicating the violation type.
       operationId: publishToSpace
       requestBody:
         required: true
@@ -657,7 +662,10 @@ paths:
     post:
       tags: [spaces]
       summary: Propose a content revision
-      description: Returns a confirmation token. Call /confirmations/{token}/confirm to execute.
+      description: |
+        Returns a confirmation token. Call /confirmations/{token}/confirm to execute.
+        Content is checked by automated moderation before revising. If content violates
+        moderation policy, a 400 ValidationError is returned with context.fields.moderation=['blocked'].
       operationId: reviseInSpace
       requestBody:
         required: true

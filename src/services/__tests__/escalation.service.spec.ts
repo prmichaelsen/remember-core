@@ -1,6 +1,5 @@
 import {
   InMemoryEscalationStore,
-  TRUST_PENALTY,
   MAX_ATTEMPTS_BEFORE_BLOCK,
   handleInsufficientTrust,
   isMemoryBlocked,
@@ -16,10 +15,6 @@ describe('EscalationService', () => {
   });
 
   describe('constants', () => {
-    it('TRUST_PENALTY is 0.1', () => {
-      expect(TRUST_PENALTY).toBe(0.1);
-    });
-
     it('MAX_ATTEMPTS_BEFORE_BLOCK is 3', () => {
       expect(MAX_ATTEMPTS_BEFORE_BLOCK).toBe(3);
     });
@@ -73,13 +68,13 @@ describe('EscalationService', () => {
   });
 
   describe('escalation flow via handleInsufficientTrust', () => {
-    it('first attempt: insufficient_trust with penalty', async () => {
+    it('first attempt: insufficient_trust, no penalty applied', async () => {
       const result = await handleInsufficientTrust(
         'owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store
       );
       expect(result.status).toBe('insufficient_trust');
       if (result.status === 'insufficient_trust') {
-        expect(result.actual_trust).toBe(Math.max(1, TrustLevel.CONFIDENTIAL - TRUST_PENALTY));
+        expect(result.actual_trust).toBe(TrustLevel.CONFIDENTIAL);
         expect(result.attempts_remaining).toBe(MAX_ATTEMPTS_BEFORE_BLOCK - 1);
       }
     });
@@ -90,6 +85,7 @@ describe('EscalationService', () => {
         'owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, store
       );
       if (result.status === 'insufficient_trust') {
+        expect(result.actual_trust).toBe(TrustLevel.CONFIDENTIAL);
         expect(result.attempts_remaining).toBe(MAX_ATTEMPTS_BEFORE_BLOCK - 2);
       }
     });
@@ -107,12 +103,12 @@ describe('EscalationService', () => {
       }
     });
 
-    it('trust floor at 1 (never below PUBLIC)', async () => {
+    it('actual_trust is never modified (no penalty)', async () => {
       const result = await handleInsufficientTrust(
         'owner', 'accessor', 'mem', TrustLevel.RESTRICTED, TrustLevel.PUBLIC, store
       );
       if (result.status === 'insufficient_trust') {
-        expect(result.actual_trust).toBeGreaterThanOrEqual(1);
+        expect(result.actual_trust).toBe(TrustLevel.PUBLIC);
       }
     });
   });

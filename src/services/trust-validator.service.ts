@@ -1,10 +1,12 @@
 /**
  * Trust validator — validation and suggestions for trust-sensitive operations.
  *
+ * Uses integer TrustLevel 1–5 scale (higher = more confidential).
  * Ported from remember-mcp/src/services/trust-validator.ts
  */
 
 import type { ContentType } from '../types/memory.types.js';
+import { TrustLevel, isValidTrustLevel, TRUST_LABELS } from '../types/trust.types.js';
 
 /**
  * Validation result for trust assignment.
@@ -16,21 +18,20 @@ export interface TrustValidationResult {
 
 /**
  * Validate a trust level assignment.
- * Warns if trust < 0.25 (very private — existence-only for most accessors).
+ * Warns if trust >= 4 (Restricted/Secret — very restrictive).
  * Returns invalid for out-of-range values.
  *
- * @param trustLevel - The trust level being assigned (0-1)
- * @param content - Optional content for context-aware validation
+ * @param trustLevel - The trust level being assigned (1-5 integer)
  */
-export function validateTrustAssignment(trustLevel: number, content?: string): TrustValidationResult {
-  if (trustLevel < 0 || trustLevel > 1) {
-    return { valid: false, warning: `Trust level must be between 0 and 1, got ${trustLevel}` };
+export function validateTrustAssignment(trustLevel: number): TrustValidationResult {
+  if (!isValidTrustLevel(trustLevel)) {
+    return { valid: false, warning: `Trust level must be an integer 1-5, got ${trustLevel}` };
   }
 
-  if (trustLevel < 0.25) {
+  if (trustLevel >= TrustLevel.RESTRICTED) {
     return {
       valid: true,
-      warning: `Trust level ${trustLevel} is very restrictive — most accessors will see only that this memory exists. Consider 0.25+ for metadata visibility.`,
+      warning: `Trust level ${TRUST_LABELS[trustLevel as TrustLevel]} (${trustLevel}) is very restrictive — most accessors will only see metadata or existence. Consider ${TRUST_LABELS[TrustLevel.CONFIDENTIAL]} (${TrustLevel.CONFIDENTIAL}) or lower for broader visibility.`,
     };
   }
 
@@ -41,30 +42,30 @@ export function validateTrustAssignment(trustLevel: number, content?: string): T
  * Suggest an appropriate trust level based on content type and tags.
  *
  * Guidelines:
- * - System/audit/action: 0.5 (internal, summary access for trusted users)
- * - Personal (journal, memory, event): 0.75 (share with close friends)
- * - Business (invoice, contract): 0.5 (summary only for collaborators)
- * - Communication (email, conversation): 0.5 (summary only)
- * - Creative/content: 0.25 (metadata for discovery, full access for trusted)
- * - Default: 0.25 (conservative — metadata only)
+ * - Personal (journal, memory, event): RESTRICTED (4) — close contacts only
+ * - System/audit/action: CONFIDENTIAL (3) — trusted friends
+ * - Business (invoice, contract): CONFIDENTIAL (3)
+ * - Communication (email, conversation): CONFIDENTIAL (3)
+ * - Ghost conversations: RESTRICTED (4)
+ * - Default: INTERNAL (2) — conservative
  *
  * Tag overrides:
- * - 'private' or 'secret': 0.1 (near-hidden)
- * - 'public': 1.0 (open to all)
+ * - 'private' or 'secret': SECRET (5)
+ * - 'public': PUBLIC (1)
  *
  * @param contentType - The type of content
  * @param tags - Optional tags that may affect suggestion
- * @returns Suggested trust level (0-1)
+ * @returns Suggested TrustLevel (1-5)
  */
-export function suggestTrustLevel(contentType: ContentType, tags?: string[]): number {
+export function suggestTrustLevel(contentType: ContentType, tags?: string[]): TrustLevel {
   // Tag-based overrides take priority
   if (tags && tags.length > 0) {
     const lowerTags = tags.map(t => t.toLowerCase());
     if (lowerTags.includes('private') || lowerTags.includes('secret')) {
-      return 0.1;
+      return TrustLevel.SECRET;
     }
     if (lowerTags.includes('public')) {
-      return 1.0;
+      return TrustLevel.PUBLIC;
     }
   }
 
@@ -74,32 +75,32 @@ export function suggestTrustLevel(contentType: ContentType, tags?: string[]): nu
     case 'journal':
     case 'memory':
     case 'event':
-      return 0.75;
+      return TrustLevel.RESTRICTED;
 
     // System/internal
     case 'system':
     case 'audit':
     case 'action':
     case 'history':
-      return 0.5;
+      return TrustLevel.CONFIDENTIAL;
 
     // Business
     case 'invoice':
     case 'contract':
-      return 0.5;
+      return TrustLevel.CONFIDENTIAL;
 
     // Communication
     case 'email':
     case 'conversation':
     case 'meeting':
-      return 0.5;
+      return TrustLevel.CONFIDENTIAL;
 
     // Ghost conversations — private by default
     case 'ghost':
-      return 0.75;
+      return TrustLevel.RESTRICTED;
 
     // Default — conservative
     default:
-      return 0.25;
+      return TrustLevel.INTERNAL;
   }
 }

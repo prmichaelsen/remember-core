@@ -3,7 +3,7 @@
  *
  * In ghost mode (default), query-level filtering handles trust at the Weaviate layer.
  * This service is needed for:
- * 1. Trust escalation penalty tracking
+ * 1. Escalation tracking (deny → deny → block)
  * 2. Block management
  * 3. Prompt/hybrid enforcement modes (per-memory access checks)
  * 4. Future direct access tools
@@ -15,7 +15,7 @@ import type { Memory } from '../types/memory.types.js';
 import type { AccessResult } from '../types/access-result.types.js';
 import type { GhostConfig } from '../types/ghost-config.types.js';
 import type { WriteMode, UserCredentials } from '../types/auth.types.js';
-import { TrustLevel } from '../types/trust.types.js';
+import { TrustLevel, TRUST_LABELS } from '../types/trust.types.js';
 import { isTrustSufficient } from './trust-enforcement.service.js';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -108,9 +108,6 @@ export class InMemoryEscalationStore implements EscalationStore {
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
-/** Trust penalty applied per failed access attempt (after repeated attempts) */
-export const TRUST_PENALTY = 0.1;
-
 /** Number of failed attempts before blocking */
 export const MAX_ATTEMPTS_BEFORE_BLOCK = 3;
 
@@ -124,8 +121,8 @@ export const MAX_ATTEMPTS_BEFORE_BLOCK = 3;
  * 2. Ghost not enabled → no_permission
  * 3. Accessor blocked by owner → no_permission
  * 4. Memory-specific block → blocked
- * 5. Insufficient trust → insufficient_trust (+ penalty on repeated attempts, possible block)
- * 6. Sufficient trust → granted (trusted; trust 1.0 memories capped to existence-only by formatting layer)
+ * 5. Insufficient trust → insufficient_trust (deny → deny → block after 3)
+ * 6. Sufficient trust → granted (trusted)
  */
 export async function checkMemoryAccess(
   accessorUserId: string,
@@ -175,7 +172,7 @@ export async function checkMemoryAccess(
     return result;
   }
 
-  // 6. All checks pass (trust 1.0 memories capped to existence-only by formatting layer)
+  // 6. All checks pass
   return { status: 'granted', memory, access_level: 'trusted' };
 }
 
@@ -183,7 +180,7 @@ export async function checkMemoryAccess(
 
 /**
  * Handle an insufficient trust access attempt.
- * Tracks attempts; applies -0.1 penalty on repeated attempts, blocks after 3.
+ * Tracks attempts; blocks after MAX_ATTEMPTS_BEFORE_BLOCK (deny → deny → block).
  */
 export async function handleInsufficientTrust(
   ownerUserId: string,
@@ -215,8 +212,7 @@ export async function handleInsufficientTrust(
     status: 'insufficient_trust',
     memory_id: memoryId,
     required_trust: requiredTrust,
-    // TODO(task-100): Remove penalty math, simplify to deny→deny→block
-    actual_trust: Math.max(1, actualTrust - TRUST_PENALTY) as TrustLevel,
+    actual_trust: actualTrust,
     attempts_remaining: MAX_ATTEMPTS_BEFORE_BLOCK - attempt.count,
   };
 }
@@ -279,7 +275,7 @@ export function formatAccessResultMessage(result: AccessResult): string {
         ? 'Access granted (owner).'
         : 'Access granted (trusted).';
     case 'insufficient_trust':
-      return `Insufficient trust level. Required: ${result.required_trust}, actual: ${result.actual_trust}. ${result.attempts_remaining} attempt(s) remaining before access is blocked.`;
+      return `Insufficient trust level. Required: ${TRUST_LABELS[result.required_trust as TrustLevel] ?? result.required_trust} (${result.required_trust}), actual: ${TRUST_LABELS[result.actual_trust as TrustLevel] ?? result.actual_trust} (${result.actual_trust}). ${result.attempts_remaining} attempt(s) remaining before access is blocked.`;
     case 'blocked':
       return `Access blocked: ${result.reason}`;
     case 'no_permission':

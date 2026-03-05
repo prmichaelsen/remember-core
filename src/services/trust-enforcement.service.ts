@@ -22,7 +22,7 @@ import { TrustLevel, TRUST_LABELS } from '../types/trust.types.js';
  * @param accessorTrustLevel - The accessor's trust level (1-5)
  * @returns Weaviate filter object
  */
-export function buildTrustFilter(collection: any, accessorTrustLevel: TrustLevel): any {
+export function buildTrustFilter(collection: any, accessorTrustLevel: number): any {
   return collection.filter.byProperty('trust_score').lessOrEqual(accessorTrustLevel);
 }
 
@@ -176,7 +176,7 @@ export function redactSensitiveFields(memory: Memory): Memory {
  * Check whether an accessor's trust level is sufficient for a memory.
  * Access is granted when accessorTrust >= memoryTrust.
  */
-export function isTrustSufficient(memoryTrust: TrustLevel, accessorTrust: TrustLevel): boolean {
+export function isTrustSufficient(memoryTrust: number, accessorTrust: number): boolean {
   return accessorTrust >= memoryTrust;
 }
 

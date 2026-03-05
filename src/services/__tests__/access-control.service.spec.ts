@@ -5,7 +5,6 @@ import {
   formatAccessResultMessage,
   canRevise,
   canOverwrite,
-  TRUST_PENALTY,
   MAX_ATTEMPTS_BEFORE_BLOCK,
   StubGhostConfigProvider,
   InMemoryEscalationStore,
@@ -163,17 +162,10 @@ describe('AccessControlService', () => {
       }
     });
 
-    it('applies trust penalty on insufficient trust', async () => {
+    it('returns actual_trust unchanged (no penalty)', async () => {
       const result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', TrustLevel.RESTRICTED, TrustLevel.CONFIDENTIAL, escalationStore);
       if (result.status === 'insufficient_trust') {
-        expect(result.actual_trust).toBe(Math.max(1, TrustLevel.CONFIDENTIAL - TRUST_PENALTY));
-      }
-    });
-
-    it('trust floor is 1 (never below PUBLIC)', async () => {
-      const result = await handleInsufficientTrust('owner-1', 'accessor-1', 'mem-1', TrustLevel.RESTRICTED, TrustLevel.PUBLIC, escalationStore);
-      if (result.status === 'insufficient_trust') {
-        expect(result.actual_trust).toBeGreaterThanOrEqual(1);
+        expect(result.actual_trust).toBe(TrustLevel.CONFIDENTIAL);
       }
     });
   });
@@ -217,7 +209,7 @@ describe('AccessControlService', () => {
       expect(formatAccessResultMessage(result)).toContain('trusted');
     });
 
-    it('formats insufficient_trust', () => {
+    it('formats insufficient_trust with labels', () => {
       const result: AccessResult = {
         status: 'insufficient_trust',
         memory_id: 'mem-1',
@@ -226,8 +218,9 @@ describe('AccessControlService', () => {
         attempts_remaining: 2,
       };
       const msg = formatAccessResultMessage(result);
-      expect(msg).toContain('4');
-      expect(msg).toContain('2');
+      expect(msg).toContain('Restricted');
+      expect(msg).toContain('Internal');
+      expect(msg).toContain('2 attempt(s) remaining');
     });
 
     it('formats blocked', () => {

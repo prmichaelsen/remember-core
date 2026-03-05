@@ -123,7 +123,6 @@ export {
   formatAccessResultMessage,
   canRevise,
   canOverwrite,
-  TRUST_PENALTY,
   MAX_ATTEMPTS_BEFORE_BLOCK,
   type MemoryBlock,
   type AttemptRecord,

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.30.0] - 2026-03-05
+
+### Changed
+- **BREAKING**: Remove `TRUST_PENALTY` constant (no longer exported)
+- **BREAKING**: `suggestTrustLevel()` now returns `TrustLevel` (integer 1-5) instead of float 0-1
+- `validateTrustAssignment()` validates integer 1-5 scale, warns for Restricted/Secret levels
+- `buildTrustFilter()` and `isTrustSufficient()` accept `number` (not strict `TrustLevel`) for runtime compatibility
+- `handleInsufficientTrust()` no longer applies -0.1 penalty; escalation is deny→deny→block
+- `formatAccessResultMessage()` uses human-readable trust labels (e.g. "Restricted" instead of "4")
+- Access control comments/docs updated for integer trust model
+
 ## [0.29.0] - 2026-03-05
 
 ### Changed

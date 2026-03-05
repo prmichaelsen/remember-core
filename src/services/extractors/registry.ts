@@ -1,6 +1,8 @@
 import type { FileExtractor } from './types.js';
 import { PlaintextExtractor } from './plaintext.extractor.js';
 import { HtmlExtractor } from './html.extractor.js';
+import { PdfExtractor } from './pdf.extractor.js';
+import type { DocumentAiClient, Logger } from './pdf.extractor.js';
 
 export class ExtractorRegistry {
   private extractors: FileExtractor[] = [];
@@ -22,9 +24,13 @@ export class ExtractorRegistry {
  * Create a registry with all built-in extractors.
  * Cloud clients are optional — if not provided, those extractors are skipped.
  */
-export function createDefaultRegistry(): ExtractorRegistry {
+export function createDefaultRegistry(deps?: {
+  documentAiClient?: DocumentAiClient;
+  logger?: Logger;
+}): ExtractorRegistry {
   const registry = new ExtractorRegistry();
   registry.register(new PlaintextExtractor());
   registry.register(new HtmlExtractor());
+  registry.register(new PdfExtractor(deps?.documentAiClient, deps?.logger));
   return registry;
 }

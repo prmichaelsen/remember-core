@@ -67,7 +67,9 @@ export function estimateTokens(text: string): number {
 
 /**
  * Split text into chunks of approximately maxTokensPerChunk tokens.
- * Splits on paragraph boundaries (\n\n+) to avoid cutting mid-sentence.
+ * When text contains Markdown headings, prefers splitting on heading
+ * boundaries (section-aware chunking). Falls back to paragraph splitting
+ * within sections that exceed the token budget.
  *
  * Edge cases:
  * - Empty input → empty array
@@ -77,6 +79,76 @@ export function estimateTokens(text: string): number {
 export function chunkByTokens(text: string, maxTokensPerChunk: number): string[] {
   if (!text.trim()) return [];
 
+  // Check if text contains Markdown headings for section-aware chunking
+  const hasHeadings = /^#{1,3} /m.test(text);
+  if (hasHeadings) {
+    return chunkBySections(text, maxTokensPerChunk);
+  }
+
+  return chunkByParagraphs(text, maxTokensPerChunk);
+}
+
+/**
+ * Section-aware chunking: split on Markdown heading boundaries first,
+ * then fall back to paragraph splitting within oversized sections.
+ */
+function chunkBySections(text: string, maxTokensPerChunk: number): string[] {
+  // Split on heading lines (# , ## , ### )
+  const sections: string[] = [];
+  const lines = text.split('\n');
+  let currentSection = '';
+
+  for (const line of lines) {
+    if (/^#{1,3} /.test(line) && currentSection.trim()) {
+      sections.push(currentSection);
+      currentSection = '';
+    }
+    currentSection += line + '\n';
+  }
+  if (currentSection.trim()) {
+    sections.push(currentSection);
+  }
+
+  // Now chunk sections, splitting oversized ones by paragraphs
+  const chunks: string[] = [];
+  let current = '';
+  let currentTokens = 0;
+
+  for (const section of sections) {
+    const sectionTokens = estimateTokens(section);
+
+    if (currentTokens + sectionTokens > maxTokensPerChunk && current) {
+      chunks.push(current.trim());
+      current = '';
+      currentTokens = 0;
+    }
+
+    if (sectionTokens > maxTokensPerChunk) {
+      // Section exceeds budget — fall back to paragraph splitting within it
+      if (current.trim()) {
+        chunks.push(current.trim());
+        current = '';
+        currentTokens = 0;
+      }
+      const subChunks = chunkByParagraphs(section, maxTokensPerChunk);
+      chunks.push(...subChunks);
+    } else {
+      current += section + '\n';
+      currentTokens += sectionTokens;
+    }
+  }
+
+  if (current.trim()) {
+    chunks.push(current.trim());
+  }
+
+  return chunks;
+}
+
+/**
+ * Paragraph-based chunking (original behavior).
+ */
+function chunkByParagraphs(text: string, maxTokensPerChunk: number): string[] {
   const maxChars = maxTokensPerChunk * 4;
   const paragraphs = text.split(/\n\n+/);
 

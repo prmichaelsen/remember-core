@@ -24,6 +24,11 @@ export interface ImportJobParams {
   context_conversation_id?: string;
 }
 
+interface ExtractionData {
+  metadata: Record<string, string>;
+  page_boundaries?: number[];
+}
+
 interface ChunkEntry {
   itemIndex: number;
   chunkIndex: number;
@@ -52,7 +57,10 @@ export class ImportJobWorker {
     const chunkSize = params.chunk_size ?? DEFAULT_CHUNK_SIZE;
 
     // 0. Extract file content for file-based items
-    for (const item of params.items) {
+    const extractionDataMap = new Map<number, ExtractionData>();
+
+    for (let i = 0; i < params.items.length; i++) {
+      const item = params.items[i];
       if (item.file_url && item.mime_type) {
         try {
           const extractor = this.extractorRegistry?.getExtractor(item.mime_type);
@@ -71,6 +79,10 @@ export class ImportJobWorker {
           const result = await extractor.extract(buffer, item.mime_type);
 
           item.content = result.text;
+          extractionDataMap.set(i, {
+            metadata: result.metadata,
+            page_boundaries: result.page_boundaries,
+          });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           this.logger.warn('Extraction failed', { job_id: jobId, error: message });
@@ -150,11 +162,28 @@ export class ImportJobWorker {
 
       try {
         const data = itemData.get(entry.itemIndex)!;
-        const marker = `[CHUNK ${String(entry.chunkIndex + 1).padStart(5, '0')}]`;
+        const extractionData = extractionDataMap.get(entry.itemIndex);
+        const isFileImport = !!extractionData;
+
+        // Build chunk marker with page numbers if available
+        let marker = `[CHUNK ${String(entry.chunkIndex + 1).padStart(5, '0')}`;
+        if (extractionData?.page_boundaries) {
+          const pageRange = getPageRange(entry.chunk, entry.chunkIndex, extractionData.page_boundaries, entry.item.content ?? '');
+          if (pageRange) {
+            marker += ` | Pages ${pageRange}`;
+          }
+        }
+        marker += ']';
+
+        // Add source:file_import tag for file-imported memories
+        const tags = [`import:${data.importId}`];
+        if (isFileImport) {
+          tags.push('source:file_import');
+        }
 
         const result: CreateMemoryResult = await this.memoryService.create({
           content: `${marker}\n\n${entry.chunk}`,
-          tags: [`import:${data.importId}`],
+          tags,
           context_summary: `Chunk ${entry.chunkIndex + 1} from import`,
           context_conversation_id: params.context_conversation_id,
         });
@@ -188,10 +217,12 @@ export class ImportJobWorker {
     // 4. Generate parent summaries + relationships (per item)
     const results: ImportItemResult[] = [];
 
-    for (const [, data] of itemData) {
+    for (const [itemIdx, data] of itemData) {
       if (data.chunkMemoryIds.length === 0) continue;
 
       const sourceLabel = data.item.source_filename || 'pasted text';
+      const extractionData = extractionDataMap.get(itemIdx);
+      const isFileImport = !!extractionData;
 
       // Generate summary
       let summaryText: string;
@@ -213,9 +244,21 @@ export class ImportJobWorker {
         `Chunks: ${data.chunkMemoryIds.length}\n` +
         `Import ID: ${data.importId}`;
 
+      // Build tags for parent summary
+      const parentTags = [`import:${data.importId}`, 'import_summary'];
+      if (isFileImport) {
+        parentTags.push('source:file_import');
+        // Add document metadata tags
+        const meta = extractionData!.metadata;
+        if (meta.title) parentTags.push(`doc:title:${meta.title}`);
+        if (meta.author) parentTags.push(`doc:author:${meta.author}`);
+        if (meta.created) parentTags.push(`doc:created:${meta.created}`);
+        if (meta.pages) parentTags.push(`doc:pages:${meta.pages}`);
+      }
+
       const parentResult: CreateMemoryResult = await this.memoryService.create({
         content: parentContent,
-        tags: [`import:${data.importId}`, 'import_summary'],
+        tags: parentTags,
         context_summary: `Import summary for ${sourceLabel}`,
         context_conversation_id: params.context_conversation_id,
       });
@@ -263,4 +306,54 @@ export class ImportJobWorker {
       total_memories_created: totalCreated,
     });
   }
+}
+
+/**
+ * Determine which pages a chunk spans based on page boundaries.
+ * Page boundaries are character offsets where each page starts in the full text.
+ */
+function getPageRange(
+  _chunk: string,
+  chunkIndex: number,
+  pageBoundaries: number[],
+  fullText: string,
+): string | null {
+  if (pageBoundaries.length === 0) return null;
+
+  // Find approximate start position of this chunk in the full text
+  // This is a rough heuristic — chunks are split from the full text sequentially
+  const chunks = fullText.split(/\n\n+/);
+  let startOffset = 0;
+  let chunkStart = 0;
+  let chunkEnd = 0;
+
+  // Reconstruct chunk boundaries from paragraph splits
+  let currentChunkIdx = 0;
+  let currentPos = 0;
+  for (const para of chunks) {
+    if (currentChunkIdx === chunkIndex) {
+      chunkStart = currentPos;
+    }
+    currentPos += para.length + 2; // +2 for \n\n
+    if (currentChunkIdx === chunkIndex) {
+      chunkEnd = currentPos;
+      break;
+    }
+    currentChunkIdx++;
+  }
+
+  // Find which pages this range spans
+  let startPage = 1;
+  let endPage = pageBoundaries.length;
+
+  for (let p = 0; p < pageBoundaries.length; p++) {
+    if (pageBoundaries[p] <= chunkStart) {
+      startPage = p + 1;
+    }
+    if (pageBoundaries[p] <= chunkEnd) {
+      endPage = p + 1;
+    }
+  }
+
+  return startPage === endPage ? `${startPage}` : `${startPage}-${endPage}`;
 }

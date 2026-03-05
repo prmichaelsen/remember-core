@@ -67,8 +67,10 @@ describe('createDefaultRegistry', () => {
     expect(registry).toBeInstanceOf(ExtractorRegistry);
   });
 
-  it('initially has no registered extractors', () => {
+  it('registers built-in extractors by default', () => {
     const registry = createDefaultRegistry();
-    expect(registry.getSupportedMimeTypes()).toEqual([]);
+    const types = registry.getSupportedMimeTypes();
+    expect(types).toContain('text/plain');
+    expect(types).toContain('text/html');
   });
 });

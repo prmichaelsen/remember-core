@@ -1,4 +1,6 @@
 import type { FileExtractor } from './types.js';
+import { PlaintextExtractor } from './plaintext.extractor.js';
+import { HtmlExtractor } from './html.extractor.js';
 
 export class ExtractorRegistry {
   private extractors: FileExtractor[] = [];
@@ -18,8 +20,11 @@ export class ExtractorRegistry {
 
 /**
  * Create a registry with all built-in extractors.
- * Initially empty — extractors are registered in later tasks.
+ * Cloud clients are optional — if not provided, those extractors are skipped.
  */
 export function createDefaultRegistry(): ExtractorRegistry {
-  return new ExtractorRegistry();
+  const registry = new ExtractorRegistry();
+  registry.register(new PlaintextExtractor());
+  registry.register(new HtmlExtractor());
+  return registry;
 }

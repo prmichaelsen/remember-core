@@ -3,7 +3,7 @@
 **Milestone**: [M17 - File Format Extraction](../../milestones/milestone-17-file-format-extraction.md)
 **Estimated Time**: 1-2 hours
 **Dependencies**: task-85
-**Status**: Not Started
+**Status**: Completed
 
 ---
 

@@ -311,6 +311,21 @@ milestones:
       Design docs updated. 726 tests passing.
       See: agent/milestones/milestone-19-trust-level-redesign.md
 
+  - id: M20
+    name: Memory Ratings System
+    status: not_started
+    progress: 0
+    estimated_weeks: 1.5
+    tasks_completed: 0
+    tasks_total: 7
+    notes: |
+      1-5 star rating system on memories with Bayesian aggregation and byRating
+      sort mode. RatingService (Firestore individual ratings + Weaviate aggregates),
+      byRating sort (native Weaviate sort by rating_bayesian), REST endpoints,
+      SVC client methods. Self-rating and ghost-mode prevention.
+      See: agent/milestones/milestone-20-memory-ratings-system.md
+      See: agent/design/local.memory-ratings.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1477,11 +1492,77 @@ tasks:
         (trust-enforcement, ghost-persona, access-control-result). Update
         OpenAPI specs and migration guide.
 
+  milestone_20:
+    - id: task-104
+      name: Weaviate Schema — Rating Properties
+      status: not_started
+      file: agent/tasks/milestone-20-memory-ratings-system/task-104-weaviate-schema-rating-properties.md
+      estimated_hours: 1-2
+      dependencies: []
+      notes: |
+        Add rating_sum (INT), rating_count (INT), rating_bayesian (NUMBER) to
+        Memory schema. Update Memory type, create rating.types.ts, update
+        MemoryService.create() defaults and read paths for rating_avg.
+    - id: task-105
+      name: RatingService
+      status: not_started
+      file: agent/tasks/milestone-20-memory-ratings-system/task-105-rating-service.md
+      estimated_hours: 3-4
+      dependencies: [task-104]
+      notes: |
+        Core rate/retract/getUserRating logic. Firestore individual ratings,
+        Weaviate aggregate updates. MemoryIndexService for collection resolution.
+        Self-rating and ghost-mode rejection.
+    - id: task-106
+      name: byRating Sort Mode
+      status: not_started
+      file: agent/tasks/milestone-20-memory-ratings-system/task-106-byrating-sort-mode.md
+      estimated_hours: 2-3
+      dependencies: [task-104]
+      notes: |
+        MemoryService.byRating() — Weaviate native sort by rating_bayesian.
+        Follows byTime/byDensity pattern. Desc/asc, pagination, filters.
+    - id: task-107
+      name: REST Endpoints (OpenAPI Spec)
+      status: not_started
+      file: agent/tasks/milestone-20-memory-ratings-system/task-107-rest-endpoints.md
+      estimated_hours: 2-3
+      dependencies: [task-105]
+      notes: |
+        PUT/DELETE/GET /api/svc/v1/memories/:id/rating in OpenAPI spec.
+        Rating schemas, Memory schema update. Regenerate types.
+    - id: task-108
+      name: SVC Client Methods
+      status: not_started
+      file: agent/tasks/milestone-20-memory-ratings-system/task-108-svc-client-openapi-spec.md
+      estimated_hours: 2-3
+      dependencies: [task-107]
+      notes: |
+        memories.rate(), retractRating(), getMyRating() on MemoriesResource.
+        Uses generated types from OpenAPI spec.
+    - id: task-109
+      name: Unit Tests
+      status: not_started
+      file: agent/tasks/milestone-20-memory-ratings-system/task-109-unit-tests.md
+      estimated_hours: 3-4
+      dependencies: [task-105, task-106, task-108]
+      notes: |
+        RatingService tests (rate/change/retract/validation/rejection/math),
+        byRating sort tests, SVC client rating tests. Colocated .spec.ts.
+    - id: task-110
+      name: Documentation
+      status: not_started
+      file: agent/tasks/milestone-20-memory-ratings-system/task-110-documentation.md
+      estimated_hours: 1-2
+      dependencies: [task-109]
+      notes: |
+        CHANGELOG, README, migration guide updates. Version bump to 0.31.0.
+
 documentation:
   design_documents: 13
-  milestone_documents: 15
+  milestone_documents: 16
   pattern_documents: 25
-  task_documents: 94
+  task_documents: 101
 
 progress:
   planning: 100
@@ -1489,6 +1570,16 @@ progress:
   overall: 95
 
 recent_work:
+  - date: 2026-03-05
+    description: |
+      Planned M20 — Memory Ratings System
+    items:
+      - "Created milestone-20-memory-ratings-system.md"
+      - "Created 7 tasks (task-104 through task-110)"
+      - "Design doc already complete: agent/design/local.memory-ratings.md"
+      - "Clarifications 8-10 already complete"
+      - "All dependencies satisfied (M18 Memory Index Lookup, M11 Sort Modes)"
+      - "Scope: RatingService, byRating sort, REST endpoints, SVC client, tests, docs"
   - date: 2026-03-05
     description: |
       M17 COMPLETE — File Format Extraction (tasks 85-92)

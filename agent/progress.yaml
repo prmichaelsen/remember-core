@@ -1598,9 +1598,10 @@ tasks:
 
     - id: task-113
       name: Unit Tests
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-21-content-moderation/task-113-unit-tests.md
       estimated_hours: 2-3
+      completed_date: 2026-03-05
       dependencies: [task-111, task-112]
       notes: |
         ModerationService tests (mock HTTP) + SpaceService moderation tests (mock client).

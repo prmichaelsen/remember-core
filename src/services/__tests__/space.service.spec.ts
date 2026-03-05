@@ -1,5 +1,7 @@
 import { SpaceService } from '../space.service.js';
 import { ConfirmationTokenService } from '../confirmation-token.service.js';
+import { createMockModerationClient, type ModerationClient } from '../moderation.service.js';
+import { ValidationError } from '../../errors/app-errors.js';
 import {
   createMockCollection,
   createMockWeaviateClient,
@@ -335,6 +337,90 @@ describe('SpaceService', () => {
       expect(result.question).toBe('hiking');
       expect(result.spaces_queried).toEqual(['the_void']);
       expect(result.memories).toBeDefined();
+    });
+  });
+
+  describe('content moderation', () => {
+    let moderatedService: SpaceService;
+    let blockingClient: ModerationClient;
+
+    beforeEach(() => {
+      blockingClient = createMockModerationClient({
+        pass: false,
+        reason: 'Contains explicit hate speech',
+        category: 'hate_speech',
+      });
+    });
+
+    function createServiceWithModeration(client: ModerationClient) {
+      return new SpaceService(
+        weaviateClient as any,
+        userCollection as any,
+        userId,
+        confirmationService,
+        logger,
+        { moderationClient: client },
+      );
+    }
+
+    it('publish succeeds when moderation passes', async () => {
+      moderatedService = createServiceWithModeration(createMockModerationClient());
+      const memoryId = await insertUserMemory();
+      const result = await moderatedService.publish({
+        memory_id: memoryId,
+        spaces: ['the_void'],
+      });
+      expect(result.token).toBeDefined();
+    });
+
+    it('publish throws ValidationError when moderation blocks', async () => {
+      moderatedService = createServiceWithModeration(blockingClient);
+      const memoryId = await insertUserMemory();
+
+      await expect(
+        moderatedService.publish({ memory_id: memoryId, spaces: ['the_void'] }),
+      ).rejects.toThrow(ValidationError);
+
+      try {
+        await moderatedService.publish({ memory_id: memoryId, spaces: ['the_void'] });
+      } catch (e) {
+        const err = e as ValidationError;
+        expect(err.message).toBe('Contains explicit hate speech');
+        expect(err.fields.moderation).toEqual(['blocked']);
+        expect(err.fields.category).toEqual(['hate_speech']);
+      }
+    });
+
+    it('revise succeeds when moderation passes', async () => {
+      moderatedService = createServiceWithModeration(createMockModerationClient());
+      const memoryId = await insertUserMemory({ space_ids: ['the_void'] });
+      const result = await moderatedService.revise({ memory_id: memoryId });
+      expect(result.token).toBeDefined();
+    });
+
+    it('revise throws ValidationError when moderation blocks', async () => {
+      moderatedService = createServiceWithModeration(blockingClient);
+      const memoryId = await insertUserMemory({ space_ids: ['the_void'] });
+
+      await expect(
+        moderatedService.revise({ memory_id: memoryId }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('publish works normally without moderationClient', async () => {
+      // Default service has no moderationClient
+      const memoryId = await insertUserMemory();
+      const result = await service.publish({
+        memory_id: memoryId,
+        spaces: ['the_void'],
+      });
+      expect(result.token).toBeDefined();
+    });
+
+    it('revise works normally without moderationClient', async () => {
+      const memoryId = await insertUserMemory({ space_ids: ['the_void'] });
+      const result = await service.revise({ memory_id: memoryId });
+      expect(result.token).toBeDefined();
     });
   });
 });

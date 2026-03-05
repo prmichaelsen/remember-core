@@ -1368,13 +1368,15 @@ tasks:
         6 new tests: index hit, index miss/fallback, nonexistent, soft-deleted, no client error, no index.
     - id: task-96
       name: Backfill Migration Script
-      status: not_started
+      status: complete
       file: agent/tasks/milestone-18-memory-index-lookup/task-96-backfill-migration-script.md
       estimated_hours: 3-4
       dependencies: task-93
       notes: |
-        Script scanning all Weaviate collections, writing index entries.
-        Batch Firestore writes. Idempotent. npm script added.
+        scripts/migrations/backfill-memory-index.ts — scans Firestore collection registry,
+        fetches all memories from each Memory_ collection, indexes via MemoryIndexService.
+        Idempotent (uses set()). npm script: migrate:backfill-memory-index.
+        5 tests verifying index writes, idempotency, multi-collection-type, lookup.
     - id: task-97
       name: Deprecate MemoryResolutionService
       status: not_started

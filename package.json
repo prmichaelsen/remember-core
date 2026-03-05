@@ -129,6 +129,7 @@
     "duplicates:find": "tsx scripts/find-duplicates.ts",
     "duplicates:process": "tsx scripts/deduplicate.ts",
     "migrate:backfill-relationship-count": "node --import tsx/esm scripts/migrations/backfill-relationship-count.ts",
+    "migrate:backfill-memory-index": "node --import tsx/esm scripts/migrations/backfill-memory-index.ts",
     "prepublishOnly": "npm run clean && npm run build && npm run test"
   },
   "keywords": [

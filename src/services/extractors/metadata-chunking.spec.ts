@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ImportJobWorker } from '../import-job.worker.js';
 import type { JobService } from '../job.service.js';
 import type { MemoryService } from '../memory.service.js';
@@ -10,25 +9,25 @@ import type { FileExtractor, ExtractionResult } from './types.js';
 import { chunkByTokens } from '../import.service.js';
 
 // Mock downloadFile
-vi.mock('./download.js', () => ({
-  downloadFile: vi.fn(),
+jest.mock('./download.js', () => ({
+  downloadFile: jest.fn(),
 }));
 
 import { downloadFile } from './download.js';
-const mockDownload = vi.mocked(downloadFile);
+const mockDownload = jest.mocked(downloadFile);
 
 function createMocks() {
   let memCounter = 0;
   return {
     jobService: {
-      addStep: vi.fn(),
-      updateStep: vi.fn(),
-      updateProgress: vi.fn(),
-      complete: vi.fn(),
-      isCancelled: vi.fn().mockResolvedValue(false),
+      addStep: jest.fn(),
+      updateStep: jest.fn(),
+      updateProgress: jest.fn(),
+      complete: jest.fn(),
+      isCancelled: jest.fn().mockResolvedValue(false),
     } as unknown as JobService,
     memoryService: {
-      create: vi.fn().mockImplementation(() => {
+      create: jest.fn().mockImplementation(() => {
         memCounter++;
         return Promise.resolve({
           memory_id: `mem-${memCounter}`,
@@ -37,15 +36,15 @@ function createMocks() {
       }),
     } as unknown as MemoryService,
     relationshipService: {
-      create: vi.fn().mockResolvedValue({
+      create: jest.fn().mockResolvedValue({
         relationship_id: 'rel-1',
         memory_ids: [],
         created_at: new Date().toISOString(),
       }),
     } as unknown as RelationshipService,
     haikuClient: {
-      validateCluster: vi.fn(),
-      extractFeatures: vi.fn().mockResolvedValue({
+      validateCluster: jest.fn(),
+      extractFeatures: jest.fn().mockResolvedValue({
         keywords: [],
         topics: [],
         themes: [],
@@ -53,10 +52,10 @@ function createMocks() {
       }),
     } as HaikuClient,
     logger: {
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
     } as Logger,
   };
 }
@@ -67,7 +66,7 @@ describe('source:file_import tagging', () => {
     const registry = new ExtractorRegistry();
     registry.register({
       supportedMimeTypes: ['application/pdf'],
-      extract: vi.fn().mockResolvedValue({
+      extract: jest.fn().mockResolvedValue({
         text: 'Extracted text',
         metadata: {},
       } as ExtractionResult),
@@ -83,7 +82,7 @@ describe('source:file_import tagging', () => {
       items: [{ file_url: 'https://example.com/doc.pdf', mime_type: 'application/pdf' }],
     });
 
-    const createCalls = vi.mocked(mocks.memoryService.create).mock.calls;
+    const createCalls = jest.mocked(mocks.memoryService.create).mock.calls;
     // Both chunk and parent should have source:file_import
     for (const call of createCalls) {
       expect((call[0] as any).tags).toContain('source:file_import');
@@ -101,7 +100,7 @@ describe('source:file_import tagging', () => {
       items: [{ content: 'Plain text' }],
     });
 
-    const createCalls = vi.mocked(mocks.memoryService.create).mock.calls;
+    const createCalls = jest.mocked(mocks.memoryService.create).mock.calls;
     for (const call of createCalls) {
       expect((call[0] as any).tags).not.toContain('source:file_import');
     }
@@ -114,7 +113,7 @@ describe('document metadata tags on parent summary', () => {
     const registry = new ExtractorRegistry();
     registry.register({
       supportedMimeTypes: ['application/pdf'],
-      extract: vi.fn().mockResolvedValue({
+      extract: jest.fn().mockResolvedValue({
         text: 'Extracted text content',
         metadata: { title: 'My Doc', author: 'Alice', pages: '5' },
       } as ExtractionResult),
@@ -130,7 +129,7 @@ describe('document metadata tags on parent summary', () => {
       items: [{ file_url: 'https://example.com/doc.pdf', mime_type: 'application/pdf' }],
     });
 
-    const createCalls = vi.mocked(mocks.memoryService.create).mock.calls;
+    const createCalls = jest.mocked(mocks.memoryService.create).mock.calls;
     // Last create call should be the parent summary
     const parentCall = createCalls[createCalls.length - 1][0] as any;
     expect(parentCall.tags).toContain('doc:title:My Doc');

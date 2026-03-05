@@ -1,16 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { downloadFile } from './download.js';
 
 describe('downloadFile', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   it('returns Buffer from successful download', async () => {
     const content = 'hello world';
     const arrayBuffer = new TextEncoder().encode(content).buffer;
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(arrayBuffer, { status: 200 }),
     );
 
@@ -20,7 +19,7 @@ describe('downloadFile', () => {
   });
 
   it('throws on non-200 response', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(null, { status: 403, statusText: 'Forbidden' }),
     );
 
@@ -29,7 +28,7 @@ describe('downloadFile', () => {
   });
 
   it('throws on 404 response', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(null, { status: 404, statusText: 'Not Found' }),
     );
 
@@ -38,7 +37,7 @@ describe('downloadFile', () => {
   });
 
   it('throws on network failure', async () => {
-    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+    jest.spyOn(globalThis, 'fetch').mockRejectedValue(
       new TypeError('Failed to fetch'),
     );
 
@@ -48,7 +47,7 @@ describe('downloadFile', () => {
 
   it('handles binary content', async () => {
     const bytes = new Uint8Array([0x00, 0x01, 0xFF, 0xFE]);
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(bytes.buffer, { status: 200 }),
     );
 

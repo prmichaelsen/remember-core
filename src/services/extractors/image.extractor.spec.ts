@@ -1,10 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
 import { ImageExtractor } from './image.extractor.js';
 import type { VisionClient } from './image.extractor.js';
 
 describe('ImageExtractor', () => {
   function createMockClient(text: string): VisionClient {
-    return { detectText: vi.fn().mockResolvedValue(text) };
+    return { detectText: jest.fn().mockResolvedValue(text) };
   }
 
   it('supports all image MIME types', () => {
@@ -37,7 +36,7 @@ describe('ImageExtractor', () => {
 
   it('propagates Vision API errors', async () => {
     const client: VisionClient = {
-      detectText: vi.fn().mockRejectedValue(new Error('Vision API error')),
+      detectText: jest.fn().mockRejectedValue(new Error('Vision API error')),
     };
     const extractor = new ImageExtractor(client);
 

@@ -1,22 +1,21 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PdfExtractor } from './pdf.extractor.js';
 import type { DocumentAiClient, Logger } from './pdf.extractor.js';
 import type { ExtractionResult } from './types.js';
 
 // Mock unpdf module
-vi.mock('unpdf', () => ({
-  extractText: vi.fn(),
-  getMeta: vi.fn(),
+jest.mock('unpdf', () => ({
+  extractText: jest.fn(),
+  getMeta: jest.fn(),
 }));
 
 import { extractText, getMeta } from 'unpdf';
 
-const mockExtractText = vi.mocked(extractText);
-const mockGetMeta = vi.mocked(getMeta);
+const mockExtractText = jest.mocked(extractText);
+const mockGetMeta = jest.mocked(getMeta);
 
 describe('PdfExtractor', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     mockGetMeta.mockResolvedValue({
       info: {},
       metadata: {} as any,
@@ -72,9 +71,9 @@ describe('PdfExtractor', () => {
       page_boundaries: [0, 100],
     };
     const documentAiClient: DocumentAiClient = {
-      extractText: vi.fn().mockResolvedValue(ocrResult),
+      extractText: jest.fn().mockResolvedValue(ocrResult),
     };
-    const logger: Logger = { info: vi.fn(), warn: vi.fn() };
+    const logger: Logger = { info: jest.fn(), warn: jest.fn() };
 
     const extractor = new PdfExtractor(documentAiClient, logger);
     const result = await extractor.extract(Buffer.from('fake-pdf'), 'application/pdf');
@@ -107,7 +106,7 @@ describe('PdfExtractor', () => {
     } as any);
 
     const documentAiClient: DocumentAiClient = {
-      extractText: vi.fn(),
+      extractText: jest.fn(),
     };
 
     const extractor = new PdfExtractor(documentAiClient);

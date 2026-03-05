@@ -1,27 +1,31 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DocxExtractor } from './docx.extractor.js';
 
+const mockTurndownFn = jest.fn();
+
 // Mock mammoth and turndown
-vi.mock('mammoth', () => ({
-  convertToHtml: vi.fn(),
+jest.mock('mammoth', () => ({
+  convertToHtml: jest.fn(),
 }));
 
-vi.mock('turndown', () => {
-  const mockTurndown = vi.fn();
-  mockTurndown.prototype.turndown = vi.fn();
-  return { default: mockTurndown };
+jest.mock('turndown', () => {
+  return {
+    __esModule: true,
+    default: jest.fn().mockImplementation(() => ({
+      turndown: mockTurndownFn,
+    })),
+  };
 });
 
 import { convertToHtml } from 'mammoth';
 import TurndownService from 'turndown';
 
-const mockConvertToHtml = vi.mocked(convertToHtml);
+const mockConvertToHtml = jest.mocked(convertToHtml);
 
 describe('DocxExtractor', () => {
   const extractor = new DocxExtractor();
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   it('supports DOCX MIME type', () => {
@@ -38,7 +42,7 @@ describe('DocxExtractor', () => {
       value: html,
       messages: [],
     });
-    vi.mocked(TurndownService.prototype.turndown).mockReturnValue(markdown);
+    mockTurndownFn.mockReturnValue(markdown);
 
     const result = await extractor.extract(Buffer.from('fake-docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 
@@ -52,7 +56,7 @@ describe('DocxExtractor', () => {
       value: '',
       messages: [],
     });
-    vi.mocked(TurndownService.prototype.turndown).mockReturnValue('');
+    mockTurndownFn.mockReturnValue('');
 
     const result = await extractor.extract(Buffer.from('fake-docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     expect(result.text).toBe('');
@@ -63,7 +67,7 @@ describe('DocxExtractor', () => {
       value: '<p>test</p>',
       messages: [],
     });
-    vi.mocked(TurndownService.prototype.turndown).mockReturnValue('test');
+    mockTurndownFn.mockReturnValue('test');
 
     const result = await extractor.extract(Buffer.from('fake-docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     expect(result.page_boundaries).toBeUndefined();
@@ -74,7 +78,7 @@ describe('DocxExtractor', () => {
       value: '<p>test</p>',
       messages: [],
     });
-    vi.mocked(TurndownService.prototype.turndown).mockReturnValue('test');
+    mockTurndownFn.mockReturnValue('test');
 
     await extractor.extract(Buffer.from('fake-docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 

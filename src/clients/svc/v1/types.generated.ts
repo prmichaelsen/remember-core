@@ -367,6 +367,10 @@ export interface paths {
         /**
          * Publish a memory to shared spaces
          * @description Returns a confirmation token. Call /confirmations/{token}/confirm to execute.
+         *     Content is checked by automated moderation before publishing. If content violates
+         *     moderation policy (hate speech, extremism, violence incitement, CSAM, self-harm
+         *     encouragement), a 400 ValidationError is returned with context.fields.moderation=['blocked']
+         *     and context.fields.category indicating the violation type.
          */
         post: operations["publishToSpace"];
         delete?: never;
@@ -407,6 +411,8 @@ export interface paths {
         /**
          * Propose a content revision
          * @description Returns a confirmation token. Call /confirmations/{token}/confirm to execute.
+         *     Content is checked by automated moderation before revising. If content violates
+         *     moderation policy, a 400 ValidationError is returned with context.fields.moderation=['blocked'].
          */
         post: operations["reviseInSpace"];
         delete?: never;
@@ -656,6 +662,8 @@ export interface components {
             /** Format: date-time */
             date_to?: string;
             has_relationships?: boolean;
+            /** @description Minimum rating_bayesian score (e.g. 4.0 for highly-rated memories) */
+            rating_min?: number;
             /** @description Inclusive lower bound on relationship_count */
             relationship_count_min?: number;
             /** @description Inclusive upper bound on relationship_count */

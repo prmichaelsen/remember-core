@@ -1240,6 +1240,11 @@ components:
           format: date-time
         has_relationships:
           type: boolean
+        rating_min:
+          type: number
+          minimum: 1
+          maximum: 5
+          description: Minimum rating_bayesian score (e.g. 4.0 for highly-rated memories)
         relationship_count_min:
           type: integer
           minimum: 0

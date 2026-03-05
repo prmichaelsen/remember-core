@@ -136,6 +136,13 @@ function buildDocTypeFilters(
     );
   }
 
+  // Rating minimum (Bayesian score)
+  if (filters?.rating_min !== undefined) {
+    filterList.push(
+      collection.filter.byProperty('rating_bayesian').greaterOrEqual(filters.rating_min),
+    );
+  }
+
   // Tags
   if (filters?.tags && filters.tags.length > 0) {
     filterList.push(

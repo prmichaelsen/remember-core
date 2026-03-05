@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.32.1] - 2026-03-05
+
+### Added
+- `rating_min` filter on `SearchFilters` — filter search results by minimum Bayesian rating score at the Weaviate query level
+- OpenAPI `SearchFilters.rating_min` property with min/max validation
+
 ## [0.32.0] - 2026-03-05
 
 ### Added

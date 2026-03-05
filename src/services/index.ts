@@ -264,3 +264,12 @@ export {
   RatingService,
   type RatingServiceParams,
 } from './rating.service.js';
+
+// Content moderation
+export {
+  type ModerationCategory,
+  type ModerationResult,
+  type ModerationClient,
+  createModerationClient,
+  createMockModerationClient,
+} from './moderation.service.js';

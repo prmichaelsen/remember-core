@@ -3,7 +3,7 @@ project:
   version: 0.27.3
   started: 2026-02-27
   status: in_progress
-  current_milestone: M13
+  current_milestone: M18
   # M14, M15, M16 all completed. M13 (Performance) remains not_started.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -273,6 +273,23 @@ milestones:
       DOCX via mammoth + Turndown. Images via Google Vision API.
       See: agent/milestones/milestone-17-file-format-extraction.md
       See: agent/design/local.file-format-extraction.md
+
+  - id: M18
+    name: Memory Index Lookup Table
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 5
+    started: null
+    completed: null
+    notes: |
+      Firestore lookup table mapping memory UUIDs to Weaviate collection names.
+      Replaces MemoryResolutionService 2-try fallback with O(1) index reads.
+      MemoryService.getById() folds resolution into the service itself.
+      Backfill migration for existing memories. MemoryResolutionService deprecated.
+      See: agent/milestones/milestone-18-memory-index-lookup.md
+      See: agent/design/local.memory-index-lookup.md
 
 tasks:
   milestone_1:
@@ -1312,16 +1329,64 @@ tasks:
         Update OpenAPI spec with file_url/mime_type. Add peer dependencies.
         Regenerate SVC client types. Update barrel exports. MIME whitelist.
 
+  milestone_18:
+    - id: task-93
+      name: MemoryIndexService
+      status: not_started
+      file: agent/tasks/milestone-18-memory-index-lookup/task-93-memory-index-service.md
+      estimated_hours: 2-3
+      dependencies: null
+      notes: |
+        Firestore-backed service with index() and lookup() methods.
+        MemoryIndexEntry type. Path helper in firestore/paths.ts.
+    - id: task-94
+      name: Wire Index Write into MemoryService.create
+      status: not_started
+      file: agent/tasks/milestone-18-memory-index-lookup/task-94-wire-index-write.md
+      estimated_hours: 2-3
+      dependencies: task-93
+      notes: |
+        Add optional MemoryIndexService to MemoryService constructor.
+        Wire index write into create() after Weaviate insert.
+    - id: task-95
+      name: Add MemoryService.getById with Index Lookup
+      status: not_started
+      file: agent/tasks/milestone-18-memory-index-lookup/task-95-memory-service-getbyid.md
+      estimated_hours: 2-3
+      dependencies: [task-93, task-94]
+      notes: |
+        New getById(memoryId) method on MemoryService.
+        Index lookup + Weaviate fetch. Legacy fallback for unindexed memories.
+    - id: task-96
+      name: Backfill Migration Script
+      status: not_started
+      file: agent/tasks/milestone-18-memory-index-lookup/task-96-backfill-migration-script.md
+      estimated_hours: 3-4
+      dependencies: task-93
+      notes: |
+        Script scanning all Weaviate collections, writing index entries.
+        Batch Firestore writes. Idempotent. npm script added.
+    - id: task-97
+      name: Deprecate MemoryResolutionService
+      status: not_started
+      file: agent/tasks/milestone-18-memory-index-lookup/task-97-deprecate-memory-resolution-service.md
+      estimated_hours: 2-3
+      dependencies: [task-95, task-96]
+      notes: |
+        Delete MemoryResolutionService. Remove MemorySource type.
+        Migrate all callers to MemoryService.getById().
+        Remove legacy fallback from getById.
+
 documentation:
-  design_documents: 12
-  milestone_documents: 13
+  design_documents: 13
+  milestone_documents: 14
   pattern_documents: 25
-  task_documents: 84
+  task_documents: 89
 
 progress:
   planning: 100
-  implementation: 100
-  overall: 100
+  implementation: 95
+  overall: 95
 
 recent_work:
   - date: 2026-03-05

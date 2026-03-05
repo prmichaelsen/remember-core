@@ -1,5 +1,10 @@
 # @prmichaelsen/remember-core
 
+[![npm version](https://img.shields.io/npm/v/@prmichaelsen/remember-core.svg)](https://www.npmjs.com/package/@prmichaelsen/remember-core)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Publish](https://github.com/prmichaelsen/remember-core/actions/workflows/publish.yml/badge.svg)](https://github.com/prmichaelsen/remember-core/actions/workflows/publish.yml)
+[![npm downloads](https://img.shields.io/npm/dm/@prmichaelsen/remember-core.svg)](https://www.npmjs.com/package/@prmichaelsen/remember-core)
+
 Transport-agnostic core SDK for Remember. Extracts business logic from remember-mcp so both remember-mcp-server (MCP transport) and remember-rest-server (REST transport) can share the same services.
 
 ## Installation

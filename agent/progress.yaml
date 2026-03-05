@@ -1559,7 +1559,7 @@ tasks:
         Uses generated types from OpenAPI spec.
     - id: task-109
       name: Unit Tests
-      status: not_started
+      status: done
       file: agent/tasks/milestone-20-memory-ratings-system/task-109-unit-tests.md
       estimated_hours: 3-4
       dependencies: [task-105, task-106, task-108]

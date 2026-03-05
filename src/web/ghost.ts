@@ -44,8 +44,8 @@ export async function updateGhostConfig(
   input: {
     enabled?: boolean;
     public_ghost_enabled?: boolean;
-    default_friend_trust?: number;
-    default_public_trust?: number;
+    default_friend_trust?: GhostConfig['default_friend_trust'];
+    default_public_trust?: GhostConfig['default_public_trust'];
     enforcement_mode?: 'query' | 'prompt' | 'hybrid';
   },
 ): Promise<Result<{ success: boolean; config: GhostConfig; message: string }>> {

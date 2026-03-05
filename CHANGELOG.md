@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.28.0] - 2026-03-05
+
+### Changed
+- **BREAKING: Trust levels now use integer 1-5 scale** (task-98, M19)
+  - New `TrustLevel` const+type: `PUBLIC=1, INTERNAL=2, CONFIDENTIAL=3, RESTRICTED=4, SECRET=5`
+  - `TRUST_LABELS` mapping and `ALL_TRUST_LEVELS` ordered array
+  - `isValidTrustLevel()` validator for runtime checks
+  - Higher value = more confidential (inverted from previous float semantics)
+  - `Memory.trust` typed as `TrustLevel` (was `number`)
+  - `GhostConfig.default_friend_trust` default: `2` (was `0.25`)
+  - `GhostConfig.default_public_trust` default: `1` (was `0`)
+  - `GhostConfig.per_user_trust` values typed as `TrustLevel`
+  - `AccessInsufficientTrust.required_trust` / `actual_trust` typed as `TrustLevel`
+  - `resolveAccessorTrustLevel()` returns `TrustLevel`
+  - `TRUST_THRESHOLDS` deprecated (will be removed in next major)
+
 ## [0.27.4] - 2026-03-05
 
 ### Added

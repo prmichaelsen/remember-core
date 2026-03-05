@@ -4,6 +4,7 @@
  */
 
 import type { Location, MemoryContext } from './context.types.js';
+import type { TrustLevel } from './trust.types.js';
 
 /**
  * Source of a relationship — who/what created it.
@@ -94,7 +95,7 @@ export interface Memory {
 
   // Significance & Trust
   weight: number; // 0-1, significance/priority
-  trust: number; // 0-1, access control level
+  trust: TrustLevel; // 1-5 integer, higher = more confidential
   confidence?: number; // 0-1, system confidence in accuracy
 
   // Location (from platform)

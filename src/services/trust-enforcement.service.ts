@@ -10,10 +10,12 @@
 
 import type { Memory } from '../types/memory.types.js';
 import type { TrustEnforcementMode } from '../types/ghost-config.types.js';
+import { TrustLevel, TRUST_LABELS } from '../types/trust.types.js';
 
-// ─── Trust Level Thresholds ────────────────────────────────────────────────
-
-/** Trust level thresholds mapping continuous 0-1 values to discrete behavior tiers */
+/**
+ * @deprecated Use TrustLevel from '../types/trust.types.js' instead.
+ * Kept temporarily for downstream consumers — will be removed in next major.
+ */
 export const TRUST_THRESHOLDS = {
   FULL_ACCESS: 1.0,
   PARTIAL_ACCESS: 0.75,

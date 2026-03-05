@@ -1,9 +1,12 @@
 /**
  * Discriminated union for type-safe access control responses.
  * Ported from remember-mcp/src/types/access-result.ts
+ *
+ * Trust levels use integer 1-5 scale (higher = more confidential).
  */
 
 import type { Memory } from './memory.types.js';
+import type { TrustLevel } from './trust.types.js';
 
 /** Access granted — owner or trusted cross-user access */
 export interface AccessGranted {
@@ -16,8 +19,8 @@ export interface AccessGranted {
 export interface AccessInsufficientTrust {
   status: 'insufficient_trust';
   memory_id: string;
-  required_trust: number;
-  actual_trust: number;
+  required_trust: TrustLevel;
+  actual_trust: TrustLevel;
   attempts_remaining: number;
 }
 

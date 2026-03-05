@@ -296,7 +296,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 5
     notes: |
       Redesign trust system: invert semantics (higher = more confidential),
@@ -1407,13 +1407,18 @@ tasks:
   milestone_19:
     - id: task-98
       name: Trust Types and Constants
-      status: not_started
+      status: completed
+      completed_date: 2026-03-05
       file: agent/tasks/milestone-19-trust-level-redesign/task-98-trust-types-and-constants.md
       estimated_hours: 2-3
+      actual_hours: 0.25
       dependencies: null
       notes: |
-        TrustLevel enum (1-5), TRUST_LABELS mapping, update GhostConfig types,
-        Memory.trust type, remove old TRUST_THRESHOLDS.
+        Created src/types/trust.types.ts: TrustLevel const+type (1-5), TRUST_LABELS,
+        ALL_TRUST_LEVELS, isValidTrustLevel(). Updated GhostConfig to use TrustLevel
+        (default_friend_trust=2, default_public_trust=1). Memory.trust typed as TrustLevel.
+        AccessResult trust fields typed as TrustLevel. resolveAccessorTrustLevel returns
+        TrustLevel. TRUST_THRESHOLDS deprecated. TypeScript compiles clean, 570 tests pass.
     - id: task-99
       name: Trust Enforcement Service Rewrite
       status: not_started

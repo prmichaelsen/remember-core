@@ -15,6 +15,7 @@ import type { Memory } from '../types/memory.types.js';
 import type { AccessResult } from '../types/access-result.types.js';
 import type { GhostConfig } from '../types/ghost-config.types.js';
 import type { WriteMode, UserCredentials } from '../types/auth.types.js';
+import { TrustLevel } from '../types/trust.types.js';
 import { isTrustSufficient } from './trust-enforcement.service.js';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -188,8 +189,8 @@ export async function handleInsufficientTrust(
   ownerUserId: string,
   accessorUserId: string,
   memoryId: string,
-  requiredTrust: number,
-  actualTrust: number,
+  requiredTrust: TrustLevel,
+  actualTrust: TrustLevel,
   escalationStore: EscalationStore,
 ): Promise<AccessResult> {
   const attempt = await escalationStore.incrementAttempts(ownerUserId, accessorUserId, memoryId);
@@ -214,7 +215,8 @@ export async function handleInsufficientTrust(
     status: 'insufficient_trust',
     memory_id: memoryId,
     required_trust: requiredTrust,
-    actual_trust: Math.max(0, actualTrust - TRUST_PENALTY),
+    // TODO(task-100): Remove penalty math, simplify to deny→deny→block
+    actual_trust: Math.max(1, actualTrust - TRUST_PENALTY) as TrustLevel,
     attempts_remaining: MAX_ATTEMPTS_BEFORE_BLOCK - attempt.count,
   };
 }
@@ -255,14 +257,14 @@ export async function resetBlock(
  * context when friend list/social graph is available. For now, non-per_user
  * accessors fall through to default_public_trust.
  */
-export function resolveAccessorTrustLevel(ghostConfig: GhostConfig, accessorUserId: string): number {
+export function resolveAccessorTrustLevel(ghostConfig: GhostConfig, accessorUserId: string): TrustLevel {
   // 1. Per-user override
   if (accessorUserId in ghostConfig.per_user_trust) {
     return ghostConfig.per_user_trust[accessorUserId];
   }
 
   // 2. Fall through to public trust (friend detection deferred)
-  return ghostConfig.default_public_trust ?? 0;
+  return ghostConfig.default_public_trust ?? TrustLevel.PUBLIC;
 }
 
 // ─── Message Formatting ───────────────────────────────────────────────────

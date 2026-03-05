@@ -92,6 +92,15 @@ export type {
   CredentialsProvider,
 } from './auth.types.js';
 
+// Trust level types (integer 1-5 scale)
+export {
+  TrustLevel,
+  TRUST_LABELS,
+  ALL_TRUST_LEVELS,
+  isValidTrustLevel,
+} from './trust.types.js';
+export type { TrustLevel as TrustLevelType } from './trust.types.js';
+
 // Ghost config types (ported from remember-mcp v3.11.0+)
 export type {
   TrustEnforcementMode,

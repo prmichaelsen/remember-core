@@ -837,8 +837,12 @@ export interface components {
             orphaned_relationship_ids: string[];
         };
         ImportItem: {
-            /** @description Raw text content to import */
-            content: string;
+            /** @description Raw text content (mutually exclusive with file_url) */
+            content?: string;
+            /** @description Signed HTTPS URL for file download (mutually exclusive with content) */
+            file_url?: string;
+            /** @description MIME type of the file (required when file_url is provided) */
+            mime_type?: string;
             /** @description Original filename for metadata */
             source_filename?: string;
         };

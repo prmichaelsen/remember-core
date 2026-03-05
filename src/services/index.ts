@@ -251,3 +251,12 @@ export {
 export type { ExtractionResult, FileExtractor } from './extractors/index.js';
 export { ExtractorRegistry, createDefaultRegistry } from './extractors/index.js';
 export { downloadFile } from './extractors/index.js';
+export { PlaintextExtractor } from './extractors/index.js';
+export { HtmlExtractor } from './extractors/index.js';
+export { PdfExtractor } from './extractors/index.js';
+export type { DocumentAiClient, Logger as ExtractorLogger } from './extractors/index.js';
+export { DocxExtractor } from './extractors/index.js';
+export { ImageExtractor } from './extractors/index.js';
+export type { VisionClient } from './extractors/index.js';
+export { validateImportItems, type ValidationError as ImportValidationError } from './extractors/index.js';
+export { ALLOWED_MIME_TYPES } from './extractors/index.js';

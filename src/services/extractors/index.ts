@@ -9,3 +9,24 @@ export { DocxExtractor } from './docx.extractor.js';
 export { ImageExtractor } from './image.extractor.js';
 export type { VisionClient } from './image.extractor.js';
 export { validateImportItems, type ValidationError } from './validation.js';
+
+/** MIME types supported for file import */
+export const ALLOWED_MIME_TYPES = [
+  // Documents
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/html',
+  'text/plain',
+  'text/markdown',
+  // Images (OCR)
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'image/tiff',
+  // Structured data
+  'text/csv',
+  'application/json',
+  'application/x-yaml',
+  'text/yaml',
+] as const;

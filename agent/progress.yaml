@@ -260,9 +260,10 @@ milestones:
   - id: M17
     name: File Format Extraction
     status: in_progress
-    progress: 87
+    status: completed
+    progress: 100
     estimated_weeks: 2-3
-    tasks_completed: 7
+    tasks_completed: 8
     tasks_total: 8
     notes: |
       Pluggable file-to-text extraction pipeline for PDF, DOCX, images (OCR),
@@ -1301,7 +1302,9 @@ tasks:
         in chunk markers. Best-effort section-aware chunking on headings.
     - id: task-92
       name: OpenAPI Spec and Documentation
-      status: not_started
+      status: completed
+      completed_date: 2026-03-05
+      actual_hours: 0.3
       file: agent/tasks/milestone-17-file-format-extraction/task-92-openapi-spec-documentation.md
       estimated_hours: 2-3
       dependencies: task-90
@@ -1323,14 +1326,17 @@ progress:
 recent_work:
   - date: 2026-03-05
     description: |
-      M17 task-85: Extractor Infrastructure — complete
+      M17 COMPLETE — File Format Extraction (tasks 85-92)
     items:
-      - "Created FileExtractor interface and ExtractionResult type"
-      - "Created ExtractorRegistry with register/getExtractor/getSupportedMimeTypes"
-      - "Created downloadFile() utility (plain fetch with signed URLs)"
-      - "Barrel exports from src/services/extractors/index.ts"
-      - "Added extractors to services barrel export"
-      - "13 tests passing (registry: 8, download: 5)"
+      - "task-85: FileExtractor interface, ExtractorRegistry, downloadFile()"
+      - "task-86: PlaintextExtractor + HtmlExtractor (Turndown)"
+      - "task-87: PdfExtractor (unpdf + Document AI fallback)"
+      - "task-88: DocxExtractor (mammoth + Turndown)"
+      - "task-89: ImageExtractor (Vision API OCR)"
+      - "task-90: Import pipeline integration (file_url, extraction steps, validation)"
+      - "task-91: source:file_import tags, doc metadata tags, page markers, section-aware chunking"
+      - "task-92: OpenAPI spec, peer deps, SVC types, ALLOWED_MIME_TYPES"
+      - "67 tests passing across 10 test files"
   - date: 2026-03-05
     description: |
       Planned M17 — File Format Extraction

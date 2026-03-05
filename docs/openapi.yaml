@@ -1611,11 +1611,16 @@ components:
     # ----------------------------------------------------------
     ImportItem:
       type: object
-      required: [content]
       properties:
         content:
           type: string
-          description: Raw text content to import
+          description: Raw text content (mutually exclusive with file_url)
+        file_url:
+          type: string
+          description: Signed HTTPS URL for file download (mutually exclusive with content)
+        mime_type:
+          type: string
+          description: MIME type of the file (required when file_url is provided)
         source_filename:
           type: string
           description: Original filename for metadata

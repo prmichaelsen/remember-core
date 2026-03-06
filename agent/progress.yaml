@@ -344,6 +344,21 @@ milestones:
       See: agent/milestones/milestone-21-content-moderation.md
       See: agent/design/local.content-moderation.md
 
+  - id: M22
+    name: Content Hash Deduplication
+    status: not_started
+    progress: 0
+    estimated_weeks: 1.5
+    tasks_completed: 0
+    tasks_total: 5
+    notes: |
+      SHA-256 content hash deduplication for aggregate feeds.
+      Precedence: space > group > personal. Origin links (source_memory_id)
+      for tracking diverged copies. Service-layer dedupe after cross-collection
+      merge. API: also_in metadata + dedupe disable parameter.
+      See: agent/milestones/milestone-22-content-hash-dedupe.md
+      See: agent/design/local.content-hash-dedupe.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1632,6 +1647,56 @@ tasks:
       notes: |
         CHANGELOG, OpenAPI specs, README. Version bump to 0.32.0.
 
+  milestone_22:
+    - id: task-118
+      name: Schema Migration — content_hash and source_memory_id
+      status: not_started
+      file: agent/tasks/milestone-22-content-hash-dedupe/task-118-schema-migration.md
+      estimated_hours: 3-4
+      dependencies: []
+      notes: |
+        Add content_hash and source_memory_id to Weaviate schema, types, and client.
+        Backfill script for existing memories.
+
+    - id: task-119
+      name: Hash Computation on Write
+      status: not_started
+      file: agent/tasks/milestone-22-content-hash-dedupe/task-119-hash-computation.md
+      estimated_hours: 2-3
+      dependencies: [task-118]
+      notes: |
+        computeContentHash utility (SHA-256 of content + sorted references).
+        Wire into MemoryService.create() and update().
+
+    - id: task-120
+      name: Origin Link on Publish/Share
+      status: not_started
+      file: agent/tasks/milestone-22-content-hash-dedupe/task-120-origin-link.md
+      estimated_hours: 2-3
+      dependencies: [task-118]
+      notes: |
+        Set source_memory_id on group/space copies at publish/share time.
+
+    - id: task-121
+      name: Service-Layer Deduplication
+      status: not_started
+      file: agent/tasks/milestone-22-content-hash-dedupe/task-121-service-deduplication.md
+      estimated_hours: 4-6
+      dependencies: [task-119]
+      notes: |
+        dedupeMemories utility with precedence rules (space > group > personal).
+        Wire into aggregate query methods. also_in metadata.
+
+    - id: task-122
+      name: API Contract — also_in and dedupe Parameter
+      status: not_started
+      file: agent/tasks/milestone-22-content-hash-dedupe/task-122-api-contract.md
+      estimated_hours: 2-3
+      dependencies: [task-121]
+      notes: |
+        Expose also_in in responses. Add dedupe query parameter.
+        Update OpenAPI specs.
+
   unassigned:
     - id: task-115
       name: Wire ModerationClient in remember-rest-service
@@ -1655,10 +1720,10 @@ tasks:
         user_id matches collection owner. Root cause unknown.
 
 documentation:
-  design_documents: 14
-  milestone_documents: 17
+  design_documents: 15
+  milestone_documents: 18
   pattern_documents: 25
-  task_documents: 106
+  task_documents: 111
 
 progress:
   planning: 100
@@ -1666,6 +1731,16 @@ progress:
   overall: 95
 
 recent_work:
+  - date: 2026-03-06
+    description: |
+      Planned M22 — Content Hash Deduplication
+    items:
+      - "Created milestone-22-content-hash-dedupe.md"
+      - "Created 5 tasks (task-118 through task-122)"
+      - "Design doc: agent/design/local.content-hash-dedupe.md"
+      - "Clarification 13 complete (scope, precedence, hash definition, implementation)"
+      - "Source: agentbase.me draft content-hash-dedupe.md"
+      - "Scope: schema migration, hash on write, origin links, service-layer dedupe, API contract"
   - date: 2026-03-05
     description: |
       Planned M21 — Content Moderation

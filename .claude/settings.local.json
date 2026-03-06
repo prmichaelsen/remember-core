@@ -55,7 +55,8 @@
       "Bash(code:*)",
       "Bash(chmod +x:*)",
       "Bash(npx tsx:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(npm view:*)"
     ]
   }
 }

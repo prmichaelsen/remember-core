@@ -7,8 +7,9 @@ export interface DocumentAiClientConfig {
   location?: string;
 }
 
-export function createDocumentAiClient(config: DocumentAiClientConfig): DocumentAiClient {
-  const { DocumentProcessorServiceClient } = require('@google-cloud/documentai');
+export async function createDocumentAiClient(config: DocumentAiClientConfig): Promise<DocumentAiClient> {
+  // @ts-expect-error — optional peer dependency, resolved at runtime
+  const { DocumentProcessorServiceClient } = await import('@google-cloud/documentai');
 
   const credentials = typeof config.serviceAccountKey === 'string'
     ? JSON.parse(config.serviceAccountKey)

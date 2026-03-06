@@ -28,7 +28,7 @@ describe('createDocumentAiClient', () => {
       },
     }]);
 
-    const client = createDocumentAiClient(config);
+    const client = await createDocumentAiClient(config);
     const result = await client.extractText(Buffer.from('pdf data'));
 
     expect(mockProcessDocument).toHaveBeenCalledWith({
@@ -48,7 +48,7 @@ describe('createDocumentAiClient', () => {
       document: { text: '', pages: [] },
     }]);
 
-    const client = createDocumentAiClient(config);
+    const client = await createDocumentAiClient(config);
     const result = await client.extractText(Buffer.from('pdf'));
 
     expect(result.text).toBe('');
@@ -61,7 +61,7 @@ describe('createDocumentAiClient', () => {
       document: { text: 'text', pages: [] },
     }]);
 
-    const client = createDocumentAiClient({ ...config, location: 'eu' });
+    const client = await createDocumentAiClient({ ...config, location: 'eu' });
     await client.extractText(Buffer.from('pdf'));
 
     expect(mockProcessDocument).toHaveBeenCalledWith(
@@ -82,7 +82,7 @@ describe('createDocumentAiClient', () => {
       },
     }]);
 
-    const client = createDocumentAiClient(config);
+    const client = await createDocumentAiClient(config);
     const result = await client.extractText(Buffer.from('pdf'));
 
     expect(result.page_boundaries).toEqual([0, 14]);

@@ -4,8 +4,9 @@ export interface VisionClientConfig {
   serviceAccountKey: string | object;
 }
 
-export function createVisionClient(config: VisionClientConfig): VisionClient {
-  const { ImageAnnotatorClient } = require('@google-cloud/vision');
+export async function createVisionClient(config: VisionClientConfig): Promise<VisionClient> {
+  // @ts-expect-error — optional peer dependency, resolved at runtime
+  const { ImageAnnotatorClient } = await import('@google-cloud/vision');
 
   const credentials = typeof config.serviceAccountKey === 'string'
     ? JSON.parse(config.serviceAccountKey)

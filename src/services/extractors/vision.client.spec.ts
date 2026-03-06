@@ -22,7 +22,7 @@ describe('createVisionClient', () => {
       textAnnotations: [{ description: 'Hello World' }],
     }]);
 
-    const client = createVisionClient(config);
+    const client = await createVisionClient(config);
     const result = await client.detectText(Buffer.from('image data'));
 
     expect(mockTextDetection).toHaveBeenCalledWith({
@@ -34,7 +34,7 @@ describe('createVisionClient', () => {
   it('should return empty string when no annotations', async () => {
     mockTextDetection.mockResolvedValue([{ textAnnotations: [] }]);
 
-    const client = createVisionClient(config);
+    const client = await createVisionClient(config);
     const result = await client.detectText(Buffer.from('image data'));
 
     expect(result).toBe('');
@@ -45,7 +45,7 @@ describe('createVisionClient', () => {
       textAnnotations: [{ description: 'text' }],
     }]);
 
-    const client = createVisionClient({
+    const client = await createVisionClient({
       serviceAccountKey: { project_id: 'test' },
     });
     const result = await client.detectText(Buffer.from('data'));

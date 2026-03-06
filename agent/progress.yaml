@@ -109,16 +109,16 @@ milestones:
 
   - id: M8
     name: Bug Fixes
-    status: completed
-    progress: 100
+    status: in_progress
+    progress: 50
     estimated_weeks: 1
     tasks_completed: 1
-    tasks_total: 1
+    tasks_total: 2
     started: 2026-02-28
-    completed: 2026-02-28
     notes: |
-      Bug fixes placeholder. Task 36 (memory search indexing) moved out —
-      likely a Weaviate/infrastructure issue, not a remember-core library bug.
+      Bug fixes. Task 36 (memory search indexing) moved out.
+      Task 117: Wire MemoryIndexService into SpaceService + make required
+      in MemoryService (root cause of task-116 index lookup returning null).
 
   - id: M9
     name: Client SDKs (Svc + App)
@@ -782,6 +782,17 @@ tasks:
         Added compositeIdToUuid() using uuid v5 (DNS namespace, matching Weaviate).
         Updated SpaceService to use UUID for Weaviate ops, composite string as property.
         5 new tests, 399 total passing.
+    - id: task-117
+      name: Wire MemoryIndexService into SpaceService and Make Required in MemoryService
+      status: not_started
+      file: agent/tasks/milestone-8-bug-fixes/task-117-wire-memory-index-into-space-and-memory-services.md
+      estimated_hours: 1-2
+      completed_date: null
+      dependencies: []
+      notes: |
+        SpaceService.publish/revise never writes to memory index.
+        MemoryService treats memoryIndex as optional. Both should be required.
+        Root cause fix for task-116 (index lookup returns null for published memories).
 
   milestone_9:
     - id: task-37

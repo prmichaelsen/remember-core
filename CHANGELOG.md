@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.8] - 2026-03-06
+
+### Added
+- **Trust live e2e tests** (task-130) — `06-trust.live.ts`
+  - Ghost config get, set user trust (integer level >= 1), remove user trust
+  - 3 test cases with cleanup in afterAll
+
 ## [0.34.7] - 2026-03-06
 
 ### Added

@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.32.0
+  version: 0.33.2
   started: 2026-02-27
   status: in_progress
   current_milestone: M22
@@ -259,7 +259,6 @@ milestones:
 
   - id: M17
     name: File Format Extraction
-    status: in_progress
     status: completed
     progress: 100
     estimated_weeks: 2-3
@@ -1711,10 +1710,13 @@ tasks:
       status: completed
       file: agent/tasks/milestone-22-content-hash-dedupe/task-122-api-contract.md
       estimated_hours: 2-3
+      actual_hours: 0.15
+      completed_date: 2026-03-06
       dependencies: [task-121]
       notes: |
-        Expose also_in in responses. Add dedupe query parameter.
-        Update OpenAPI specs.
+        Added dedupe query parameter and also_in to OpenAPI specs (svc + app).
+        Fixed toSpaceSearchResult mapper to pass also_in through.
+        784 tests passing (62 suites), zero regressions.
 
     - id: task-124
       name: Switch Dedupe Strategy from Content Hash to Source ID
@@ -1727,7 +1729,8 @@ tasks:
         All duplicates enter via publish/share which already sets original_memory_id.
         Content hashing is unnecessary complexity for a case that doesn't occur.
 
-  unassigned:
+  # (continued from unassigned above)
+  unassigned_m21_plus:
     - id: task-115
       name: Wire ModerationClient in remember-rest-service
       status: not_started
@@ -1750,10 +1753,10 @@ tasks:
         user_id matches collection owner. Root cause unknown.
 
 documentation:
-  design_documents: 15
-  milestone_documents: 18
-  pattern_documents: 25
-  task_documents: 111
+  design_documents: 24
+  milestone_documents: 23
+  pattern_documents: 29
+  task_documents: 124
 
 progress:
   planning: 100
@@ -1763,14 +1766,16 @@ progress:
 recent_work:
   - date: 2026-03-06
     description: |
-      Planned M22 — Content Hash Deduplication
+      M22 — Content Hash Deduplication (tasks 118-122 complete, task-124 remaining)
     items:
-      - "Created milestone-22-content-hash-dedupe.md"
-      - "Created 5 tasks (task-118 through task-122)"
-      - "Design doc: agent/design/local.content-hash-dedupe.md"
-      - "Clarification 13 complete (scope, precedence, hash definition, implementation)"
-      - "Source: agentbase.me draft content-hash-dedupe.md"
-      - "Scope: schema migration, hash on write, origin links, service-layer dedupe, API contract"
+      - "task-118: Schema migration — content_hash property, computeContentHash utility, backfill script"
+      - "task-119: Hash computation wired into MemoryService.create() and update()"
+      - "task-120: Origin link — original_memory_id set on publish to spaces/groups"
+      - "task-121: Service-layer dedup — dedupeByContentHash + tagWithSource, precedence rules, 12 tests"
+      - "task-122: API contract — also_in + dedupe param in OpenAPI specs, toSpaceSearchResult fix"
+      - "task-123: Backfill rerun (committed)"
+      - "task-124: Switch dedupe to source ID (planned — simplification to drop content_hash)"
+      - "784 tests passing (62 suites), v0.33.2"
   - date: 2026-03-05
     description: |
       Planned M21 — Content Moderation
@@ -2189,12 +2194,10 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Publish v0.17.0 to npm
-  - Deploy REM Cloud Run handler (thin wrapper around RemService.runCycle)
-  - Configure Cloud Scheduler for hourly REM runs
-  - Fix pre-existing svc client method count test (29 → 30)
+  - Complete task-124 — switch dedupe from content_hash to original_memory_id
+  - Complete M22 and publish next version to npm
+  - Resume M20 (Memory Ratings System) — 1/7 tasks complete
   - Migrate agentbase.me from hand-written fetch to app client
-  - Implement /api/app/v1/ routes on remember-rest-service
 
 notes:
   - "Source: remember-mcp v3.8.0-v3.13.0 (prmichaelsen/remember-mcp)"

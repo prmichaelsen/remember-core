@@ -44,7 +44,11 @@
       "Bash(cat:*)",
       "Bash(ENVIRONMENT=production node:*)",
       "Bash(set:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(gcloud config:*)",
+      "Bash(gcloud logging:*)",
+      "Bash(gcloud run:*)",
+      "Bash(npx js-yaml:*)"
     ]
   }
 }

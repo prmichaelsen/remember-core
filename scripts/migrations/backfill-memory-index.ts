@@ -29,14 +29,31 @@ interface BackfillStats {
 }
 
 const logger = {
-  debug: (msg: string) => console.log(`  ${msg}`),
-  info: (msg: string) => console.log(msg),
-  warn: (msg: string) => console.warn(`  ⚠️  ${msg}`),
-  error: (msg: string) => console.error(`  ❌ ${msg}`),
+  debug: () => {},
+  info: () => {},
+  warn: () => {},
+  error: () => {},
 };
 
+const BAR_WIDTH = 30;
+
+function progressBar(current: number, total: number, label: string): string {
+  const pct = total > 0 ? current / total : 0;
+  const filled = Math.round(pct * BAR_WIDTH);
+  const empty = BAR_WIDTH - filled;
+  const bar = '█'.repeat(filled) + '░'.repeat(empty);
+  const pctStr = (pct * 100).toFixed(0).padStart(3);
+  return `  ${bar} ${pctStr}% ${current}/${total} ${label}`;
+}
+
+function clearLine() {
+  process.stdout.write('\r\x1b[K');
+}
+
 async function backfillMemoryIndex() {
-  console.log('=== Backfill Memory Index Migration ===\n');
+  console.log('\n  ╔══════════════════════════════════════════╗');
+  console.log('  ║     Backfill Memory Index Migration      ║');
+  console.log('  ╚══════════════════════════════════════════╝\n');
 
   const stats: BackfillStats = {
     collections_processed: 0,
@@ -44,50 +61,48 @@ async function backfillMemoryIndex() {
     errors: 0,
   };
 
-  // Initialize Weaviate client
+  process.stdout.write('  Connecting to Weaviate...');
   await initWeaviateClient({
     url: process.env.WEAVIATE_REST_URL!,
     apiKey: process.env.WEAVIATE_API_KEY,
     openaiApiKey: process.env.EMBEDDINGS_API_KEY!,
   });
+  clearLine();
+  console.log('  ✓ Connected to Weaviate');
 
   const client = getWeaviateClient();
   const indexService = new MemoryIndexService(logger);
 
-  // Get all collections from Firestore registry
+  process.stdout.write('  Loading collection registry...');
   const path = getCollectionRegistryPath();
   const registryEntries = await queryDocuments(path, {
     orderBy: [{ field: 'collection_name', direction: 'ASCENDING' }],
   });
+  clearLine();
 
-  console.log(`Found ${registryEntries.length} collections in registry\n`);
+  const memoryCollections = registryEntries.filter(
+    (e) => (e.data.collection_name as string).startsWith('Memory_')
+  );
+  const skipped = registryEntries.length - memoryCollections.length;
+  console.log(`  ✓ Found ${memoryCollections.length} memory collections (${skipped} non-memory skipped)\n`);
 
-  for (const entry of registryEntries) {
-    const collectionName = entry.data.collection_name as string;
-
-    // Only process Memory_ collections
-    if (!collectionName.startsWith('Memory_')) {
-      console.log(`Skipping ${collectionName} (not a memory collection)`);
-      continue;
-    }
-
-    console.log(`Processing ${collectionName}...`);
+  for (let ci = 0; ci < memoryCollections.length; ci++) {
+    const collectionName = memoryCollections[ci].data.collection_name as string;
+    const shortName = collectionName.replace('Memory_', '');
 
     try {
       const exists = await client.collections.exists(collectionName);
       if (!exists) {
-        console.log(`  ⚠️  Collection not found in Weaviate, skipping`);
+        console.log(`  ⊘ ${shortName} — not found in Weaviate, skipped`);
         continue;
       }
 
       const collection = client.collections.get(collectionName);
-
-      // Fetch all objects using cursor-based pagination
-      // Note: Weaviate cursor API doesn't allow filters with `after`,
-      // so we fetch all objects and filter client-side
       const batchSize = 100;
       let afterCursor: string | undefined = undefined;
       let collectionCount = 0;
+
+      process.stdout.write(progressBar(0, 0, shortName));
 
       while (true) {
         const results = await collection.query.fetchObjects({
@@ -96,50 +111,45 @@ async function backfillMemoryIndex() {
           returnProperties: ['doc_type'],
         });
 
-        if (results.objects.length === 0) {
-          break;
-        }
+        if (results.objects.length === 0) break;
 
-        // Track cursor for next page
         afterCursor = results.objects[results.objects.length - 1].uuid;
 
-        // Index only memory objects
         for (const obj of results.objects) {
           if (obj.properties.doc_type !== 'memory') continue;
           try {
             await indexService.index(obj.uuid, collectionName);
             stats.memories_indexed++;
             collectionCount++;
-
-            if (stats.memories_indexed % 100 === 0) {
-              console.log(`  Indexed ${stats.memories_indexed} memories total...`);
-            }
+            clearLine();
+            process.stdout.write(progressBar(collectionCount, collectionCount, shortName));
           } catch (error) {
-            console.error(`  ❌ Error indexing memory ${obj.uuid}:`, error);
             stats.errors++;
           }
         }
 
-        if (results.objects.length < batchSize) {
-          break;
-        }
+        if (results.objects.length < batchSize) break;
       }
 
+      clearLine();
+      console.log(`  ✓ ${shortName} — ${collectionCount} memories indexed`);
       stats.collections_processed++;
-      console.log(`  ✓ Completed ${collectionName}: ${collectionCount} memories indexed\n`);
     } catch (error) {
-      console.error(`  ❌ Error processing ${collectionName}:`, error);
+      clearLine();
+      console.log(`  ✗ ${shortName} — error: ${error instanceof Error ? error.message : error}`);
       stats.errors++;
     }
   }
 
-  console.log('=== Backfill Complete ===');
-  console.log(`Collections processed: ${stats.collections_processed}`);
-  console.log(`Memories indexed: ${stats.memories_indexed}`);
-  console.log(`Errors: ${stats.errors}`);
+  console.log('');
+  console.log('  ┌─────────────────────────────────┐');
+  console.log(`  │ Collections: ${String(stats.collections_processed).padStart(6)}              │`);
+  console.log(`  │ Indexed:     ${String(stats.memories_indexed).padStart(6)}              │`);
+  console.log(`  │ Errors:      ${String(stats.errors).padStart(6)}              │`);
+  console.log('  └─────────────────────────────────┘');
 
   if (stats.errors > 0) {
-    console.log('\n⚠️  Some errors occurred. Check logs above for details.');
+    console.log('\n  ⚠ Some errors occurred during backfill.\n');
     process.exit(1);
   }
 }

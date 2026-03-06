@@ -77,10 +77,13 @@ Content to evaluate:
 ${content}
 ---
 
-Respond with ONLY valid JSON:
-{"pass":true}
-OR
-{"pass":false,"reason":"<specific, human-friendly explanation of why this was blocked>","category":"<hate_speech|extremism|violence_incitement|csam|self_harm_encouragement>"}`;
+🚨 CRITICAL 🚨:
+Respond with ONLY a single JSON object on one line — no markdown, no explanation, no code fences.
+
+If the content passes: {"pass":true,"reason":"<brief reason>"}
+If the content fails: {"pass":false,"reason":"<specific explanation>","category":"<hate_speech|extremism|violence_incitement|csam|self_harm_encouragement>"}
+
+Your entire response must be parseable by JSON.parse(). Do not include any other text.`;
 }
 
 // ─── Cache ───────────────────────────────────────────────────────────────
@@ -123,7 +126,11 @@ export function createModerationClient(options: {
           body: JSON.stringify({
             model,
             max_tokens: 256,
-            messages: [{ role: 'user', content: buildModerationPrompt(content) }],
+            temperature: 0,
+            messages: [
+              { role: 'user', content: buildModerationPrompt(content) },
+              { role: 'assistant', content: '{' },
+            ],
           }),
         });
 
@@ -136,8 +143,8 @@ export function createModerationClient(options: {
 
         const data = (await response.json()) as any;
         const rawText = data.content?.[0]?.text ?? '';
-        // Strip markdown code fences if the LLM wraps its response
-        const text = rawText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+        // Prepend '{' from assistant prefill, strip any code fences
+        const text = ('{' + rawText).replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
         const parsed = JSON.parse(text) as ModerationResult;
 
         // Normalize result

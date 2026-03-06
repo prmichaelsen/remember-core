@@ -54,7 +54,8 @@
       "Bash(gcloud builds:*)",
       "Bash(code:*)",
       "Bash(chmod +x:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(sort:*)"
     ]
   }
 }

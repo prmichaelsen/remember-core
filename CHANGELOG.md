@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.13] - 2026-03-06
+
+### Fixed
+- **Error mapping in web SDK** — all 7 web modules returned HTTP 500 for every error (validation, not-found, forbidden). Shared `wrapError` now preserves `AppError` kind, mapping to correct HTTP status codes (400, 403, 404, etc.)
+- **Space service error types** — replaced ~25 plain `throw new Error()` with typed `ValidationError`, `NotFoundError`, `ForbiddenError` so errors propagate with correct semantics
+- Comment publish failures (and all space operations) now return proper error kinds instead of generic 500
+
+### Added
+- `wrapError()` exported from `remember-core/web` errors module — detects `AppError` subclasses and maps to `WebSDKError` with correct `kind`
+- 5 new tests for `wrapError` error mapping (ValidationError, NotFoundError, ForbiddenError, plain Error, non-Error)
+- Assertion that publish validation errors return `kind: 'validation'`
+
 ## [0.34.9] - 2026-03-06
 
 ### Added

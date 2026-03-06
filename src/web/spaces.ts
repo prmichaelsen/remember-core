@@ -5,7 +5,7 @@ import type { WebSDKContext } from './context.js';
 import type { WebSDKError } from './errors.js';
 import type { Result } from './result.js';
 import { ok, err } from './result.js';
-import { internal } from './errors.js';
+import { wrapError } from './errors.js';
 import { normalizeTrustScore } from '../types/trust.types.js';
 import type {
   PublishInput,
@@ -199,7 +199,4 @@ function toSpaceSearchResult(raw: Record<string, unknown>): SpaceSearchResult {
   };
 }
 
-function wrapError(e: unknown): WebSDKError {
-  const message = e instanceof Error ? e.message : String(e);
-  return internal(message);
-}
+// wrapError imported from ./errors.js

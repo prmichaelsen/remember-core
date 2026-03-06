@@ -1,6 +1,6 @@
 import { ok, err, isOk, mapOk, tryCatch } from './result';
-import type { Result } from './result';
-import type { WebSDKError } from './errors';
+import { wrapError } from './errors';
+import { ValidationError, NotFoundError, ForbiddenError } from '../errors/app-errors';
 
 describe('Result type', () => {
   describe('ok()', () => {
@@ -10,7 +10,7 @@ describe('Result type', () => {
     });
 
     it('narrows with if (result.ok)', () => {
-      const result: Result<number> = ok(42);
+      const result = ok(42);
       if (result.ok) {
         expect(result.data).toBe(42);
       } else {
@@ -21,14 +21,14 @@ describe('Result type', () => {
 
   describe('err()', () => {
     it('creates a failure result', () => {
-      const error: WebSDKError = { kind: 'not_found', message: 'gone', context: {} };
-      const result = err(error);
-      expect(result).toEqual({ ok: false, error });
+      const e = { kind: 'not_found', message: 'gone', context: {} };
+      const result = err(e);
+      expect(result).toEqual({ ok: false, error: e });
     });
 
     it('narrows with if (!result.ok)', () => {
-      const error: WebSDKError = { kind: 'internal', message: 'fail', context: {} };
-      const result: Result<number> = err(error);
+      const error = { kind: 'internal', message: 'fail', context: {} };
+      const result = err(error);
       if (!result.ok) {
         expect(result.error.kind).toBe('internal');
       } else {
@@ -54,9 +54,9 @@ describe('Result type', () => {
     });
 
     it('passes error through unchanged', () => {
-      const error: WebSDKError = { kind: 'validation', message: 'bad', context: {} };
-      const result = mapOk(err(error), (n: number) => n * 2);
-      expect(result).toEqual({ ok: false, error });
+      const e = { kind: 'validation', message: 'bad', context: {} };
+      const result = mapOk(err(e), (n) => n * 2);
+      expect(result).toEqual({ ok: false, error: e });
     });
   });
 
@@ -82,6 +82,37 @@ describe('Result type', () => {
       if (!result.ok) {
         expect(result.error.message).toBe('string error');
       }
+    });
+  });
+
+  describe('wrapError()', () => {
+    it('maps ValidationError to validation kind', () => {
+      const error = wrapError(new ValidationError('bad input', { name: ['required'] }));
+      expect(error.kind).toBe('validation');
+      expect(error.message).toBe('bad input');
+    });
+
+    it('maps NotFoundError to not_found kind', () => {
+      const error = wrapError(new NotFoundError('Memory', 'abc-123'));
+      expect(error.kind).toBe('not_found');
+      expect(error.message).toContain('abc-123');
+    });
+
+    it('maps ForbiddenError to forbidden kind', () => {
+      const error = wrapError(new ForbiddenError('Permission denied'));
+      expect(error.kind).toBe('forbidden');
+    });
+
+    it('maps plain Error to internal kind', () => {
+      const error = wrapError(new Error('something broke'));
+      expect(error.kind).toBe('internal');
+      expect(error.message).toBe('something broke');
+    });
+
+    it('maps non-Error values to internal kind', () => {
+      const error = wrapError('string thrown');
+      expect(error.kind).toBe('internal');
+      expect(error.message).toBe('string thrown');
     });
   });
 });

@@ -2,6 +2,7 @@
 // Web SDK error types — plain objects matching OpenAPI ErrorResponse.error schema
 
 import type { ErrorKind } from '../errors/base.error.js';
+import { AppError } from '../errors/base.error.js';
 
 export type { ErrorKind };
 
@@ -51,4 +52,16 @@ export function conflict(message: string): WebSDKError {
 
 export function internal(message = 'Internal server error'): WebSDKError {
   return createError('internal', message);
+}
+
+/**
+ * Convert a caught exception into a WebSDKError.
+ * AppError subclasses preserve their kind; plain Errors become 'internal'.
+ */
+export function wrapError(e: unknown): WebSDKError {
+  if (e instanceof AppError) {
+    return createError(e.kind, e.message, e.context);
+  }
+  const message = e instanceof Error ? e.message : String(e);
+  return internal(message);
 }

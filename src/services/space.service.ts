@@ -21,7 +21,7 @@ import { CollectionType, getCollectionName } from '../collections/dot-notation.j
 import { generateCompositeId, compositeIdToUuid } from '../collections/composite-ids.js';
 import { getSpaceConfig } from './space-config.service.js';
 import { canModerate, canModerateAny } from '../utils/auth-helpers.js';
-import { ValidationError } from '../errors/app-errors.js';
+import { ValidationError, NotFoundError, ForbiddenError } from '../errors/app-errors.js';
 import type { ModerationClient } from './moderation.service.js';
 import type { MemoryIndexService } from './memory-index.service.js';
 import { tagWithSource, dedupeBySourceId, type DedupeOptions } from '../utils/dedupe.js';
@@ -266,14 +266,14 @@ export class SpaceService {
     const groups = input.groups || [];
 
     if (spaces.length === 0 && groups.length === 0) {
-      throw new Error('Must specify at least one space or group to publish to');
+      throw new ValidationError('Must specify at least one space or group to publish to');
     }
 
     // Validate space IDs
     if (spaces.length > 0) {
       const invalidSpaces = spaces.filter((s) => !isValidSpaceId(s));
       if (invalidSpaces.length > 0) {
-        throw new Error(`Invalid space IDs: ${invalidSpaces.join(', ')}`);
+        throw new ValidationError(`Invalid space IDs: ${invalidSpaces.join(', ')}`, { spaces: invalidSpaces });
       }
     }
 
@@ -281,22 +281,22 @@ export class SpaceService {
     if (groups.length > 0) {
       const invalidGroups = groups.filter((g) => !g || g.includes('.') || g.trim() === '');
       if (invalidGroups.length > 0) {
-        throw new Error('Group IDs cannot be empty or contain dots');
+        throw new ValidationError('Group IDs cannot be empty or contain dots');
       }
     }
 
     // Verify memory exists, belongs to user, is a memory
     const memory = await fetchMemoryWithAllProperties(this.userCollection, input.memory_id);
-    if (!memory) throw new Error(`Memory not found: ${input.memory_id}`);
-    if (memory.properties.user_id !== this.userId) throw new Error('Permission denied: not memory owner');
-    if (memory.properties.doc_type !== 'memory') throw new Error('Only memories can be published');
+    if (!memory) throw new NotFoundError('Memory', input.memory_id);
+    if (memory.properties.user_id !== this.userId) throw new ForbiddenError('Permission denied: not memory owner');
+    if (memory.properties.doc_type !== 'memory') throw new ValidationError('Only memories can be published');
 
     // Validate content_type restrictions for restricted spaces
     const memoryContentType = memory.properties.content_type as string | undefined;
     for (const spaceId of spaces) {
       const requiredType = SPACE_CONTENT_TYPE_RESTRICTIONS[spaceId as SpaceId];
       if (requiredType && memoryContentType !== requiredType) {
-        throw new Error(
+        throw new ValidationError(
           `Space '${spaceId}' only accepts content_type '${requiredType}', got '${memoryContentType ?? 'undefined'}'`,
         );
       }
@@ -334,21 +334,21 @@ export class SpaceService {
     const groups = input.groups || [];
 
     if (spaces.length === 0 && groups.length === 0) {
-      throw new Error('Must specify at least one space or group to retract from');
+      throw new ValidationError('Must specify at least one space or group to retract from');
     }
 
     // Validate group IDs
     if (groups.length > 0) {
       const invalidGroups = groups.filter((g) => g.includes('.'));
       if (invalidGroups.length > 0) {
-        throw new Error(`Group IDs cannot contain dots: ${invalidGroups.join(', ')}`);
+        throw new ValidationError(`Group IDs cannot contain dots: ${invalidGroups.join(', ')}`);
       }
     }
 
     // Verify memory exists and belongs to user
     const memory = await fetchMemoryWithAllProperties(this.userCollection, input.memory_id);
-    if (!memory) throw new Error(`Memory not found: ${input.memory_id}`);
-    if (memory.properties.user_id !== this.userId) throw new Error('Permission denied: not memory owner');
+    if (!memory) throw new NotFoundError('Memory', input.memory_id);
+    if (memory.properties.user_id !== this.userId) throw new ForbiddenError('Permission denied: not memory owner');
 
     // Check current publication status
     const currentSpaceIds: string[] = Array.isArray(memory.properties.space_ids)
@@ -362,7 +362,7 @@ export class SpaceService {
     const notPublishedGroups = groups.filter((g) => !currentGroupIds.includes(g));
 
     if (notPublishedSpaces.length > 0 || notPublishedGroups.length > 0) {
-      throw new Error(
+      throw new ValidationError(
         `Memory is not published to some destinations. ` +
           `Not in spaces: [${notPublishedSpaces.join(', ')}], ` +
           `Not in groups: [${notPublishedGroups.join(', ')}]`,
@@ -396,8 +396,8 @@ export class SpaceService {
 
   async revise(input: ReviseInput): Promise<ReviseResult> {
     const memory = await fetchMemoryWithAllProperties(this.userCollection, input.memory_id);
-    if (!memory) throw new Error(`Memory not found: ${input.memory_id}`);
-    if (memory.properties.user_id !== this.userId) throw new Error('Permission denied: not memory owner');
+    if (!memory) throw new NotFoundError('Memory', input.memory_id);
+    if (memory.properties.user_id !== this.userId) throw new ForbiddenError('Permission denied: not memory owner');
 
     const spaceIds: string[] = Array.isArray(memory.properties.space_ids)
       ? memory.properties.space_ids
@@ -407,7 +407,7 @@ export class SpaceService {
       : [];
 
     if (spaceIds.length === 0 && groupIds.length === 0) {
-      throw new Error('Memory has no published copies to revise. Publish first with publish().');
+      throw new ValidationError('Memory has no published copies to revise. Publish first with publish().');
     }
 
     // Content moderation check (blocks hateful/extremist content)
@@ -438,7 +438,7 @@ export class SpaceService {
   async confirm(input: ConfirmInput): Promise<ConfirmResult> {
     const request = await this.confirmationTokenService.confirmRequest(this.userId, input.token);
     if (!request) {
-      throw new Error('Invalid or expired confirmation token');
+      throw new ValidationError('Invalid or expired confirmation token');
     }
 
     if (request.action === 'publish_memory') {
@@ -451,7 +451,7 @@ export class SpaceService {
       return this.executeRevise(request);
     }
 
-    throw new Error(`Unknown action type: ${request.action}`);
+    throw new ValidationError(`Unknown action type: ${request.action}`);
   }
 
   // ── Deny ────────────────────────────────────────────────────────────
@@ -459,7 +459,7 @@ export class SpaceService {
   async deny(input: DenyInput): Promise<DenyResult> {
     const success = await this.confirmationTokenService.denyRequest(this.userId, input.token);
     if (!success) {
-      throw new Error('Token not found or already used');
+      throw new NotFoundError('Token', input.token);
     }
     return { success: true };
   }
@@ -468,21 +468,21 @@ export class SpaceService {
 
   async moderate(input: ModerateInput, authContext?: AuthContext): Promise<ModerateResult> {
     if (!input.space_id && !input.group_id) {
-      throw new Error('Must specify either space_id or group_id');
+      throw new ValidationError('Must specify either space_id or group_id');
     }
 
     if (!ACTION_TO_STATUS[input.action]) {
-      throw new Error(`Invalid action: ${input.action}. Must be approve, reject, or remove`);
+      throw new ValidationError(`Invalid action: ${input.action}. Must be approve, reject, or remove`);
     }
 
     // Permission check
     if (input.group_id) {
       if (!canModerate(authContext, input.group_id)) {
-        throw new Error(`Moderator access required for group ${input.group_id}`);
+        throw new ForbiddenError(`Moderator access required for group ${input.group_id}`);
       }
     } else if (input.space_id) {
       if (!canModerateAny(authContext)) {
-        throw new Error('Moderator access required to moderate memories in spaces');
+        throw new ForbiddenError('Moderator access required to moderate memories in spaces');
       }
     }
 
@@ -498,8 +498,7 @@ export class SpaceService {
     // Fetch the memory
     const memory = await fetchMemoryWithAllProperties(collection, input.memory_id);
     if (!memory) {
-      const location = input.group_id ? `group ${input.group_id}` : `space ${input.space_id}`;
-      throw new Error(`Published memory ${input.memory_id} not found in ${location}`);
+      throw new NotFoundError('Published memory', input.memory_id);
     }
 
     // Update moderation fields
@@ -548,7 +547,7 @@ export class SpaceService {
     if (spaces.length > 0) {
       const invalidSpaces = spaces.filter((s) => !isValidSpaceId(s));
       if (invalidSpaces.length > 0) {
-        throw new Error(`Invalid space IDs: ${invalidSpaces.join(', ')}`);
+        throw new ValidationError(`Invalid space IDs: ${invalidSpaces.join(', ')}`, { spaces: invalidSpaces });
       }
     }
 
@@ -556,7 +555,7 @@ export class SpaceService {
     if (groups.length > 0) {
       const invalidGroups = groups.filter((g) => !g || g.includes('.') || g.trim() === '');
       if (invalidGroups.length > 0) {
-        throw new Error('Group IDs cannot be empty or contain dots');
+        throw new ValidationError('Group IDs cannot be empty or contain dots');
       }
     }
 
@@ -565,11 +564,11 @@ export class SpaceService {
     if (moderationFilter !== 'approved') {
       for (const groupId of groups) {
         if (!canModerate(authContext, groupId)) {
-          throw new Error(`Moderator access required to view ${moderationFilter} memories in group ${groupId}`);
+          throw new ForbiddenError(`Moderator access required to view ${moderationFilter} memories in group ${groupId}`);
         }
       }
       if ((spaces.length > 0 || groups.length === 0) && !canModerateAny(authContext)) {
-        throw new Error(`Moderator access required to view ${moderationFilter} memories in spaces`);
+        throw new ForbiddenError(`Moderator access required to view ${moderationFilter} memories in spaces`);
       }
     }
 
@@ -646,19 +645,19 @@ export class SpaceService {
   // ── Query Space ─────────────────────────────────────────────────────
 
   async query(input: QuerySpaceInput, authContext?: AuthContext): Promise<QuerySpaceResult> {
-    if (!input.question?.trim()) throw new Error('Question cannot be empty');
+    if (!input.question?.trim()) throw new ValidationError('Question cannot be empty');
 
     // Validate space IDs
-    if (input.spaces.length === 0) throw new Error('Must specify at least one space to query');
+    if (input.spaces.length === 0) throw new ValidationError('Must specify at least one space to query');
     const invalidSpaces = input.spaces.filter((s) => !isValidSpaceId(s));
     if (invalidSpaces.length > 0) {
-      throw new Error(`Invalid space IDs: ${invalidSpaces.join(', ')}`);
+      throw new ValidationError(`Invalid space IDs: ${invalidSpaces.join(', ')}`, { spaces: invalidSpaces });
     }
 
     // Permission check for non-approved moderation filters
     const moderationFilterValue = input.moderation_filter || 'approved';
     if (moderationFilterValue !== 'approved' && !canModerateAny(authContext)) {
-      throw new Error(`Moderator access required to view ${moderationFilterValue} memories in spaces`);
+      throw new ForbiddenError(`Moderator access required to view ${moderationFilterValue} memories in spaces`);
     }
 
     const publicCollection = await ensurePublicCollection(this.weaviateClient);
@@ -733,7 +732,7 @@ export class SpaceService {
     const groups: string[] = request.payload.groups || [];
 
     if (spaces.length === 0 && groups.length === 0) {
-      throw new Error('No destinations in publish request');
+      throw new ValidationError('No destinations in publish request');
     }
 
     // Fetch the memory fresh
@@ -741,8 +740,8 @@ export class SpaceService {
       this.userCollection,
       request.payload.memory_id,
     );
-    if (!originalMemory) throw new Error(`Memory ${request.payload.memory_id} no longer exists`);
-    if (originalMemory.properties.user_id !== this.userId) throw new Error('Permission denied');
+    if (!originalMemory) throw new NotFoundError('Memory', request.payload.memory_id);
+    if (originalMemory.properties.user_id !== this.userId) throw new ForbiddenError('Permission denied');
 
     const compositeId = generateCompositeId(this.userId, request.payload.memory_id);
     const weaviateId = compositeIdToUuid(compositeId);
@@ -925,7 +924,7 @@ export class SpaceService {
       this.userCollection,
       request.payload.memory_id,
     );
-    if (!sourceMemory) throw new Error(`Source memory ${request.payload.memory_id} no longer exists`);
+    if (!sourceMemory) throw new NotFoundError('Memory', request.payload.memory_id);
 
     const currentSpaceIds: string[] = Array.isArray(sourceMemory.properties.space_ids)
       ? sourceMemory.properties.space_ids
@@ -1033,8 +1032,8 @@ export class SpaceService {
     const { memory_id, space_ids = [], group_ids = [] } = request.payload;
 
     const sourceMemory = await fetchMemoryWithAllProperties(this.userCollection, memory_id);
-    if (!sourceMemory) throw new Error(`Source memory ${memory_id} no longer exists`);
-    if (sourceMemory.properties.user_id !== this.userId) throw new Error('Permission denied');
+    if (!sourceMemory) throw new NotFoundError('Memory', memory_id);
+    if (sourceMemory.properties.user_id !== this.userId) throw new ForbiddenError('Permission denied');
 
     const newContent = String(sourceMemory.properties.content ?? '');
     const revisedAt = new Date().toISOString();

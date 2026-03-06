@@ -5,7 +5,7 @@ import type { WebSDKContext } from './context.js';
 import type { WebSDKError } from './errors.js';
 import type { Result } from './result.js';
 import { ok, err } from './result.js';
-import { internal, conflict } from './errors.js';
+import { conflict, wrapError } from './errors.js';
 import { publishToSpace } from './spaces.js';
 import { retractFromSpace, reviseInSpace } from './spaces.js';
 import type { PaginatedResult, ProfileSearchResult } from './types.js';
@@ -201,7 +201,4 @@ function extractBio(raw: Record<string, unknown>): string | undefined {
   return match ? match[1].trim() : undefined;
 }
 
-function wrapError(e: unknown): WebSDKError {
-  const message = e instanceof Error ? e.message : String(e);
-  return internal(message);
-}
+// wrapError imported from ./errors.js

@@ -24,13 +24,16 @@ describe('Space use cases', () => {
       expect(typeof result.ok).toBe('boolean');
     });
 
-    it('returns err on invalid input (no spaces or groups)', async () => {
+    it('returns err with validation kind on invalid input (no spaces or groups)', async () => {
       const created = await createMemory(ctx, { content: 'test' });
       if (!created.ok) fail('setup');
       const result = await publishToSpace(ctx, {
         memory_id: created.data.memory_id,
       });
       expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.kind).toBe('validation');
+      }
     });
   });
 

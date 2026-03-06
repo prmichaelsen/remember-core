@@ -7,7 +7,7 @@ import type { WebSDKContext } from './context.js';
 import type { WebSDKError } from './errors.js';
 import type { Result } from './result.js';
 import { ok, err } from './result.js';
-import { internal } from './errors.js';
+import { internal, wrapError } from './errors.js';
 import {
   handleGetConfig,
   handleUpdateConfig,
@@ -210,7 +210,4 @@ export async function searchAsGhost(
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 
-function wrapError(e: unknown): WebSDKError {
-  const message = e instanceof Error ? e.message : String(e);
-  return internal(message);
-}
+// wrapError imported from ./errors.js

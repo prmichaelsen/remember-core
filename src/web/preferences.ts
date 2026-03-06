@@ -6,7 +6,7 @@ import type { WebSDKContext } from './context.js';
 import type { WebSDKError } from './errors.js';
 import type { Result } from './result.js';
 import { ok, err } from './result.js';
-import { internal, validation } from './errors.js';
+import { validation, wrapError } from './errors.js';
 
 export async function getPreferences(
   ctx: WebSDKContext,
@@ -37,7 +37,4 @@ export async function updatePreferences(
   }
 }
 
-function wrapError(e: unknown): WebSDKError {
-  const message = e instanceof Error ? e.message : String(e);
-  return internal(message);
-}
+// wrapError imported from ./errors.js

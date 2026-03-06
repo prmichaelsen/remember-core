@@ -395,10 +395,10 @@ milestones:
 
   - id: M25
     name: byDiscovery Sort Mode
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1
-    tasks_completed: 3
+    tasks_completed: 4
     tasks_total: 4
     notes: |
       Algorithmic sort mode that interleaves unrated/underrated memories with
@@ -1914,7 +1914,7 @@ tasks:
         SpaceService.byDiscovery(), SVC spaces client, OpenAPI endpoint, types exported.
     - id: task-135
       name: Unit Tests and Edge Cases
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-25-by-discovery-sort-mode/task-135-unit-tests-and-edge-cases.md
       estimated_hours: 1-2
       dependencies: [task-132, task-133, task-134]

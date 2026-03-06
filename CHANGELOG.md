@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.35.5] - 2026-03-06
+
+### Added
+- `SpaceService.getPublishedLocations(memoryId)` — look up a published memory's space_ids and group_ids from the public collection
+
+### Fixed
+- **createAndPublishComment requires spaces/groups** — comments now infer their publish destinations from the parent memory when spaces/groups are not explicitly provided
+
 ## [0.35.4] - 2026-03-06
 
 ### Added

@@ -1381,4 +1381,24 @@ export class SpaceService {
         return (await collection.query.hybrid(query, opts)).objects;
     }
   }
+
+  // ── Get Published Locations ─────────────────────────────────────────
+
+  /**
+   * Look up a published memory's space_ids and group_ids from the public collection.
+   * Returns empty arrays if the memory is not found in any space.
+   */
+  async getPublishedLocations(memoryId: string): Promise<{ space_ids: string[]; group_ids: string[] }> {
+    const publicCollection = await ensurePublicCollection(this.weaviateClient);
+    const filter = publicCollection.filter.byProperty('original_memory_id').equal(memoryId);
+    const result = await publicCollection.query.fetchObjects({ filters: filter, limit: 1 });
+    if (result.objects.length === 0) {
+      return { space_ids: [], group_ids: [] };
+    }
+    const props = result.objects[0].properties;
+    return {
+      space_ids: Array.isArray(props.space_ids) ? props.space_ids : [],
+      group_ids: Array.isArray(props.group_ids) ? props.group_ids : [],
+    };
+  }
 }

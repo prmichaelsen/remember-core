@@ -208,6 +208,15 @@ export async function createAndPublishComment(
   published_to: string[];
 }>> {
   try {
+    // Infer spaces/groups from parent memory when not provided
+    let spaces = input.spaces;
+    let groups = input.groups;
+    if (!spaces?.length && !groups?.length) {
+      const locations = await ctx.spaceService.getPublishedLocations(input.parent_id);
+      spaces = locations.space_ids;
+      groups = locations.group_ids;
+    }
+
     // 1. Create the comment memory in the user's collection
     const memory = await ctx.memoryService.create({
       content: input.content,
@@ -220,8 +229,8 @@ export async function createAndPublishComment(
     // 2. Publish to spaces/groups (auto-confirmed)
     const publishResult = await publishToSpace(ctx, {
       memory_id: memory.memory_id,
-      spaces: input.spaces,
-      groups: input.groups,
+      spaces,
+      groups,
     });
 
     if (!publishResult.ok) {

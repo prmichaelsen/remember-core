@@ -94,15 +94,13 @@ describe('Space use cases', () => {
       expect(typeof result.ok).toBe('boolean');
     });
 
-    it('returns err with validation kind when no spaces or groups provided', async () => {
+    it('infers spaces from parent when none provided (errors in mock due to no public collection)', async () => {
       const result = await createAndPublishComment(ctx, {
         content: 'test comment',
         parent_id: 'some-parent-id',
       });
+      // Falls back to parent lookup, which fails in mock — returns err, never throws
       expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.error.kind).toBe('validation');
-      }
     });
 
     it('defaults thread_root_id to parent_id', async () => {

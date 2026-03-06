@@ -1618,11 +1618,22 @@ tasks:
       notes: |
         CHANGELOG, OpenAPI specs, README. Version bump to 0.32.0.
 
+  unassigned:
+    - id: task-115
+      name: Wire ModerationClient in remember-rest-service
+      status: not_started
+      file: agent/tasks/unassigned/task-115-rest-service-moderation-wiring.md
+      estimated_hours: 0.5-1
+      dependencies: []
+      notes: |
+        Cross-project: remember-rest-service needs to pass ModerationClient to SpaceService.
+        Requires remember-core >= 0.32.0 published to npm.
+
 documentation:
   design_documents: 14
   milestone_documents: 17
   pattern_documents: 25
-  task_documents: 105
+  task_documents: 106
 
 progress:
   planning: 100

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.35.1] - 2026-03-06
+
+### Fixed
+- **Moderation JSON reliability** — improve Haiku prompt for consistent JSON output: assistant prefill forces JSON start, temperature 0 for deterministic output, stricter instructions (no markdown, no code fences), reason field on pass results
+
 ## [0.35.0] - 2026-03-06
 
 ### Added

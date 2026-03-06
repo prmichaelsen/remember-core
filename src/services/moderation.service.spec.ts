@@ -6,12 +6,21 @@ import {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
+/**
+ * Mock a fetch response simulating Haiku with assistant prefill.
+ * The service sends `{ role: 'assistant', content: '{' }` as prefill,
+ * so the API response text starts AFTER the '{'. We strip the leading
+ * '{' from the stringified body to match real API behavior.
+ */
 function mockFetchResponse(body: any, status = 200) {
+  const json = JSON.stringify(body);
+  // Remove leading '{' — the service prepends it from the prefill
+  const textAfterPrefill = json.slice(1);
   return jest.fn().mockResolvedValueOnce({
     ok: status >= 200 && status < 300,
     status,
     json: async () => ({
-      content: [{ type: 'text', text: JSON.stringify(body) }],
+      content: [{ type: 'text', text: textAfterPrefill }],
     }),
   });
 }
@@ -25,6 +34,10 @@ function mockFetchText(text: string, status = 200) {
     }),
   });
 }
+
+/** Shorthand for the text portion after prefill '{' */
+const PASS_TEXT = '"pass":true,"reason":""}';
+const FAIL_TEXT = '"pass":false,"reason":"blocked","category":"hate_speech"}';
 
 // ─── Tests ───────────────────────────────────────────────────────────────
 
@@ -134,11 +147,11 @@ describe('ModerationService', () => {
       const fetchMock = jest.fn()
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ content: [{ type: 'text', text: '{"pass":true}' }] }),
+          json: async () => ({ content: [{ type: 'text', text: PASS_TEXT }] }),
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => ({ content: [{ type: 'text', text: '{"pass":true}' }] }),
+          json: async () => ({ content: [{ type: 'text', text: PASS_TEXT }] }),
         });
       global.fetch = fetchMock as any;
       const client = createModerationClient({ apiKey: 'test-key' });
@@ -155,7 +168,7 @@ describe('ModerationService', () => {
         callCount++;
         return {
           ok: true,
-          json: async () => ({ content: [{ type: 'text', text: '{"pass":true}' }] }),
+          json: async () => ({ content: [{ type: 'text', text: PASS_TEXT }] }),
         };
       }) as any;
 

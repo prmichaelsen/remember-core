@@ -30,7 +30,7 @@ describe('Spaces (live)', () => {
 
     const res = await client.spaces.publish(TEST_USER_ID, {
       memory_id: memoryId,
-      spaces: ['live-test-space'],
+      spaces: ['the_void'],
     });
 
     if (res.error) {
@@ -61,7 +61,7 @@ describe('Spaces (live)', () => {
   it('search the space', async () => {
     const res = await client.spaces.search(TEST_USER_ID, {
       query: 'spaces publish test',
-      spaces: ['live-test-space'],
+      spaces: ['the_void'],
     });
 
     if (res.error) {
@@ -78,7 +78,7 @@ describe('Spaces (live)', () => {
 
     const res = await client.spaces.retract(TEST_USER_ID, {
       memory_id: memoryId,
-      spaces: ['live-test-space'],
+      spaces: ['the_void'],
     });
 
     if (res.error) {

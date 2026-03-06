@@ -11,11 +11,13 @@ beforeEach(() => {
 });
 
 function mockJsonResponse(status: number, body: unknown): Response {
+  const text = body != null ? JSON.stringify(body) : '';
   return {
     ok: status >= 200 && status < 300,
     status,
     statusText: status === 200 ? 'OK' : 'Error',
     json: () => Promise.resolve(body),
+    text: () => Promise.resolve(text),
   } as Response;
 }
 

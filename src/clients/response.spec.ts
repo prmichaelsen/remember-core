@@ -59,11 +59,13 @@ describe('SdkResponse', () => {
 
   describe('fromHttpResponse', () => {
     function mockResponse(status: number, body: unknown, ok?: boolean): Response {
+      const text = body != null ? JSON.stringify(body) : '';
       return {
         ok: ok ?? (status >= 200 && status < 300),
         status,
         statusText: status === 200 ? 'OK' : 'Error',
         json: () => Promise.resolve(body),
+        text: () => Promise.resolve(text),
       } as Response;
     }
 
@@ -120,10 +122,24 @@ describe('SdkResponse', () => {
         status: 502,
         statusText: 'Bad Gateway',
         json: () => Promise.reject(new Error('not json')),
+        text: () => Promise.resolve('Bad Gateway'),
       } as Response;
       const result = await fromHttpResponse(resp);
       expect(result.error?.code).toBe('bad_gateway');
       expect(result.error?.message).toBe('Bad Gateway');
+    });
+
+    it('handles 204 No Content (empty body)', async () => {
+      const resp = {
+        ok: true,
+        status: 204,
+        statusText: 'No Content',
+        json: () => Promise.reject(new SyntaxError('Unexpected end of JSON input')),
+        text: () => Promise.resolve(''),
+      } as Response;
+      const result = await fromHttpResponse<void>(resp);
+      expect(result.error).toBeNull();
+      expect(result.data).toBeUndefined();
     });
 
     it('uses error field as message fallback', async () => {

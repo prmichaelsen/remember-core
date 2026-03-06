@@ -54,7 +54,12 @@ export function createError<T = never>(error: RememberError): SdkResponse<T> {
  */
 export async function fromHttpResponse<T>(response: Response): Promise<SdkResponse<T>> {
   if (response.ok) {
-    const data = await response.json() as T;
+    // 204 No Content (and other empty responses) have no JSON body
+    const text = await response.text();
+    if (!text) {
+      return createSuccess(undefined as T);
+    }
+    const data = JSON.parse(text) as T;
     return createSuccess(data);
   }
 

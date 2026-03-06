@@ -71,6 +71,7 @@ export interface SpaceSearchResult extends MemorySearchResult {
   composite_id: string;
   author_id: string;
   moderation_status: string;
+  also_in?: Array<{ source: string; id: string }>;
 }
 
 // ─── Profile result types ─────────────────────────────────────────────

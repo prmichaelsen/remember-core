@@ -193,6 +193,9 @@ function toSpaceSearchResult(raw: Record<string, unknown>): SpaceSearchResult {
     composite_id: (raw.composite_id ?? '') as string,
     author_id: (raw.author_id ?? raw.user_id ?? '') as string,
     moderation_status: (raw.moderation_status ?? 'approved') as string,
+    ...(Array.isArray(raw.also_in) && raw.also_in.length > 0
+      ? { also_in: raw.also_in as Array<{ source: string; id: string }> }
+      : {}),
   };
 }
 

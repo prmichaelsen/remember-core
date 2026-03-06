@@ -24,6 +24,7 @@ import { canModerate, canModerateAny } from '../utils/auth-helpers.js';
 import { ValidationError } from '../errors/app-errors.js';
 import type { ModerationClient } from './moderation.service.js';
 import type { MemoryIndexService } from './memory-index.service.js';
+import { tagWithSource, dedupeByContentHash, type DedupeOptions } from '../utils/dedupe.js';
 
 // ─── Shared Types ───────────────────────────────────────────────────────
 
@@ -184,6 +185,8 @@ export interface SearchSpaceInput {
   include_comments?: boolean;
   limit?: number;
   offset?: number;
+  /** Content-hash deduplication options */
+  dedupe?: DedupeOptions;
 }
 
 export interface SearchSpaceResult {
@@ -586,7 +589,7 @@ export class SpaceService {
 
       const combinedFilters = filterList.length > 0 ? Filters.and(...filterList) : undefined;
       const spaceObjects = await this.executeSearch(spacesCollection, input.query, searchType, combinedFilters, fetchLimit);
-      allObjects.push(...spaceObjects);
+      allObjects.push(...tagWithSource(spaceObjects, spacesCollectionName));
     }
 
     // Search group collections
@@ -599,29 +602,33 @@ export class SpaceService {
       const filterList = this.buildBaseFilters(groupCollection, input);
       const combinedFilters = filterList.length > 0 ? Filters.and(...filterList) : undefined;
       const groupObjects = await this.executeSearch(groupCollection, input.query, searchType, combinedFilters, fetchLimit);
-      allObjects.push(...groupObjects);
+      allObjects.push(...tagWithSource(groupObjects, groupCollectionName));
     }
 
-    // Deduplicate by UUID
+    // Deduplicate by UUID first
     const seen = new Set<string>();
-    const deduplicated = allObjects.filter((obj) => {
+    const uuidDeduped = allObjects.filter((obj) => {
       if (seen.has(obj.uuid)) return false;
       seen.add(obj.uuid);
       return true;
     });
 
+    // Content-hash deduplication with precedence (space > group > personal)
+    const contentDeduped = dedupeByContentHash(uuidDeduped, input.dedupe);
+
     // Sort by relevance score
-    deduplicated.sort((a, b) => {
+    contentDeduped.sort((a, b) => {
       const scoreA = a.metadata?.score ?? 0;
       const scoreB = b.metadata?.score ?? 0;
       return scoreB - scoreA;
     });
 
     // Paginate
-    const paginated = deduplicated.slice(offset, offset + limit);
+    const paginated = contentDeduped.slice(offset, offset + limit);
     const memories = paginated.map((obj: any) => ({
       id: obj.uuid,
       ...obj.properties,
+      ...(obj._also_in?.length ? { also_in: obj._also_in } : {}),
     }));
 
     const isAllPublic = spaces.length === 0 && groups.length === 0;

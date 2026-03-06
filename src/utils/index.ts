@@ -27,6 +27,13 @@ export { canModerate, canModerateAny } from './auth-helpers.js';
 export { computeContentHash } from './content-hash.js';
 
 export {
+  dedupeByContentHash,
+  tagWithSource,
+  type DedupeOptions,
+  type DedupeAlsoIn,
+} from './dedupe.js';
+
+export {
   DebugLogger,
   createDebugLogger,
   type DebugContext,

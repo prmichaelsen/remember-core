@@ -349,7 +349,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1.5
-    tasks_completed: 3
+    tasks_completed: 4
     tasks_total: 5
     notes: |
       SHA-256 content hash deduplication for aggregate feeds.
@@ -1692,13 +1692,18 @@ tasks:
 
     - id: task-121
       name: Service-Layer Deduplication
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-22-content-hash-dedupe/task-121-service-deduplication.md
       estimated_hours: 4-6
+      actual_hours: 0.2
+      completed_date: 2026-03-06
       dependencies: [task-119]
       notes: |
-        dedupeMemories utility with precedence rules (space > group > personal).
-        Wire into aggregate query methods. also_in metadata.
+        Created dedupeByContentHash + tagWithSource utilities in src/utils/dedupe.ts.
+        12 unit tests covering all precedence rules, sub-precedence, disable flag.
+        Wired into SpaceService.search() — replaces simple UUID dedup with
+        content-hash dedup + UUID dedup. also_in metadata attached to winners.
+        784 tests passing (62 suites), zero regressions.
 
     - id: task-122
       name: API Contract — also_in and dedupe Parameter

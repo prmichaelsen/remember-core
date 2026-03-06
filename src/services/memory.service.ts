@@ -25,6 +25,7 @@ import {
 } from '../utils/filters.js';
 import { buildTrustFilter } from './trust-enforcement.service.js';
 import type { MemoryIndexService } from './memory-index.service.js';
+import { computeContentHash } from '../utils/content-hash.js';
 
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
@@ -311,6 +312,7 @@ export class MemoryService {
       follow_up_at: input.follow_up_at || null,
       space_ids: [],
       group_ids: [],
+      content_hash: computeContentHash(input.content, input.references),
     };
 
     const memoryId = await this.collection.data.insert({ properties });
@@ -723,6 +725,13 @@ export class MemoryService {
     if (input.moderation_flags !== undefined) { updates.moderation_flags = input.moderation_flags; updatedFields.push('moderation_flags'); }
 
     if (updatedFields.length === 0) throw new Error('No fields provided for update');
+
+    // Recompute content hash if content or references changed
+    if (input.content !== undefined || input.references !== undefined) {
+      const content = (input.content ?? existing.properties.content) as string;
+      const references = (input.references ?? existing.properties.references) as string[] | undefined;
+      updates.content_hash = computeContentHash(content, references ?? []);
+    }
 
     const now = new Date().toISOString();
     updates.updated_at = now;

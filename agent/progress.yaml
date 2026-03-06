@@ -349,7 +349,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1.5
-    tasks_completed: 1
+    tasks_completed: 2
     tasks_total: 5
     notes: |
       SHA-256 content hash deduplication for aggregate feeds.
@@ -1665,13 +1665,17 @@ tasks:
 
     - id: task-119
       name: Hash Computation on Write
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-22-content-hash-dedupe/task-119-hash-computation.md
       estimated_hours: 2-3
+      actual_hours: 0.1
+      completed_date: 2026-03-06
       dependencies: [task-118]
       notes: |
-        computeContentHash utility (SHA-256 of content + sorted references).
-        Wire into MemoryService.create() and update().
+        computeContentHash already created in task-118.
+        Wired into MemoryService.create() and update().
+        Update recomputes hash when content or references change.
+        772 tests passing, zero regressions.
 
     - id: task-120
       name: Origin Link on Publish/Share

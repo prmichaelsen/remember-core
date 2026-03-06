@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.35.3] - 2026-03-06
+
+### Fixed
+- **Space search empty query returns no results** — empty/wildcard queries in SpaceService.executeSearch used `bm25('*')` which returned empty results. Changed to `fetchObjects()` to match MemoryService behavior. Fixes comment listing and all browse-without-search-term use cases.
+
 ## [0.35.2] - 2026-03-06
 
 ### Fixed

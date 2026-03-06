@@ -1,7 +1,7 @@
-# Task 134: Wire byDiscovery into MemoryService
+# Task 134: Wire byDiscovery into SpaceService
 
 **Milestone**: M25 — byDiscovery Sort Mode
-**Estimated Time**: 0.5-1 hour
+**Estimated Time**: 1-2 hours
 **Dependencies**: Task 132
 **Status**: Not Started
 
@@ -9,36 +9,39 @@
 
 ## Objective
 
-Integrate the `byDiscovery` sort mode into `MemoryService.search()` so personal collections also support discovery interleaving.
+Add `byDiscovery` sort mode support to SpaceService search and query, so shared spaces/groups also support discovery interleaving.
 
 ---
 
 ## Context
 
-Per clarification 14/15, byDiscovery should work on personal collections too — surfacing the user's own unrated memories alongside their rated ones. The implementation mirrors the SpaceService pattern but queries the user's own collection.
+SpaceService.search() currently sorts by relevance score. Adding byDiscovery support means either:
+- Adding a `sort_mode` parameter to SearchSpaceInput
+- Or creating a separate `byDiscovery()` method on SpaceService
+
+The approach should match how the REST API exposes this (may need a separate endpoint or a param on existing search).
 
 ---
 
 ## Steps
 
-### 1. Update `searchMemories()` to handle `byDiscovery`
+### 1. Add sort_mode or byDiscovery method to SpaceService
 
-When `sort_mode === 'byDiscovery'`:
-1. Two parallel queries against the user's collection:
-   - **Rated**: `rating_count >= 5`, sort by `rating_bayesian` DESC
-   - **Discovery**: `rating_count < 5`, sort by `created_at` DESC
-2. Call `interleaveDiscovery()` with both pools
-3. Map to response format with `is_discovery` flag
+When byDiscovery is requested for spaces:
+- Execute two parallel queries against space/group collections with rating filters
+- Merge with interleaveDiscovery()
 
-### 2. Update search input/output types
+### 2. Update SpaceService search/query input types
 
-Ensure `sort_mode` accepts `'byDiscovery'` in memory search input and `is_discovery` is on the result type.
+### 3. Update SVC spaces client if needed
+
+### 4. Update OpenAPI spec for spaces endpoint
 
 ---
 
 ## Verification
 
-- [ ] `searchMemories({ sort_mode: 'byDiscovery' })` returns interleaved results
-- [ ] Personal collection queries work correctly
-- [ ] `is_discovery` flag present
-- [ ] Existing sort modes unaffected
+- [ ] Space search supports byDiscovery
+- [ ] Group search supports byDiscovery
+- [ ] is_discovery flag on space results
+- [ ] Existing space search unaffected

@@ -130,9 +130,8 @@ export function createModerationClient(options: {
         if (!response.ok) {
           // Fail-closed: API errors block content
           const errorBody = await response.text().catch(() => '');
-          const msg = `[moderation] Anthropic API error: ${response.status} ${response.statusText} ${errorBody}`;
-          console.error(msg);
-          return { pass: false, reason: msg };
+          console.error(`[moderation] Anthropic API error: ${response.status} ${response.statusText}`, errorBody);
+          return { pass: false, reason: 'Content moderation unavailable. Please try again later.' };
         }
 
         const data = (await response.json()) as any;
@@ -158,9 +157,8 @@ export function createModerationClient(options: {
         return result;
       } catch (err) {
         // Fail-closed: network/parse errors block content
-        const msg = `[moderation] Unexpected error: ${err instanceof Error ? err.message : String(err)}`;
-        console.error(msg, err);
-        return { pass: false, reason: msg };
+        console.error('[moderation] Unexpected error:', err);
+        return { pass: false, reason: 'Content moderation unavailable. Please try again later.' };
       }
     },
   };

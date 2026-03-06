@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.15] - 2026-03-06
+
+### Added
+- **byDiscovery sort mode** — interleaves rated memories (Bayesian top) with unrated memories (recent) at 4:1 ratio to solve cold-start problem
+- `interleaveDiscovery()` utility in `remember-core/services` — generic interleaving algorithm with offset/limit support
+- `DiscoveryModeRequest` / `DiscoveryModeResult` types with `is_discovery` boolean flag
+- `MemoryService.byDiscovery()` method for personal collections
+- SVC client `memories.byDiscovery()` method
+- OpenAPI spec: `POST /api/svc/v1/memories/by-discovery` endpoint
+
+### Fixed
+- Moderation service diagnostic logging no longer leaks internal error details to user-facing `reason` field
+
 ## [0.34.14] - 2026-03-06
 
 ### Fixed

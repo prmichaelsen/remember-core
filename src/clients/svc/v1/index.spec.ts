@@ -135,6 +135,6 @@ describe('createSvcClient', () => {
       Object.keys(client.trust).length +
       Object.keys(client.health).length;
 
-    expect(methodCount).toBe(39);
+    expect(methodCount).toBe(40);
   });
 });

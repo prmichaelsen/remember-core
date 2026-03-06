@@ -3,7 +3,7 @@ project:
   version: 0.34.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M24
+  current_milestone: M25
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -398,7 +398,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 2
     tasks_total: 4
     notes: |
       Algorithmic sort mode that interleaves unrated/underrated memories with
@@ -1887,20 +1887,22 @@ tasks:
   milestone_25:
     - id: task-132
       name: Core Interleaving Algorithm
-      status: not_started
+      status: completed
+      completed: 2026-03-06
       file: agent/tasks/milestone-25-by-discovery-sort-mode/task-132-core-interleaving-algorithm.md
       estimated_hours: 1-2
       dependencies: []
       notes: |
-        interleaveDiscovery() function, SortMode enum update, is_discovery flag.
+        interleaveDiscovery() function, DISCOVERY_RATIO/THRESHOLD constants, is_discovery flag.
     - id: task-133
-      name: Wire byDiscovery into SpaceService
-      status: not_started
+      name: Wire byDiscovery into MemoryService + SVC Client + OpenAPI
+      status: completed
+      completed: 2026-03-06
       file: agent/tasks/milestone-25-by-discovery-sort-mode/task-133-wire-into-space-service.md
       estimated_hours: 1-2
       dependencies: [task-132]
       notes: |
-        Two parallel Weaviate queries in searchSpace() and querySpace(), interleave results.
+        MemoryService.byDiscovery(), SVC client method, OpenAPI endpoint, types exported.
     - id: task-134
       name: Wire byDiscovery into MemoryService
       status: not_started

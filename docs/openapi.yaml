@@ -249,6 +249,27 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/by-discovery:
+    post:
+      tags: [memories]
+      summary: Fetch memories with discovery interleaving (rated + unrated at 4:1 ratio)
+      operationId: memoriesByDiscovery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryModeRequest'
+      responses:
+        '200':
+          description: Discovery-interleaved memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryModeResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /api/svc/v1/memories/search:
     post:
       tags: [memories]
@@ -1682,6 +1703,45 @@ components:
           type: array
           items:
             type: object
+            additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    DiscoveryModeRequest:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    DiscoveryModeResult:
+      type: object
+      required: [memories, total, offset, limit]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            properties:
+              is_discovery:
+                type: boolean
+                description: Whether this item was surfaced as a discovery slot
             additionalProperties: true
         total:
           type: integer

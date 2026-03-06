@@ -47,6 +47,8 @@ export {
   type TimeModeResult,
   type DensityModeRequest,
   type DensityModeResult,
+  type DiscoveryModeRequest,
+  type DiscoveryModeResult,
   type UpdateMemoryInput,
   type UpdateMemoryResult,
   type DeleteMemoryInput,
@@ -266,6 +268,15 @@ export {
   RatingService,
   type RatingServiceParams,
 } from './rating.service.js';
+
+// Discovery (byDiscovery sort mode)
+export {
+  interleaveDiscovery,
+  DISCOVERY_RATIO,
+  DISCOVERY_THRESHOLD,
+  type InterleaveOptions,
+  type DiscoveryItem,
+} from './discovery.js';
 
 // Content moderation
 export {

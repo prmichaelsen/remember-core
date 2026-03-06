@@ -1,4 +1,4 @@
-# Task 133: Wire byDiscovery into SpaceService
+# Task 133: Wire byDiscovery into MemoryService + SVC Client + OpenAPI
 
 **Milestone**: M25 — byDiscovery Sort Mode
 **Estimated Time**: 1-2 hours
@@ -9,49 +9,48 @@
 
 ## Objective
 
-Integrate the `byDiscovery` sort mode into `SpaceService.search()` and `SpaceService.query()` so that space/group searches support discovery interleaving.
+Add `byDiscovery()` method to MemoryService (personal collections), the SVC client, and OpenAPI spec — matching the pattern of `byTime`, `byDensity`, `byRating`.
 
 ---
 
 ## Context
 
-SpaceService already supports `byTime`, `byDensity`, and `byRating` sort modes. This task adds `byDiscovery` which executes two parallel Weaviate queries (rated + discovery pools) and merges results using `interleaveDiscovery()`.
+Sort modes in this codebase are separate methods on MemoryService (`byTime()`, `byDensity()`, `byRating()`) with corresponding REST endpoints (`/memories/by-time`, etc.) and SVC client methods. `byDiscovery` follows this same pattern.
 
-The existing `discovery_count` field on published memories is already in the Weaviate schema.
+SpaceService.search() sorts by relevance score, not by sort modes. Space discovery support (task 134) will need a different approach.
 
 ---
 
 ## Steps
 
-### 1. Update `searchSpace()` to handle `byDiscovery`
+### 1. Add DiscoveryModeRequest/Result types to MemoryService
 
-When `sort_mode === 'byDiscovery'`:
-1. Execute two parallel Weaviate queries:
-   - **Rated**: `rating_count >= 5`, sort by `rating_bayesian` DESC
-   - **Discovery**: `rating_count < 5`, sort by `created_at` DESC
-2. Fetch generously from both pools (e.g., limit * 2 each)
-3. Call `interleaveDiscovery()` with both pools, offset, and limit
-4. Map results to response format, including `is_discovery` flag
+Same pattern as TimeModeRequest/RatingModeRequest.
 
-### 2. Update `querySpace()` to handle `byDiscovery`
+### 2. Add `byDiscovery()` method to MemoryService
 
-Same two-query pattern, but with vector search + filters applied to both queries.
+Two parallel Weaviate queries:
+- Rated: `rating_count >= 5`, sort by `rating_bayesian` DESC
+- Discovery: `rating_count < 5`, sort by `created_at` DESC
+Merge with `interleaveDiscovery()`, map to response with `is_discovery` flag.
 
-### 3. Update search/query input types
+### 3. Add `byDiscovery` to SVC client
 
-Ensure `sort_mode` accepts `'byDiscovery'` in `SearchSpaceInput` and `QuerySpaceInput`.
+Add method to MemoriesResource interface and implementation:
+`POST /api/svc/v1/memories/by-discovery`
 
-### 4. Update response types
+### 4. Add endpoint to OpenAPI spec
 
-Add `is_discovery?: boolean` to the space search/query result memory type.
+Add `/api/svc/v1/memories/by-discovery` to `docs/openapi.yaml`.
+
+### 5. Export types from services index
 
 ---
 
 ## Verification
 
-- [ ] `searchSpace({ sort_mode: 'byDiscovery' })` returns interleaved results
-- [ ] `querySpace({ sort_mode: 'byDiscovery' })` returns interleaved results
-- [ ] `is_discovery` flag present on response objects
+- [ ] `byDiscovery()` method on MemoryService
+- [ ] DiscoveryModeRequest/Result types exported
+- [ ] SVC client `byDiscovery()` method
+- [ ] OpenAPI spec updated with new endpoint
 - [ ] Existing sort modes unaffected
-- [ ] Works with group searches
-- [ ] Pool exhaustion handled gracefully

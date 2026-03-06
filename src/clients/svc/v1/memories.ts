@@ -31,6 +31,7 @@ export interface MemoriesResource {
   retractRating(userId: string, memoryId: string): Promise<SdkResponse<void>>;
   getMyRating(userId: string, memoryId: string): Promise<SdkResponse<unknown>>;
   byRating(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byDiscovery(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
 }
 
 export function createMemoriesResource(http: HttpClient): MemoriesResource {
@@ -88,6 +89,9 @@ export function createMemoriesResource(http: HttpClient): MemoriesResource {
     },
     byRating(userId, input) {
       return http.request('POST', '/api/svc/v1/memories/by-rating', { userId, body: input });
+    },
+    byDiscovery(userId, input) {
+      return http.request('POST', '/api/svc/v1/memories/by-discovery', { userId, body: input });
     },
   };
 }

@@ -13,7 +13,8 @@ import type { Logger } from '../utils/logger.js';
 import type { SearchFilters, GhostSearchContext } from '../types/search.types.js';
 import type { ContentType } from '../types/index.js';
 import { normalizeTrustScore, isValidTrustLevel, TrustLevel } from '../types/trust.types.js';
-import { computeRatingAvg, type RatingModeRequest, type RatingModeResult } from '../types/rating.types.js';
+import { computeRatingAvg, type RatingModeRequest, type RatingModeResult, RATING_MIN_THRESHOLD } from '../types/rating.types.js';
+import { interleaveDiscovery, DISCOVERY_RATIO, type DiscoveryItem } from './discovery.js';
 import { isValidContentType, DEFAULT_CONTENT_TYPE } from '../constants/content-types.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import {
@@ -137,6 +138,21 @@ export interface DensityModeRequest {
 
 export interface DensityModeResult {
   memories: Record<string, unknown>[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export interface DiscoveryModeRequest {
+  limit?: number;
+  offset?: number;
+  filters?: SearchFilters;
+  deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
+}
+
+export interface DiscoveryModeResult {
+  memories: (Record<string, unknown> & { is_discovery: boolean })[];
   total: number;
   offset: number;
   limit: number;
@@ -570,6 +586,88 @@ export class MemoryService {
         memories.push(doc);
       }
     }
+
+    return {
+      memories,
+      total: memories.length,
+      offset,
+      limit,
+    };
+  }
+
+  // ── By Discovery (interleaved rated + unrated) ────────────────────
+
+  async byDiscovery(input: DiscoveryModeRequest): Promise<DiscoveryModeResult> {
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+
+    // Build shared filters
+    const memoryFilters = buildMemoryOnlyFilters(this.collection, input.filters);
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+
+    const buildBaseFilters = (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+      return [deletedFilter, memoryFilters, ...ghostFilters].filter((f) => f !== null);
+    };
+
+    // Generous fetch — we merge in-memory then slice
+    const fetchLimit = (limit + offset) * 2;
+
+    // Rated pool: rating_count >= threshold, sorted by Bayesian DESC
+    const executeRated = async (useDeletedFilter: boolean) => {
+      const base = buildBaseFilters(useDeletedFilter);
+      base.push(this.collection.filter.byProperty('rating_count').greaterOrEqual(RATING_MIN_THRESHOLD));
+      const combinedFilters = combineFiltersWithAnd(base);
+      const queryOptions: any = {
+        limit: fetchLimit,
+        sort: this.collection.sort.byProperty('rating_bayesian', false),
+      };
+      if (combinedFilters) queryOptions.filters = combinedFilters;
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    // Discovery pool: rating_count < threshold, sorted by created_at DESC
+    const executeDiscovery = async (useDeletedFilter: boolean) => {
+      const base = buildBaseFilters(useDeletedFilter);
+      base.push(this.collection.filter.byProperty('rating_count').lessThan(RATING_MIN_THRESHOLD));
+      const combinedFilters = combineFiltersWithAnd(base);
+      const queryOptions: any = {
+        limit: fetchLimit,
+        sort: this.collection.sort.byProperty('created_at', false),
+      };
+      if (combinedFilters) queryOptions.filters = combinedFilters;
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    const [ratedResults, discoveryResults] = await Promise.all([
+      this.retryWithoutDeletedFilter(executeRated),
+      this.retryWithoutDeletedFilter(executeDiscovery),
+    ]);
+
+    const toDoc = (obj: any) => normalizeDoc({ id: obj.uuid, ...obj.properties });
+    const ratedDocs = ratedResults.objects.map(toDoc).filter((d: any) => d.doc_type === 'memory');
+    const discoveryDocs = discoveryResults.objects.map(toDoc).filter((d: any) => d.doc_type === 'memory');
+
+    const interleaved = interleaveDiscovery({
+      rated: ratedDocs,
+      discovery: discoveryDocs,
+      ratio: DISCOVERY_RATIO,
+      offset,
+      limit,
+    });
+
+    const memories = interleaved.map((item) => {
+      const doc = item.item as Record<string, unknown>;
+      return Object.assign({}, doc, { is_discovery: item.is_discovery });
+    });
 
     return {
       memories,

@@ -131,8 +131,6 @@ const COMMON_MEMORY_PROPERTIES = [
   { name: 'deleted_by', dataType: configure.dataType.TEXT },
   { name: 'deletion_reason', dataType: configure.dataType.TEXT },
 
-  // Content hash (SHA-256 of normalized content + sorted references, for deduplication)
-  { name: 'content_hash', dataType: configure.dataType.TEXT },
 ];
 
 /**

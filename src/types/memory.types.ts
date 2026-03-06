@@ -167,8 +167,6 @@ export interface Memory {
   moderated_by?: string | null; // User ID of last moderator action
   moderated_at?: string | null; // ISO 8601 timestamp of last moderation action
 
-  // Content Hash (for deduplication in aggregate feeds)
-  content_hash?: string; // SHA-256 of normalized content + sorted references
 }
 
 /**

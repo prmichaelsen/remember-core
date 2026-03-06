@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.33.3] - 2026-03-06
+
+### Changed
+- **Dedupe strategy switched from content hash to source ID** (task-124)
+  - `dedupeByContentHash` replaced by `dedupeBySourceId` (groups by `original_memory_id`)
+  - Removed `computeContentHash` from `MemoryService.create()` and `.update()` write paths
+  - Removed `content_hash` from `Memory` type, `COMMON_MEMORY_PROPERTIES`, `ALL_MEMORY_PROPERTIES`
+  - Deleted `content-hash.ts`, `content-hash.spec.ts`, `backfill-content-hash.ts`
+  - Same precedence rules (space > group > personal), same `also_in` metadata, same `dedupe` parameter
+  - Simplification: all duplicates enter via publish/share which already sets `original_memory_id`
+
 ## [0.33.0] - 2026-03-06
 
 ### Fixed

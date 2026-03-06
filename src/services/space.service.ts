@@ -24,7 +24,7 @@ import { canModerate, canModerateAny } from '../utils/auth-helpers.js';
 import { ValidationError } from '../errors/app-errors.js';
 import type { ModerationClient } from './moderation.service.js';
 import type { MemoryIndexService } from './memory-index.service.js';
-import { tagWithSource, dedupeByContentHash, type DedupeOptions } from '../utils/dedupe.js';
+import { tagWithSource, dedupeBySourceId, type DedupeOptions } from '../utils/dedupe.js';
 
 // ─── Shared Types ───────────────────────────────────────────────────────
 
@@ -613,8 +613,8 @@ export class SpaceService {
       return true;
     });
 
-    // Content-hash deduplication with precedence (space > group > personal)
-    const contentDeduped = dedupeByContentHash(uuidDeduped, input.dedupe);
+    // Source-ID deduplication with precedence (space > group > personal)
+    const contentDeduped = dedupeBySourceId(uuidDeduped, input.dedupe);
 
     // Sort by relevance score
     contentDeduped.sort((a, b) => {

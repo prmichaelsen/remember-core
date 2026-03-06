@@ -1,7 +1,7 @@
 /**
- * Content-hash deduplication for aggregate feed results.
+ * Source-ID deduplication for aggregate feed results.
  *
- * Deduplicates memories from multiple collections by content_hash,
+ * Deduplicates memories from multiple collections by original_memory_id,
  * using precedence: space > group > personal.
  */
 
@@ -83,15 +83,15 @@ function shouldPrefer(
 }
 
 /**
- * Deduplicate memories by content_hash with precedence rules.
+ * Deduplicate memories by original_memory_id with precedence rules.
  *
  * Objects must be tagged with `_collectionName` (use `tagWithSource`).
- * Memories without content_hash pass through without deduplication.
+ * Memories without original_memory_id (originals) pass through without deduplication.
  *
  * Returns the original objects (preserving order of winners) with
  * `_also_in` metadata attached to winners.
  */
-export function dedupeByContentHash<
+export function dedupeBySourceId<
   T extends { uuid: string; properties: Record<string, unknown>; _collectionName: string },
 >(
   objects: T[],
@@ -99,23 +99,23 @@ export function dedupeByContentHash<
 ): Array<T & { _also_in?: DedupeAlsoIn[] }> {
   if (options.enabled === false) return objects;
 
-  const hashMap = new Map<string, { winner: T & { _also_in: DedupeAlsoIn[] }; index: number }>();
+  const sourceMap = new Map<string, { winner: T & { _also_in: DedupeAlsoIn[] }; index: number }>();
   const results: Array<{ obj: T & { _also_in?: DedupeAlsoIn[] }; index: number }> = [];
   const deduped = new Set<string>(); // UUIDs of losers
 
   for (let i = 0; i < objects.length; i++) {
     const obj = objects[i];
-    const contentHash = obj.properties.content_hash as string | undefined;
+    const sourceId = obj.properties.original_memory_id as string | undefined;
 
-    if (!contentHash) {
+    if (!sourceId) {
       results.push({ obj, index: i });
       continue;
     }
 
-    const existing = hashMap.get(contentHash);
+    const existing = sourceMap.get(sourceId);
     if (!existing) {
       const tagged = { ...obj, _also_in: [] as DedupeAlsoIn[] };
-      hashMap.set(contentHash, { winner: tagged, index: i });
+      sourceMap.set(sourceId, { winner: tagged, index: i });
       results.push({ obj: tagged, index: i });
       continue;
     }
@@ -138,7 +138,7 @@ export function dedupeByContentHash<
       };
       deduped.add(loser.uuid);
       deduped.delete(obj.uuid);
-      hashMap.set(contentHash, { winner: newWinner, index: i });
+      sourceMap.set(sourceId, { winner: newWinner, index: i });
       // Replace the old winner's slot with the new winner
       const oldSlot = results.find(r => r.obj.uuid === loser.uuid);
       if (oldSlot) {

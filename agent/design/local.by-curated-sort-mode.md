@@ -89,7 +89,7 @@ REM Job Cycle (per collection)
   |-- Step 4: Relationship CRUD (existing)
   |-- Step 5: Curation Scoring (NEW)
   |     |
-  |     |-- 5a. Haiku editorial pass (new/unscored memories only)
+  |     |-- 5a. Haiku editorial pass (memories without editorial_score only — once per memory, permanent)
   |     |-- 5b. Aggregate cluster quality per memory
   |     |-- 5c. Run PageRank on collection's relationship graph
   |     |-- 5d. Read existing ratings + engagement counters
@@ -143,7 +143,7 @@ interface CuratedSubScores {
 
 #### 1. Editorial Quality (Haiku)
 
-Per-memory Haiku evaluation during REM cycles. Only evaluates new/unscored memories each cycle, but can revisit previously scored memories periodically.
+Per-memory Haiku evaluation during REM cycles. Only evaluates memories that don't yet have an `editorial_score` (i.e., the field is 0 or unset). Once scored, a memory is never re-evaluated — the editorial score is permanent. This is a significant performance optimization: Haiku only touches each memory once across its entire lifetime.
 
 **Prompt** (to Haiku):
 ```
@@ -164,7 +164,7 @@ Memory content:
 Respond with JSON: { "score": 0.0-1.0, "reason": "brief explanation" }
 ```
 
-**Cost management**: $50 budget cap per REM cycle. At ~$0.003/call, that's ~16,000 evaluations per cycle. Only new/unscored memories are evaluated each cycle; re-evaluation happens on a rotation (oldest scored_at first).
+**Cost management**: $50 budget cap per REM cycle. At ~$0.003/call, that's ~16,000 evaluations per cycle. Since each memory is only evaluated once (never re-evaluated), costs are purely a function of new memory creation rate, not collection size. A mature collection with 10,000 memories and 50 new memories/day costs ~$0.15/day.
 
 #### 2. Cluster Quality
 
@@ -322,7 +322,7 @@ Minimum collection size: 50 memories (same as REM threshold). Collections below 
 ## Trade-offs
 
 - **Staleness**: Scores are only as fresh as the last REM cycle. A memory that goes viral between cycles won't be re-scored until the next run. Mitigated by REM running frequently (daily per collection via jobs).
-- **Haiku cost**: Editorial evaluation adds Haiku calls. Mitigated by $50/cycle cap and incremental evaluation (only new/unscored memories per cycle, plus periodic re-evaluation rotation).
+- **Haiku cost**: Editorial evaluation adds Haiku calls. Mitigated by evaluate-once-permanent policy — each memory is scored exactly once, so cost is proportional to new memory creation rate, not collection size. $50/cycle cap as safety net.
 - **Weight tuning**: The initial weights (w1-w6) are educated guesses. May need adjustment based on real-world usage. Mitigated by weights being constants that can be changed without schema migration.
 - **PageRank scaling**: Full PageRank on large collections (10,000+ memories) may be slow. Mitigated by limiting to top 1000 memories by relationship_count and running in background.
 - **Complexity**: Six signals, normalization, weighting, Firestore sub-score storage — this is the most complex sort mode. Mitigated by clear separation of concerns (each signal is an independent function) and pre-computation (complexity is at write time, not read time).
@@ -394,9 +394,9 @@ Minimum collection size: 50 memories (same as REM threshold). Collections below 
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Re-evaluation | Yes, periodic re-visit of previously scored items | Content context changes as collection evolves; scores should refresh |
-| Cost cap | $50 per REM cycle | Covers ~16K evaluations; sufficient unless massive user growth |
-| Incremental evaluation | Only new/unscored memories per cycle + oldest-scored rotation | Amortizes cost while keeping scores fresh |
+| Re-evaluation | No — score once, permanent | Major performance win; Haiku cost is bounded by new memory creation rate, not collection size |
+| Cost cap | $50 per REM cycle | Covers ~16K evaluations; in practice only new memories need scoring |
+| Evaluation trigger | Only memories with `editorial_score == 0` (unset) | Each memory evaluated exactly once across its lifetime |
 
 ### Engagement Signals
 

@@ -418,6 +418,19 @@ milestones:
       OpenAPI spec + generated types already exist. Needs resource, factory wiring, tests.
       See: agent/milestones/milestone-26-app-client-comments.md
 
+  - id: M27
+    name: byRecommendation Sort Mode
+    status: not_started
+    progress: 0
+    estimated_weeks: 1.5
+    tasks_completed: 0
+    tasks_total: 7
+    notes: |
+      Personalized sort mode using vector similarity to user's rating history.
+      Builds preference centroid from 4-5 star ratings, subtracts 1-2 star negative signal,
+      uses nearVector search. Firestore-cached centroid. Falls back to byDiscovery.
+      See: agent/design/local.by-recommendation-sort-mode.md, clarification-16
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1953,11 +1966,62 @@ tasks:
       dependencies: [task-43]
       description: "Create src/app/comments.ts with CommentsResource wrapping POST /api/app/v1/spaces/comments, wire into createAppClient, add tests."
 
+  milestone_27:
+    - id: task-138
+      name: Preference Centroid Computation
+      status: not_started
+      file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-138-preference-centroid-computation.md
+      estimated_hours: 2-3
+      dependencies: []
+      description: "Core vector arithmetic — fetch embeddings, average vectors, subtract weighted negative signal, compute preference centroid."
+    - id: task-139
+      name: Firestore Centroid Caching
+      status: not_started
+      file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-139-firestore-centroid-caching.md
+      estimated_hours: 1-2
+      dependencies: [task-138]
+      description: "Cache centroid in Firestore, invalidate on new 4-5 star rating."
+    - id: task-140
+      name: byRecommendation Method in MemoryService
+      status: not_started
+      file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-140-by-recommendation-memory-service.md
+      estimated_hours: 2-3
+      dependencies: [task-138, task-139]
+      description: "nearVector search using centroid, exclusion filters, similarity threshold, byDiscovery fallback."
+    - id: task-141
+      name: Wire into SpaceService and Search APIs
+      status: not_started
+      file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-141-wire-space-service-and-apis.md
+      estimated_hours: 1-2
+      dependencies: [task-140]
+      description: "Add byRecommendation to SpaceService search/query and REST endpoints."
+    - id: task-142
+      name: SVC Client, OpenAPI, and Generated Types
+      status: not_started
+      file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-142-svc-client-openapi-types.md
+      estimated_hours: 1-2
+      dependencies: [task-140, task-141]
+      description: "Update OpenAPI spec, regenerate types, add SVC client method."
+    - id: task-143
+      name: Unit Tests and Edge Cases
+      status: not_started
+      file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-143-unit-tests-and-edge-cases.md
+      estimated_hours: 2-3
+      dependencies: [task-138, task-139, task-140, task-141]
+      description: "Comprehensive tests — centroid computation, caching, search, fallback, edge cases."
+    - id: task-144
+      name: "Future: Multi-Centroid Clustering"
+      status: deferred
+      file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-144-future-multi-centroid-clustering.md
+      estimated_hours: 4-6
+      dependencies: [task-138, task-140]
+      description: "K-means clustering for diverse taste profiles. Deferred from MVP per clarification-16."
+
 documentation:
   design_documents: 24
-  milestone_documents: 27
+  milestone_documents: 28
   pattern_documents: 29
-  task_documents: 136
+  task_documents: 143
 
 progress:
   planning: 100
@@ -1965,6 +2029,16 @@ progress:
   overall: 95
 
 recent_work:
+  - date: 2026-03-06
+    description: |
+      Planned M27 — byRecommendation Sort Mode
+    items:
+      - "Clarification 16 completed — all open questions resolved"
+      - "Design doc updated with resolved decisions (agent/design/local.by-recommendation-sort-mode.md)"
+      - "Created milestone-27-by-recommendation-sort-mode.md"
+      - "Created 7 tasks (task-138 through task-144)"
+      - "Task 144 deferred (multi-centroid clustering — future enhancement)"
+      - "Key decisions: MIN_PROFILE_SIZE=5, negative signal in MVP, Firestore caching, 500 vector cap, 0.3 similarity threshold"
   - date: 2026-03-06
     description: |
       M22 — Content Hash Deduplication (tasks 118-122 complete, task-124 remaining)

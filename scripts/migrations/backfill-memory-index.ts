@@ -98,11 +98,19 @@ async function backfillMemoryIndex() {
       }
 
       const collection = client.collections.get(collectionName);
+      const aggregate = await collection.aggregate.overAll();
+      const totalCount = aggregate.totalCount ?? 0;
+
+      if (totalCount === 0) {
+        console.log(`  ⊘ ${shortName} — empty collection, skipped`);
+        continue;
+      }
+
       const batchSize = 100;
       let afterCursor: string | undefined = undefined;
       let collectionCount = 0;
 
-      process.stdout.write(progressBar(0, 0, shortName));
+      process.stdout.write(progressBar(0, totalCount, shortName));
 
       while (true) {
         const results = await collection.query.fetchObjects({
@@ -122,7 +130,7 @@ async function backfillMemoryIndex() {
             stats.memories_indexed++;
             collectionCount++;
             clearLine();
-            process.stdout.write(progressBar(collectionCount, collectionCount, shortName));
+            process.stdout.write(progressBar(collectionCount, totalCount, shortName));
           } catch (error) {
             stats.errors++;
           }

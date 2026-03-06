@@ -1629,6 +1629,17 @@ tasks:
         Cross-project: remember-rest-service needs to pass ModerationClient to SpaceService.
         Requires remember-core >= 0.32.0 published to npm.
 
+    - id: task-116
+      name: "RCA: MemoryIndexService.lookup() returns null despite document existing"
+      status: not_started
+      file: agent/tasks/unassigned/task-116-rca-memory-index-lookup-returns-null.md
+      estimated_hours: 2-4
+      dependencies: []
+      notes: |
+        GET /memories/3c6c8dfd-...?include=similar returns 404.
+        Index doc confirmed in Firestore, memory confirmed in Weaviate.
+        user_id matches collection owner. Root cause unknown.
+
 documentation:
   design_documents: 14
   milestone_documents: 17

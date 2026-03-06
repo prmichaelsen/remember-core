@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.35.2] - 2026-03-06
+
+### Fixed
+- **byTimeSlice sort order** — results from parallel time-bucketed searches were not sorted chronologically after merging, causing older memories to appear before newer ones. Now applies a sanity sort by `created_at` before pagination.
+
 ## [0.35.1] - 2026-03-06
 
 ### Fixed

@@ -93,6 +93,13 @@ export async function searchByTimeSlice(
   const allMemories = bucketResults.flatMap((r) => r.memories);
   const totalEstimate = bucketResults.reduce((sum, r) => sum + r.total, 0);
 
+  // Sort by created_at to enforce chronological order across buckets
+  allMemories.sort((a, b) => {
+    const dateA = new Date((a as Record<string, unknown>).created_at as string).getTime();
+    const dateB = new Date((b as Record<string, unknown>).created_at as string).getTime();
+    return options.direction === 'desc' ? dateB - dateA : dateA - dateB;
+  });
+
   // Apply offset and limit
   const paged = allMemories.slice(options.offset, options.offset + options.limit);
 

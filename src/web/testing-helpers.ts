@@ -27,13 +27,17 @@ export function createMockWebSDKContext(options?: {
   const collection = createMockCollection();
   const confirmationTokenService = new ConfirmationTokenService(noopLogger);
 
-  const memoryService = new MemoryService(collection, userId, noopLogger);
+  const mockMemoryIndex = { index: async () => {}, lookup: async () => null };
+  const memoryService = new MemoryService(collection, userId, noopLogger, {
+    memoryIndex: mockMemoryIndex as any,
+  });
   const spaceService = new SpaceService(
     {}, // mock weaviate client (not used in most tests)
     collection,
     userId,
     confirmationTokenService,
     noopLogger,
+    mockMemoryIndex as any,
   );
   const relationshipService = options?.includeRelationships !== false
     ? new RelationshipService(collection, userId, noopLogger)

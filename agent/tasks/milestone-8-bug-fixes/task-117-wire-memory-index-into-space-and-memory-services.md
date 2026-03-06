@@ -3,7 +3,7 @@
 **Milestone**: [M8 - Bug Fixes](../milestones/milestone-8-bug-fixes.md)
 **Estimated Time**: 1-2 hours
 **Dependencies**: None (MemoryIndexService already exists)
-**Status**: Not Started
+**Status**: Completed (2026-03-06)
 
 ---
 
@@ -64,15 +64,15 @@ Wire MemoryIndexService into SpaceService constructor.
 
 ## Verification
 
-- [ ] MemoryIndexService is a required parameter in MemoryService constructor
-- [ ] MemoryIndexService is a required parameter in SpaceService constructor
-- [ ] SpaceService.publish writes to memory index after inserting into space collection
-- [ ] SpaceService.revise writes to memory index after updating in space collection
-- [ ] MemoryService.create always writes to memory index (no conditional guard)
-- [ ] All existing tests updated to pass MemoryIndexService
-- [ ] New tests cover publish/revise index writes
-- [ ] `tsc --noEmit` passes
-- [ ] Full test suite passes
+- [x] MemoryIndexService is a required parameter in MemoryService constructor
+- [x] MemoryIndexService is a required parameter in SpaceService constructor
+- [x] SpaceService.publish writes to memory index after inserting into space collection
+- [ ] SpaceService.revise writes to memory index after updating in space collection (skipped — same UUID, collection unchanged)
+- [x] MemoryService.create always writes to memory index (no conditional guard)
+- [x] All existing tests updated to pass MemoryIndexService
+- [x] New tests cover publish index writes
+- [x] `tsc --noEmit` passes
+- [x] Full test suite passes (763 tests, 60 suites)
 
 ---
 

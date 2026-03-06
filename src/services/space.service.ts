@@ -23,6 +23,7 @@ import { getSpaceConfig } from './space-config.service.js';
 import { canModerate, canModerateAny } from '../utils/auth-helpers.js';
 import { ValidationError } from '../errors/app-errors.js';
 import type { ModerationClient } from './moderation.service.js';
+import type { MemoryIndexService } from './memory-index.service.js';
 
 // ─── Shared Types ───────────────────────────────────────────────────────
 
@@ -227,6 +228,7 @@ export interface QuerySpaceResult {
  */
 export class SpaceService {
   private moderationClient?: ModerationClient;
+  private memoryIndex: MemoryIndexService;
 
   constructor(
     private weaviateClient: any,
@@ -234,9 +236,11 @@ export class SpaceService {
     private userId: string,
     private confirmationTokenService: ConfirmationTokenService,
     private logger: Logger,
+    private memoryIndexService: MemoryIndexService,
     options?: { moderationClient?: ModerationClient },
   ) {
     this.moderationClient = options?.moderationClient;
+    this.memoryIndex = memoryIndexService;
   }
 
   // ── Content moderation helper ────────────────────────────────────────
@@ -798,6 +802,13 @@ export class SpaceService {
           await publicCollection.data.insert({ id: weaviateId, properties: publishedMemory });
         }
 
+        // Index published memory UUID → collection name
+        try {
+          await this.memoryIndex.index(weaviateId, 'Memory_spaces_public');
+        } catch (err) {
+          this.logger.warn?.(`[SpaceService] Index write failed for ${weaviateId}: ${err}`);
+        }
+
         successfulPublications.push(`spaces: ${spaces.join(', ')}`);
       } catch (err) {
         failedPublications.push(`spaces: ${err instanceof Error ? err.message : String(err)}`);
@@ -837,6 +848,13 @@ export class SpaceService {
           await groupCollection.data.update({ id: weaviateId, properties: groupMemory });
         } else {
           await groupCollection.data.insert({ id: weaviateId, properties: groupMemory });
+        }
+
+        // Index published memory UUID → group collection name
+        try {
+          await this.memoryIndex.index(weaviateId, groupCollectionName);
+        } catch (err) {
+          this.logger.warn?.(`[SpaceService] Index write failed for ${weaviateId} in ${groupCollectionName}: ${err}`);
         }
 
         successfulPublications.push(`group: ${groupId}`);

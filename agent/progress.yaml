@@ -109,8 +109,8 @@ milestones:
 
   - id: M8
     name: Bug Fixes
-    status: in_progress
-    progress: 50
+    status: completed
+    progress: 100
     estimated_weeks: 1
     tasks_completed: 1
     tasks_total: 2
@@ -784,14 +784,17 @@ tasks:
         5 new tests, 399 total passing.
     - id: task-117
       name: Wire MemoryIndexService into SpaceService and Make Required in MemoryService
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-8-bug-fixes/task-117-wire-memory-index-into-space-and-memory-services.md
       estimated_hours: 1-2
-      completed_date: null
+      actual_hours: 1
+      completed_date: 2026-03-06
       dependencies: []
       notes: |
-        SpaceService.publish/revise never writes to memory index.
-        MemoryService treats memoryIndex as optional. Both should be required.
+        Made MemoryIndexService required (not optional) in both MemoryService and SpaceService.
+        SpaceService.executePublish now indexes published memories in Firestore memory index.
+        Updated all test files (unit, e2e, web testing-helpers) for required constructor param.
+        763 tests passing, 60 suites.
         Root cause fix for task-116 (index lookup returns null for published memories).
 
   milestone_9:

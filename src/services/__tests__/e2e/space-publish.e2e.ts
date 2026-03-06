@@ -82,13 +82,17 @@ describe('Space Publishing Flow (integration)', () => {
     userCollection = createMockCollection();
     const logger = createMockLogger();
     tokenService = createMockConfirmationTokenService();
-    memoryService = new MemoryService(userCollection as any, userId, logger);
+    const mockMemoryIndex = { index: async () => {}, lookup: async () => null };
+    memoryService = new MemoryService(userCollection as any, userId, logger, {
+      memoryIndex: mockMemoryIndex as any,
+    });
     spaceService = new SpaceService(
       weaviateClient as any,
       userCollection as any,
       userId,
       tokenService,
       logger,
+      mockMemoryIndex as any,
     );
   });
 

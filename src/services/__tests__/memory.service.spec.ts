@@ -5,13 +5,17 @@ import { TrustLevel } from '../../types/trust.types.js';
 describe('MemoryService', () => {
   let collection: ReturnType<typeof createMockCollection>;
   let logger: ReturnType<typeof createMockLogger>;
+  let mockMemoryIndex: { index: jest.Mock; lookup: jest.Mock };
   let service: MemoryService;
   const userId = 'test-user';
 
   beforeEach(() => {
     collection = createMockCollection();
     logger = createMockLogger();
-    service = new MemoryService(collection as any, userId, logger);
+    mockMemoryIndex = { index: jest.fn().mockResolvedValue(undefined), lookup: jest.fn().mockResolvedValue(null) };
+    service = new MemoryService(collection as any, userId, logger, {
+      memoryIndex: mockMemoryIndex as any,
+    });
   });
 
   describe('create', () => {
@@ -586,9 +590,10 @@ describe('MemoryService', () => {
       expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Index write failed'));
     });
 
-    it('works without memoryIndex (backwards compat)', async () => {
-      const result = await service.create({ content: 'no index' });
+    it('always calls memoryIndex.index() on default service', async () => {
+      const result = await service.create({ content: 'indexed by default' });
       expect(result.memory_id).toBeDefined();
+      expect(mockMemoryIndex.index).toHaveBeenCalledWith(result.memory_id, collection.name);
     });
   });
 
@@ -693,15 +698,5 @@ describe('MemoryService', () => {
       await expect(svc.resolveById('any-id')).rejects.toThrow('resolveById requires weaviateClient');
     });
 
-    it('returns null without memoryIndex', async () => {
-      const svc = new MemoryService(collection as any, userId, logger, {
-        weaviateClient: mockWeaviateClient,
-      });
-
-      const result = await svc.resolveById('any-uuid');
-
-      expect(result.memory).toBeNull();
-      expect(result.collectionName).toBeNull();
-    });
   });
 });

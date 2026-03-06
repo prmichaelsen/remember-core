@@ -17,7 +17,10 @@ describe('Memory Lifecycle (integration)', () => {
   beforeEach(() => {
     collection = createMockCollection();
     const logger = createMockLogger();
-    service = new MemoryService(collection as any, userId, logger);
+    const mockMemoryIndex = { index: async () => {}, lookup: async () => null };
+    service = new MemoryService(collection as any, userId, logger, {
+      memoryIndex: mockMemoryIndex as any,
+    });
   });
 
   it('full lifecycle: create → search → update → delete', async () => {

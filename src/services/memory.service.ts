@@ -213,8 +213,8 @@ export class MemoryService {
     private collection: any,
     private userId: string,
     private logger: Logger,
-    private options?: {
-      memoryIndex?: MemoryIndexService;
+    private options: {
+      memoryIndex: MemoryIndexService;
       weaviateClient?: any;
     },
   ) {}
@@ -252,21 +252,19 @@ export class MemoryService {
    * Requires `memoryIndex` and `weaviateClient` in constructor options.
    */
   async resolveById(memoryId: string): Promise<ResolveByIdResult> {
-    if (!this.options?.weaviateClient) {
+    if (!this.options.weaviateClient) {
       throw new Error('resolveById requires weaviateClient in options');
     }
 
-    if (this.options?.memoryIndex) {
-      const collectionName = await this.options.memoryIndex.lookup(memoryId);
-      if (collectionName) {
-        const col = this.options.weaviateClient.collections.get(collectionName);
-        const memory = await fetchMemoryWithAllProperties(col, memoryId);
-        if (memory?.properties) {
-          return {
-            memory: normalizeDoc({ id: memory.uuid, ...memory.properties }),
-            collectionName,
-          };
-        }
+    const collectionName = await this.options.memoryIndex.lookup(memoryId);
+    if (collectionName) {
+      const col = this.options.weaviateClient.collections.get(collectionName);
+      const memory = await fetchMemoryWithAllProperties(col, memoryId);
+      if (memory?.properties) {
+        return {
+          memory: normalizeDoc({ id: memory.uuid, ...memory.properties }),
+          collectionName,
+        };
       }
     }
 
@@ -319,13 +317,11 @@ export class MemoryService {
     this.logger.info('Memory created', { memoryId, userId: this.userId });
 
     // Index memory UUID → collection name for cross-collection resolution
-    if (this.options?.memoryIndex) {
-      try {
-        const collectionName = this.collection.name;
-        await this.options.memoryIndex.index(memoryId, collectionName);
-      } catch (err) {
-        this.logger.warn?.(`[MemoryService] Index write failed for ${memoryId}: ${err}`);
-      }
+    try {
+      const collectionName = this.collection.name;
+      await this.options.memoryIndex.index(memoryId, collectionName);
+    } catch (err) {
+      this.logger.warn?.(`[MemoryService] Index write failed for ${memoryId}: ${err}`);
     }
 
     return { memory_id: memoryId, created_at: now };

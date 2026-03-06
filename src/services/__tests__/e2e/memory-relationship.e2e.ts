@@ -19,7 +19,10 @@ describe('Memory + Relationship cross-service (integration)', () => {
   beforeEach(() => {
     collection = createMockCollection();
     const logger = createMockLogger();
-    memoryService = new MemoryService(collection as any, userId, logger);
+    const mockMemoryIndex = { index: async () => {}, lookup: async () => null };
+    memoryService = new MemoryService(collection as any, userId, logger, {
+      memoryIndex: mockMemoryIndex as any,
+    });
     relationshipService = new RelationshipService(collection as any, userId, logger);
   });
 

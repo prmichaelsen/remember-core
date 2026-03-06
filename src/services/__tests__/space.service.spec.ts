@@ -74,6 +74,7 @@ describe('SpaceService', () => {
   let userCollection: ReturnType<typeof createMockCollection>;
   let logger: ReturnType<typeof createMockLogger>;
   let confirmationService: ConfirmationTokenService;
+  let mockMemoryIndex: { index: jest.Mock; lookup: jest.Mock };
   let service: SpaceService;
   const userId = 'test-user';
 
@@ -82,12 +83,14 @@ describe('SpaceService', () => {
     userCollection = createMockCollection();
     logger = createMockLogger();
     confirmationService = new ConfirmationTokenService(logger);
+    mockMemoryIndex = { index: jest.fn().mockResolvedValue(undefined), lookup: jest.fn().mockResolvedValue(null) };
     service = new SpaceService(
       weaviateClient as any,
       userCollection as any,
       userId,
       confirmationService,
       logger,
+      mockMemoryIndex as any,
     );
     // Register user collection with client
     (weaviateClient as any)._collections.set(`Memory_users_${userId}`, userCollection);
@@ -224,6 +227,21 @@ describe('SpaceService', () => {
       const source = userCollection._store.get(memoryId);
       expect(source!.properties.space_ids).toContain('the_void');
     });
+
+    it('indexes published memory UUID in memory index', async () => {
+      const memoryId = await insertUserMemory();
+
+      const { token } = await service.publish({
+        memory_id: memoryId,
+        spaces: ['the_void'],
+      });
+      await service.confirm({ token });
+
+      expect(mockMemoryIndex.index).toHaveBeenCalledWith(
+        expect.any(String), // weaviateId (UUID v5 of composite ID)
+        'Memory_spaces_public',
+      );
+    });
   });
 
   describe('deny', () => {
@@ -359,6 +377,7 @@ describe('SpaceService', () => {
         userId,
         confirmationService,
         logger,
+        mockMemoryIndex as any,
         { moderationClient: client },
       );
     }

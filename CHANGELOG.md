@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.33.0] - 2026-03-06
+
+### Fixed
+- **MemoryIndexService now required** in both `MemoryService` and `SpaceService` constructors (no longer optional)
+- **SpaceService.publish** now writes published memory UUIDs to the Firestore memory index, fixing 404s on `GET /memories/:id` for published memories (root cause of task-116)
+- Removed conditional guards around index writes in `MemoryService.create()` and `resolveById()`
+
 ## [0.32.1] - 2026-03-05
 
 ### Added

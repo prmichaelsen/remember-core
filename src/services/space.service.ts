@@ -1361,6 +1361,12 @@ export class SpaceService {
     const opts: any = { limit };
     if (filters) opts.filters = filters;
 
+    // Empty/blank queries can't be vectorized — fall back to BM25 with wildcard
+    const isWildcard = !query.trim() || query === '*';
+    if (isWildcard) {
+      return (await collection.query.bm25('*', opts)).objects;
+    }
+
     switch (searchType) {
       case 'bm25':
         return (await collection.query.bm25(query, opts)).objects;

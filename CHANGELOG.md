@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.17] - 2026-03-06
+
+### Fixed
+- **Space search empty query 500** — empty/blank query strings sent to Weaviate hybrid search caused OpenAI vectorization to fail with 400. Now falls back to BM25 wildcard search for empty queries, matching MemoryService behavior.
+
 ## [0.34.16] - 2026-03-06
 
 ### Added

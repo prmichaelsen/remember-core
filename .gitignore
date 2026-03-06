@@ -13,6 +13,7 @@ lib/
 .env
 .env.local
 .env.*.local
+.env.e1
 
 # IDE
 .vscode/

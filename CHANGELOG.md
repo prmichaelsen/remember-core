@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.0] - 2026-03-06
+
+### Added
+- **Live E2E test infrastructure** — tests run against deployed e1 REST service via SVC client SDK
+  - `test/live/` directory with global setup, helpers, and 3 test suites (health, memories CRUD, preferences)
+  - `config/jest.live.config.js` — Jest config with 30s timeout, serial execution, globalSetup
+  - `scripts/fetch-e1-secrets.ts` — fetches `E1_PLATFORM_SERVICE_TOKEN` from GCP Secret Manager to `.env.e1`
+  - `npm run test:live` and `npm run fetch-e1-secrets` scripts
+- **CI publish gate** — live e2e tests run in `.github/workflows/publish.yml` before npm publish
+  - Requires `E1_PLATFORM_SERVICE_TOKEN` GitHub Actions secret
+- `jsonwebtoken` added as devDependency (required for SVC client JWT signing in tests)
+
 ## [0.33.3] - 2026-03-06
 
 ### Changed

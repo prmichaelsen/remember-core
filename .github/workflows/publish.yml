@@ -43,6 +43,12 @@ jobs:
         if: steps.version.outputs.changed == 'true'
         run: npm test
 
+      - name: Live E2E Tests
+        if: steps.version.outputs.changed == 'true'
+        run: npm run test:live
+        env:
+          E1_PLATFORM_SERVICE_TOKEN: ${{ secrets.E1_PLATFORM_SERVICE_TOKEN }}
+
       - name: Publish
         if: steps.version.outputs.changed == 'true'
         run: npm publish --access public

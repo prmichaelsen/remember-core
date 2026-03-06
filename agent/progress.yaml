@@ -393,6 +393,19 @@ milestones:
       Target: relationships, spaces, trust, sort modes, ratings.
       See: agent/milestones/milestone-24-live-e2e-test-coverage.md
 
+  - id: M25
+    name: byDiscovery Sort Mode
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 4
+    notes: |
+      Algorithmic sort mode that interleaves unrated/underrated memories with
+      high-rated ones at a 4:1 ratio to solve the cold-start problem in byRating.
+      Strategy: recent (newest unrated first). Scope: spaces, groups, personal.
+      See: agent/design/local.by-discovery-sort-mode.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1871,11 +1884,45 @@ tasks:
       notes: |
         byTime, byDensity, byRating sort queries + rate/retract via SVC client against e1.
 
+  milestone_25:
+    - id: task-132
+      name: Core Interleaving Algorithm
+      status: not_started
+      file: agent/tasks/milestone-25-by-discovery-sort-mode/task-132-core-interleaving-algorithm.md
+      estimated_hours: 1-2
+      dependencies: []
+      notes: |
+        interleaveDiscovery() function, SortMode enum update, is_discovery flag.
+    - id: task-133
+      name: Wire byDiscovery into SpaceService
+      status: not_started
+      file: agent/tasks/milestone-25-by-discovery-sort-mode/task-133-wire-into-space-service.md
+      estimated_hours: 1-2
+      dependencies: [task-132]
+      notes: |
+        Two parallel Weaviate queries in searchSpace() and querySpace(), interleave results.
+    - id: task-134
+      name: Wire byDiscovery into MemoryService
+      status: not_started
+      file: agent/tasks/milestone-25-by-discovery-sort-mode/task-134-wire-into-memory-service.md
+      estimated_hours: 0.5-1
+      dependencies: [task-132]
+      notes: |
+        Same pattern in personal collection search. Mirrors SpaceService approach.
+    - id: task-135
+      name: Unit Tests and Edge Cases
+      status: not_started
+      file: agent/tasks/milestone-25-by-discovery-sort-mode/task-135-unit-tests-and-edge-cases.md
+      estimated_hours: 1-2
+      dependencies: [task-132, task-133, task-134]
+      notes: |
+        Interleaving logic, pool exhaustion, pagination, SpaceService + MemoryService integration.
+
 documentation:
   design_documents: 24
-  milestone_documents: 25
+  milestone_documents: 26
   pattern_documents: 29
-  task_documents: 131
+  task_documents: 135
 
 progress:
   planning: 100

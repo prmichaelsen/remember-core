@@ -398,7 +398,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1
-    tasks_completed: 2
+    tasks_completed: 3
     tasks_total: 4
     notes: |
       Algorithmic sort mode that interleaves unrated/underrated memories with
@@ -1904,13 +1904,14 @@ tasks:
       notes: |
         MemoryService.byDiscovery(), SVC client method, OpenAPI endpoint, types exported.
     - id: task-134
-      name: Wire byDiscovery into MemoryService
-      status: not_started
+      name: Wire byDiscovery into SpaceService
+      status: completed
+      completed: 2026-03-06
       file: agent/tasks/milestone-25-by-discovery-sort-mode/task-134-wire-into-memory-service.md
       estimated_hours: 0.5-1
       dependencies: [task-132]
       notes: |
-        Same pattern in personal collection search. Mirrors SpaceService approach.
+        SpaceService.byDiscovery(), SVC spaces client, OpenAPI endpoint, types exported.
     - id: task-135
       name: Unit Tests and Edge Cases
       status: not_started

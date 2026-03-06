@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.16] - 2026-03-06
+
+### Added
+- **SpaceService.byDiscovery()** — discovery interleaving for shared spaces and groups
+- `DiscoverySpaceInput` / `DiscoverySpaceResult` types with `is_discovery` flag
+- SVC client `spaces.byDiscovery()` method
+- OpenAPI spec: `POST /api/svc/v1/spaces/by-discovery` endpoint
+
 ## [0.34.15] - 2026-03-06
 
 ### Added

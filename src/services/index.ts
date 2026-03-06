@@ -89,6 +89,8 @@ export {
   type SearchSpaceResult,
   type QuerySpaceInput,
   type QuerySpaceResult,
+  type DiscoverySpaceInput,
+  type DiscoverySpaceResult,
   type ModerationAction,
   type ModerationFilter,
   type RevisionEntry,

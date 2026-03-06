@@ -11,6 +11,7 @@ export interface SpacesResource {
   moderate(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   search(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   query(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byDiscovery(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
 }
 
 export function createSpacesResource(http: HttpClient): SpacesResource {
@@ -32,6 +33,9 @@ export function createSpacesResource(http: HttpClient): SpacesResource {
     },
     query(userId, input) {
       return http.request('POST', '/api/svc/v1/spaces/query', { userId, body: input });
+    },
+    byDiscovery(userId, input) {
+      return http.request('POST', '/api/svc/v1/spaces/by-discovery', { userId, body: input });
     },
   };
 }

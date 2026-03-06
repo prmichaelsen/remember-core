@@ -25,6 +25,7 @@ import { ValidationError, NotFoundError, ForbiddenError } from '../errors/app-er
 import type { ModerationClient } from './moderation.service.js';
 import type { MemoryIndexService } from './memory-index.service.js';
 import { tagWithSource, dedupeBySourceId, type DedupeOptions } from '../utils/dedupe.js';
+import { interleaveDiscovery, DISCOVERY_RATIO, DISCOVERY_THRESHOLD } from './discovery.js';
 
 // ─── Shared Types ───────────────────────────────────────────────────────
 
@@ -216,6 +217,31 @@ export interface QuerySpaceResult {
   spaces_queried: string[];
   memories: Record<string, unknown>[];
   total: number;
+}
+
+export interface DiscoverySpaceInput {
+  spaces?: string[];
+  groups?: string[];
+  content_type?: string;
+  tags?: string[];
+  min_weight?: number;
+  max_weight?: number;
+  date_from?: string;
+  date_to?: string;
+  moderation_filter?: ModerationFilter;
+  include_comments?: boolean;
+  limit?: number;
+  offset?: number;
+  dedupe?: DedupeOptions;
+}
+
+export interface DiscoverySpaceResult {
+  spaces_searched: string[] | 'all_public';
+  groups_searched: string[];
+  memories: (Record<string, unknown> & { is_discovery: boolean })[];
+  total: number;
+  offset: number;
+  limit: number;
 }
 
 // ─── Service ────────────────────────────────────────────────────────────
@@ -1109,6 +1135,166 @@ export class SpaceService {
       composite_id: compositeId,
       revised_at: revisedAt,
       results,
+    };
+  }
+
+  // ── By Discovery (interleaved rated + unrated for spaces/groups) ────
+
+  async byDiscovery(input: DiscoverySpaceInput, authContext?: AuthContext): Promise<DiscoverySpaceResult> {
+    const spaces = input.spaces || [];
+    const groups = input.groups || [];
+    const limit = input.limit ?? 10;
+    const offset = input.offset ?? 0;
+
+    // Validate space IDs
+    if (spaces.length > 0) {
+      const invalidSpaces = spaces.filter((s) => !isValidSpaceId(s));
+      if (invalidSpaces.length > 0) {
+        throw new ValidationError(`Invalid space IDs: ${invalidSpaces.join(', ')}`, { spaces: invalidSpaces });
+      }
+    }
+
+    // Validate group IDs
+    if (groups.length > 0) {
+      const invalidGroups = groups.filter((g) => !g || g.includes('.') || g.trim() === '');
+      if (invalidGroups.length > 0) {
+        throw new ValidationError('Group IDs cannot be empty or contain dots');
+      }
+    }
+
+    // Permission check for non-approved moderation filters
+    const moderationFilter = input.moderation_filter || 'approved';
+    if (moderationFilter !== 'approved') {
+      for (const groupId of groups) {
+        if (!canModerate(authContext, groupId)) {
+          throw new ForbiddenError(`Moderator access required to view ${moderationFilter} memories in group ${groupId}`);
+        }
+      }
+      if ((spaces.length > 0 || groups.length === 0) && !canModerateAny(authContext)) {
+        throw new ForbiddenError(`Moderator access required to view ${moderationFilter} memories in spaces`);
+      }
+    }
+
+    // Generous fetch for both pools
+    const fetchLimit = (limit + offset) * 2;
+
+    const fetchPool = async (collection: any, baseFilters: any[], ratingFilter: any, sortProp: string) => {
+      const allFilters = [...baseFilters, ratingFilter];
+      const combined = allFilters.length > 0 ? Filters.and(...allFilters) : undefined;
+      const queryOptions: any = {
+        limit: fetchLimit,
+        sort: collection.sort.byProperty(sortProp, false),
+      };
+      if (combined) queryOptions.filters = combined;
+      return (await collection.query.fetchObjects(queryOptions)).objects;
+    };
+
+    // Build filters using the same SearchSpaceInput shape (cast for buildBaseFilters)
+    const searchInput: SearchSpaceInput = {
+      query: '', // not used for filter building
+      spaces: input.spaces,
+      groups: input.groups,
+      content_type: input.content_type,
+      tags: input.tags,
+      min_weight: input.min_weight,
+      max_weight: input.max_weight,
+      date_from: input.date_from,
+      date_to: input.date_to,
+      moderation_filter: input.moderation_filter,
+      include_comments: input.include_comments,
+    };
+
+    const allRated: any[] = [];
+    const allDiscovery: any[] = [];
+
+    // Search spaces collection
+    if (spaces.length > 0 || groups.length === 0) {
+      await ensurePublicCollection(this.weaviateClient);
+      const spacesCollectionName = getCollectionName(CollectionType.SPACES);
+      const spacesCollection = this.weaviateClient.collections.get(spacesCollectionName);
+      const baseFilters = this.buildBaseFilters(spacesCollection, searchInput);
+
+      if (spaces.length > 0) {
+        baseFilters.push(spacesCollection.filter.byProperty('space_ids').containsAny(spaces));
+      }
+
+      const ratedFilter = spacesCollection.filter.byProperty('rating_count').greaterOrEqual(DISCOVERY_THRESHOLD);
+      const discoveryFilter = spacesCollection.filter.byProperty('rating_count').lessThan(DISCOVERY_THRESHOLD);
+
+      const [rated, discovery] = await Promise.all([
+        fetchPool(spacesCollection, baseFilters, ratedFilter, 'rating_bayesian'),
+        fetchPool(spacesCollection, baseFilters, discoveryFilter, 'created_at'),
+      ]);
+
+      allRated.push(...tagWithSource(rated, spacesCollectionName));
+      allDiscovery.push(...tagWithSource(discovery, spacesCollectionName));
+    }
+
+    // Search group collections
+    for (const groupId of groups) {
+      const groupCollectionName = getCollectionName(CollectionType.GROUPS, groupId);
+      const exists = await this.weaviateClient.collections.exists(groupCollectionName);
+      if (!exists) continue;
+
+      const groupCollection = this.weaviateClient.collections.get(groupCollectionName);
+      const baseFilters = this.buildBaseFilters(groupCollection, searchInput);
+
+      const ratedFilter = groupCollection.filter.byProperty('rating_count').greaterOrEqual(DISCOVERY_THRESHOLD);
+      const discoveryFilter = groupCollection.filter.byProperty('rating_count').lessThan(DISCOVERY_THRESHOLD);
+
+      const [rated, discovery] = await Promise.all([
+        fetchPool(groupCollection, baseFilters, ratedFilter, 'rating_bayesian'),
+        fetchPool(groupCollection, baseFilters, discoveryFilter, 'created_at'),
+      ]);
+
+      allRated.push(...tagWithSource(rated, groupCollectionName));
+      allDiscovery.push(...tagWithSource(discovery, groupCollectionName));
+    }
+
+    // Deduplicate each pool by UUID
+    const dedupePool = (pool: any[]) => {
+      const seen = new Set<string>();
+      return pool.filter((obj) => {
+        if (seen.has(obj.uuid)) return false;
+        seen.add(obj.uuid);
+        return true;
+      });
+    };
+
+    const ratedDeduped = dedupeBySourceId(dedupePool(allRated), input.dedupe);
+    const discoveryDeduped = dedupeBySourceId(dedupePool(allDiscovery), input.dedupe);
+
+    const toDoc = (obj: any) => ({
+      id: obj.uuid,
+      ...obj.properties,
+      ...(obj._also_in?.length ? { also_in: obj._also_in } : {}),
+    });
+
+    const ratedDocs = ratedDeduped.map(toDoc);
+    const discoveryDocs = discoveryDeduped.map(toDoc);
+
+    const interleaved = interleaveDiscovery({
+      rated: ratedDocs,
+      discovery: discoveryDocs,
+      ratio: DISCOVERY_RATIO,
+      offset,
+      limit,
+    });
+
+    const memories = interleaved.map((item) => {
+      const doc = item.item as Record<string, unknown>;
+      return Object.assign({}, doc, { is_discovery: item.is_discovery });
+    });
+
+    const isAllPublic = spaces.length === 0 && groups.length === 0;
+
+    return {
+      spaces_searched: isAllPublic ? 'all_public' : spaces,
+      groups_searched: groups,
+      memories,
+      total: memories.length,
+      offset,
+      limit,
     };
   }
 

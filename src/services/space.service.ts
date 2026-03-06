@@ -1390,12 +1390,29 @@ export class SpaceService {
    */
   async getPublishedLocations(memoryId: string): Promise<{ space_ids: string[]; group_ids: string[] }> {
     const publicCollection = await ensurePublicCollection(this.weaviateClient);
+
+    // Try by original_memory_id first
     const filter = publicCollection.filter.byProperty('original_memory_id').equal(memoryId);
     const result = await publicCollection.query.fetchObjects({ filters: filter, limit: 1 });
-    if (result.objects.length === 0) {
+
+    // Fall back to direct UUID lookup (memoryId may be composite_id)
+    let props: Record<string, any> | undefined;
+    if (result.objects.length > 0) {
+      props = result.objects[0].properties;
+    } else {
+      try {
+        const obj = await publicCollection.query.fetchObjectById(memoryId);
+        if (obj) {
+          props = obj.properties;
+        }
+      } catch {
+        // Not found by UUID either
+      }
+    }
+
+    if (!props) {
       return { space_ids: [], group_ids: [] };
     }
-    const props = result.objects[0].properties;
     return {
       space_ids: Array.isArray(props.space_ids) ? props.space_ids : [],
       group_ids: Array.isArray(props.group_ids) ? props.group_ids : [],

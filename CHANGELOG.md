@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.35.6] - 2026-03-06
+
+### Fixed
+- **getPublishedLocations fails when given composite_id** — clients pass the published composite_id as parent_id when commenting, but getPublishedLocations only searched by original_memory_id. Now falls back to direct UUID lookup so both original and composite IDs work.
+
 ## [0.35.5] - 2026-03-06
 
 ### Added

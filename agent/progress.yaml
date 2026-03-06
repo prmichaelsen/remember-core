@@ -378,6 +378,20 @@ milestones:
       Task 127 is a cross-project task in remember-rest-service.
       See: agent/milestones/milestone-23-gcp-extraction-clients.md
 
+  - id: M24
+    name: Live E2E Test Coverage
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 4
+    notes: |
+      Expand live e2e test suite to cover all SVC client resources against
+      deployed e1 REST service. Tests gate npm publish in CI.
+      Current: 3 suites (health, memories, preferences).
+      Target: relationships, spaces, trust, sort modes, ratings.
+      See: agent/milestones/milestone-24-live-e2e-test-coverage.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1815,11 +1829,48 @@ tasks:
         EXTRACTOR_REGISTRY provider to pass VisionClient + DocumentAiClient.
         Blocked on publishing remember-core v0.34.0. GCloud secrets still need creating.
 
+  milestone_24:
+    - id: task-128
+      name: Relationships Live Tests
+      status: not_started
+      file: agent/tasks/milestone-24-live-e2e-test-coverage/task-128-relationships-live-tests.md
+      estimated_hours: 1
+      dependencies: []
+      notes: |
+        Create, search, delete relationships via SVC client against e1.
+
+    - id: task-129
+      name: Spaces Live Tests
+      status: not_started
+      file: agent/tasks/milestone-24-live-e2e-test-coverage/task-129-spaces-live-tests.md
+      estimated_hours: 1-2
+      dependencies: []
+      notes: |
+        Publish-confirm-search-retract flow via SVC client against e1.
+
+    - id: task-130
+      name: Trust Live Tests
+      status: not_started
+      file: agent/tasks/milestone-24-live-e2e-test-coverage/task-130-trust-live-tests.md
+      estimated_hours: 1
+      dependencies: []
+      notes: |
+        Ghost config and trust level operations via SVC client against e1.
+
+    - id: task-131
+      name: Sort Modes and Ratings Live Tests
+      status: not_started
+      file: agent/tasks/milestone-24-live-e2e-test-coverage/task-131-sort-ratings-live-tests.md
+      estimated_hours: 1-2
+      dependencies: []
+      notes: |
+        byTime, byDensity, byRating sort queries + rate/retract via SVC client against e1.
+
 documentation:
   design_documents: 24
-  milestone_documents: 24
+  milestone_documents: 25
   pattern_documents: 29
-  task_documents: 127
+  task_documents: 131
 
 progress:
   planning: 100

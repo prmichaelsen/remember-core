@@ -2,7 +2,7 @@
 
 **Goal**: Add `byDiscovery` sort mode that interleaves unrated/underrated memories with high-rated ones to solve the cold-start problem in `byRating`.
 
-**Status**: Not Started
+**Status**: In Progress
 **Estimated Duration**: 1 week (4-6 hours agent time)
 **Dependencies**: M20 (Memory Ratings System, complete), M11 (Basic Sort Modes, complete)
 
@@ -53,7 +53,8 @@ Clarifications: 14, 15
 
 ## Tasks
 
-- Task 132: Core interleaving algorithm
-- Task 133: Wire byDiscovery into SpaceService
-- Task 134: Wire byDiscovery into MemoryService
-- Task 135: Unit tests and edge cases
+- Task 132: Core interleaving algorithm (complete)
+- Task 133: Wire byDiscovery into MemoryService + SVC Client + OpenAPI (complete)
+- Task 134: Wire byDiscovery into SpaceService (complete)
+- Task 135: Unit tests and edge cases (complete)
+- Task 137: Add search query support to byDiscovery (not started — bug fix)

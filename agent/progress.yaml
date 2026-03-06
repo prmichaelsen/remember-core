@@ -398,13 +398,25 @@ milestones:
     status: completed
     progress: 100
     estimated_weeks: 1
-    tasks_completed: 4
-    tasks_total: 4
+    tasks_completed: 5
+    tasks_total: 5
     notes: |
       Algorithmic sort mode that interleaves unrated/underrated memories with
       high-rated ones at a 4:1 ratio to solve the cold-start problem in byRating.
       Strategy: recent (newest unrated first). Scope: spaces, groups, personal.
       See: agent/design/local.by-discovery-sort-mode.md
+
+  - id: M26
+    name: App Client Comments Resource
+    status: not_started
+    progress: 0
+    estimated_weeks: 0.5
+    tasks_completed: 0
+    tasks_total: 1
+    notes: |
+      Add CommentsResource to app client SDK wrapping POST /api/app/v1/spaces/comments.
+      OpenAPI spec + generated types already exist. Needs resource, factory wiring, tests.
+      See: agent/milestones/milestone-26-app-client-comments.md
 
 tasks:
   milestone_1:
@@ -1920,12 +1932,32 @@ tasks:
       dependencies: [task-132, task-133, task-134]
       notes: |
         Interleaving logic, pool exhaustion, pagination, SpaceService + MemoryService integration.
+    - id: task-137
+      name: Add Search Query Support to byDiscovery
+      status: completed
+      completed: 2026-03-06
+      file: agent/tasks/milestone-25-by-discovery-sort-mode/task-137-discovery-search-query-support.md
+      estimated_hours: 1-2
+      dependencies: [task-133, task-134]
+      notes: |
+        Bug fix: byDiscovery only uses fetchObjects (browse mode). Design doc specifies
+        search query support but it was never implemented. Add optional query field to
+        DiscoveryModeRequest and DiscoverySpaceInput, use hybrid search when provided.
+
+  milestone_26:
+    - id: task-136
+      name: Add CommentsResource to App Client
+      status: not_started
+      file: agent/tasks/milestone-26-app-client-comments/task-136-comments-resource.md
+      estimated_hours: 1-2
+      dependencies: [task-43]
+      description: "Create src/app/comments.ts with CommentsResource wrapping POST /api/app/v1/spaces/comments, wire into createAppClient, add tests."
 
 documentation:
   design_documents: 24
-  milestone_documents: 26
+  milestone_documents: 27
   pattern_documents: 29
-  task_documents: 135
+  task_documents: 136
 
 progress:
   planning: 100

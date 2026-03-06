@@ -199,6 +199,9 @@ export function createMockCollection() {
                     greaterOrEqual(value: any) {
                       return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'gte', field: nextName, value }] });
                     },
+                    lessThan(value: any) {
+                      return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'lt', field: nextName, value }] });
+                    },
                     lessOrEqual(value: any) {
                       return nextFilter({ operator: 'And', filters: [filterObj, { _type: 'lte', field: nextName, value }] });
                     },
@@ -227,6 +230,9 @@ export function createMockCollection() {
           },
           greaterOrEqual(value: any) {
             return createChainableFilter({ _type: 'gte', field: name, value });
+          },
+          lessThan(value: any) {
+            return createChainableFilter({ _type: 'lt', field: name, value });
           },
           lessOrEqual(value: any) {
             return createChainableFilter({ _type: 'lte', field: name, value });
@@ -333,6 +339,8 @@ function applyFilter(objects: MockWeaviateObject[], filter: MockFilter): MockWea
       return objects.filter((obj) => obj.properties[filter.field!] > filter.value);
     case 'gte':
       return objects.filter((obj) => obj.properties[filter.field!] >= filter.value);
+    case 'lt':
+      return objects.filter((obj) => obj.properties[filter.field!] < filter.value);
     case 'lte':
       return objects.filter((obj) => obj.properties[filter.field!] <= filter.value);
     case 'containsAny':

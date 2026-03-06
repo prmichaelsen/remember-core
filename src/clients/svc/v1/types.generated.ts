@@ -109,6 +109,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/by-discovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Browse or search memories with discovery interleaving (rated + unrated at 4:1 ratio) */
+        post: operations["memoriesByDiscovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/memories/search": {
         parameters: {
             query?: never;
@@ -466,6 +483,23 @@ export interface paths {
         put?: never;
         /** Semantic query across shared spaces */
         post: operations["querySpaces"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/spaces/by-discovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Browse or search spaces with discovery interleaving (rated + unrated at 4:1 ratio) */
+        post: operations["spacesByDiscovery"];
         delete?: never;
         options?: never;
         head?: never;
@@ -873,6 +907,60 @@ export interface components {
             offset: number;
             limit: number;
         };
+        DiscoveryModeRequest: {
+            /** @description Optional search query. When provided, pools are ranked by relevance (hybrid search) instead of rating/recency. */
+            query?: string;
+            /** @default 10 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            filters?: components["schemas"]["SearchFilters"];
+            deleted_filter?: components["schemas"]["DeletedFilter"];
+            ghost_context?: components["schemas"]["GhostSearchContext"];
+        };
+        DiscoveryModeResult: {
+            memories: ({
+                /** @description Whether this item was surfaced as a discovery slot */
+                is_discovery?: boolean;
+            } & {
+                [key: string]: unknown;
+            })[];
+            total: number;
+            offset: number;
+            limit: number;
+        };
+        DiscoverySpaceInput: {
+            /** @description Optional search query. When provided, pools are ranked by relevance (hybrid search) instead of rating/recency. */
+            query?: string;
+            spaces?: string[];
+            groups?: string[];
+            content_type?: string;
+            tags?: string[];
+            min_weight?: number;
+            max_weight?: number;
+            /** Format: date-time */
+            date_from?: string;
+            /** Format: date-time */
+            date_to?: string;
+            moderation_filter?: components["schemas"]["ModerationFilter"];
+            include_comments?: boolean;
+            /** @default 10 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+        };
+        DiscoverySpaceResult: {
+            spaces_searched: string[] | "all_public";
+            groups_searched: string[];
+            memories: ({
+                is_discovery?: boolean;
+            } & {
+                [key: string]: unknown;
+            })[];
+            total: number;
+            offset: number;
+            limit: number;
+        };
         TimeSliceSearchInput: {
             query: string;
             /** @default 10 */
@@ -1059,6 +1147,11 @@ export interface components {
             limit: number;
             /** @default 0 */
             offset: number;
+            /**
+             * @description Enable content-hash deduplication across collections (default true)
+             * @default true
+             */
+            dedupe: boolean;
         };
         QuerySpaceInput: {
             question: string;
@@ -1112,9 +1205,17 @@ export interface components {
         SearchSpaceResult: {
             spaces_searched: string[] | "all_public";
             groups_searched: string[];
-            memories: {
+            memories: ({
+                /** @description Other collections where this memory also exists (populated when dedupe is enabled) */
+                also_in?: {
+                    /** @description Collection name where the duplicate exists */
+                    source: string;
+                    /** @description UUID of the duplicate memory */
+                    id: string;
+                }[];
+            } & {
                 [key: string]: unknown;
-            }[];
+            })[];
             total: number;
             offset: number;
             limit: number;
@@ -1609,6 +1710,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RatingModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesByDiscovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Discovery-interleaved memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryModeResult"];
                 };
             };
             401: components["responses"]["UnauthorizedError"];
@@ -2143,6 +2269,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuerySpaceResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    spacesByDiscovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoverySpaceInput"];
+            };
+        };
+        responses: {
+            /** @description Discovery-interleaved space memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoverySpaceResult"];
                 };
             };
             400: components["responses"]["ValidationError"];

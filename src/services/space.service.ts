@@ -220,6 +220,7 @@ export interface QuerySpaceResult {
 }
 
 export interface DiscoverySpaceInput {
+  query?: string;
   spaces?: string[];
   groups?: string[];
   content_type?: string;
@@ -1177,15 +1178,18 @@ export class SpaceService {
 
     // Generous fetch for both pools
     const fetchLimit = (limit + offset) * 2;
+    const hasQuery = input.query?.trim();
 
     const fetchPool = async (collection: any, baseFilters: any[], ratingFilter: any, sortProp: string) => {
       const allFilters = [...baseFilters, ratingFilter];
       const combined = allFilters.length > 0 ? Filters.and(...allFilters) : undefined;
-      const queryOptions: any = {
-        limit: fetchLimit,
-        sort: collection.sort.byProperty(sortProp, false),
-      };
+      const queryOptions: any = { limit: fetchLimit };
       if (combined) queryOptions.filters = combined;
+      if (hasQuery) {
+        queryOptions.alpha = 0.7;
+        return (await collection.query.hybrid(input.query!, queryOptions)).objects;
+      }
+      queryOptions.sort = collection.sort.byProperty(sortProp, false);
       return (await collection.query.fetchObjects(queryOptions)).objects;
     };
 

@@ -144,6 +144,7 @@ export interface DensityModeResult {
 }
 
 export interface DiscoveryModeRequest {
+  query?: string;
   limit?: number;
   offset?: number;
   filters?: SearchFilters;
@@ -621,29 +622,35 @@ export class MemoryService {
     // Generous fetch — we merge in-memory then slice
     const fetchLimit = (limit + offset) * 2;
 
-    // Rated pool: rating_count >= threshold, sorted by Bayesian DESC
+    const hasQuery = input.query?.trim();
+
+    // Rated pool: rating_count >= threshold
     const executeRated = async (useDeletedFilter: boolean) => {
       const base = buildBaseFilters(useDeletedFilter);
       base.push(this.collection.filter.byProperty('rating_count').greaterOrEqual(RATING_MIN_THRESHOLD));
       const combinedFilters = combineFiltersWithAnd(base);
-      const queryOptions: any = {
-        limit: fetchLimit,
-        sort: this.collection.sort.byProperty('rating_bayesian', false),
-      };
+      const queryOptions: any = { limit: fetchLimit };
       if (combinedFilters) queryOptions.filters = combinedFilters;
+      if (hasQuery) {
+        queryOptions.alpha = 0.7;
+        return this.collection.query.hybrid(input.query!, queryOptions);
+      }
+      queryOptions.sort = this.collection.sort.byProperty('rating_bayesian', false);
       return this.collection.query.fetchObjects(queryOptions);
     };
 
-    // Discovery pool: rating_count < threshold, sorted by created_at DESC
+    // Discovery pool: rating_count < threshold
     const executeDiscovery = async (useDeletedFilter: boolean) => {
       const base = buildBaseFilters(useDeletedFilter);
       base.push(this.collection.filter.byProperty('rating_count').lessThan(RATING_MIN_THRESHOLD));
       const combinedFilters = combineFiltersWithAnd(base);
-      const queryOptions: any = {
-        limit: fetchLimit,
-        sort: this.collection.sort.byProperty('created_at', false),
-      };
+      const queryOptions: any = { limit: fetchLimit };
       if (combinedFilters) queryOptions.filters = combinedFilters;
+      if (hasQuery) {
+        queryOptions.alpha = 0.7;
+        return this.collection.query.hybrid(input.query!, queryOptions);
+      }
+      queryOptions.sort = this.collection.sort.byProperty('created_at', false);
       return this.collection.query.fetchObjects(queryOptions);
     };
 

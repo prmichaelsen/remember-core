@@ -252,7 +252,7 @@ paths:
   /api/svc/v1/memories/by-discovery:
     post:
       tags: [memories]
-      summary: Fetch memories with discovery interleaving (rated + unrated at 4:1 ratio)
+      summary: Browse or search memories with discovery interleaving (rated + unrated at 4:1 ratio)
       operationId: memoriesByDiscovery
       requestBody:
         required: true
@@ -780,7 +780,7 @@ paths:
   /api/svc/v1/spaces/by-discovery:
     post:
       tags: [spaces]
-      summary: Browse spaces with discovery interleaving (rated + unrated at 4:1 ratio)
+      summary: Browse or search spaces with discovery interleaving (rated + unrated at 4:1 ratio)
       operationId: spacesByDiscovery
       requestBody:
         required: true
@@ -1737,6 +1737,9 @@ components:
     DiscoveryModeRequest:
       type: object
       properties:
+        query:
+          type: string
+          description: Optional search query. When provided, pools are ranked by relevance (hybrid search) instead of rating/recency.
         limit:
           type: integer
           minimum: 1
@@ -1776,6 +1779,9 @@ components:
     DiscoverySpaceInput:
       type: object
       properties:
+        query:
+          type: string
+          description: Optional search query. When provided, pools are ranked by relevance (hybrid search) instead of rating/recency.
         spaces:
           type: array
           items:

@@ -699,4 +699,70 @@ describe('MemoryService', () => {
     });
 
   });
+
+  describe('byDiscovery', () => {
+    beforeEach(async () => {
+      // Create rated memories (rating_count >= 5)
+      const rated1 = await service.create({ content: 'Popular article about cats' });
+      await collection.data.update({ id: rated1.memory_id, properties: { rating_count: 10, rating_bayesian: 4.5 } });
+      const rated2 = await service.create({ content: 'Well-known dog story' });
+      await collection.data.update({ id: rated2.memory_id, properties: { rating_count: 8, rating_bayesian: 3.9 } });
+
+      // Create discovery memories (rating_count < 5)
+      const disc1 = await service.create({ content: 'New essay about cats' });
+      await collection.data.update({ id: disc1.memory_id, properties: { rating_count: 0, rating_bayesian: 0 } });
+      const disc2 = await service.create({ content: 'Fresh take on dogs' });
+      await collection.data.update({ id: disc2.memory_id, properties: { rating_count: 2, rating_bayesian: 2.0 } });
+    });
+
+    it('returns interleaved results without query (browse mode)', async () => {
+      const result = await service.byDiscovery({ limit: 10 });
+      expect(result.memories.length).toBe(4);
+      // Should have both discovery and non-discovery items
+      const discoveryItems = result.memories.filter((m) => m.is_discovery);
+      const ratedItems = result.memories.filter((m) => !m.is_discovery);
+      expect(discoveryItems.length).toBeGreaterThanOrEqual(1);
+      expect(ratedItems.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('returns interleaved results with query (search mode)', async () => {
+      const result = await service.byDiscovery({ query: 'cats', limit: 10 });
+      expect(result.memories.length).toBeGreaterThanOrEqual(1);
+      // Should still have is_discovery flags
+      for (const memory of result.memories) {
+        expect(typeof memory.is_discovery).toBe('boolean');
+      }
+    });
+
+    it('uses hybrid search when query is provided', async () => {
+      const hybridSpy = jest.spyOn(collection.query, 'hybrid');
+      const fetchSpy = jest.spyOn(collection.query, 'fetchObjects');
+
+      await service.byDiscovery({ query: 'cats', limit: 10 });
+
+      // hybrid should be called (twice — rated pool + discovery pool)
+      expect(hybridSpy).toHaveBeenCalledTimes(2);
+      expect(hybridSpy).toHaveBeenCalledWith('cats', expect.objectContaining({ alpha: 0.7 }));
+      // fetchObjects should NOT be called
+      expect(fetchSpy).not.toHaveBeenCalled();
+
+      hybridSpy.mockRestore();
+      fetchSpy.mockRestore();
+    });
+
+    it('uses fetchObjects when no query is provided', async () => {
+      const hybridSpy = jest.spyOn(collection.query, 'hybrid');
+      const fetchSpy = jest.spyOn(collection.query, 'fetchObjects');
+
+      await service.byDiscovery({ limit: 10 });
+
+      // fetchObjects should be called (twice — rated pool + discovery pool)
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      // hybrid should NOT be called
+      expect(hybridSpy).not.toHaveBeenCalled();
+
+      hybridSpy.mockRestore();
+      fetchSpy.mockRestore();
+    });
+  });
 });

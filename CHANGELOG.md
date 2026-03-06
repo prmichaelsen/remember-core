@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.35.4] - 2026-03-06
+
+### Added
+- **byDiscovery search query support** — `DiscoveryModeRequest` and `DiscoverySpaceInput` now accept optional `query` field. When provided, both pools (rated + discovery) use hybrid search ranked by relevance instead of fetchObjects with rating/recency sort. Browse mode (no query) unchanged.
+- **App client CommentsResource** — `appClient.comments.createAndPublish()` wrapping `POST /api/app/v1/spaces/comments`
+- `lessThan` filter support in Weaviate test mock
+
+### Fixed
+- **byDiscovery was browse-only** — design doc specified search query support but implementation only used `fetchObjects`. Now correctly uses `hybrid()` when a query is provided.
+
 ## [0.35.3] - 2026-03-06
 
 ### Fixed

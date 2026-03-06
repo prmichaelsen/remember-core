@@ -3,7 +3,7 @@ project:
   version: 0.34.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M23
+  current_milestone: M24
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -380,10 +380,10 @@ milestones:
 
   - id: M24
     name: Live E2E Test Coverage
-    status: not_started
-    progress: 0
+    status: in_progress
+    progress: 25
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 4
     notes: |
       Expand live e2e test suite to cover all SVC client resources against
@@ -1832,7 +1832,8 @@ tasks:
   milestone_24:
     - id: task-128
       name: Relationships Live Tests
-      status: not_started
+      status: completed
+      completed: 2026-03-06
       file: agent/tasks/milestone-24-live-e2e-test-coverage/task-128-relationships-live-tests.md
       estimated_hours: 1
       dependencies: []

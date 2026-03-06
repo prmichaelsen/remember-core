@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.6] - 2026-03-06
+
+### Added
+- **Relationships live e2e tests** (task-128) — `04-relationships.live.ts`
+  - Create two memories, create relationship between them, search, delete
+  - Tests use `memory_ids` array + `relationship_type` + `observation` API shape
+  - 4 test cases, all passing against e1
+
 ## [0.34.0] - 2026-03-06
 
 ### Added

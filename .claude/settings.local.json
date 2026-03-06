@@ -41,7 +41,9 @@
       "Bash(find:*)",
       "Bash(./agent/scripts/acp.sessions.sh:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(ENVIRONMENT=production node:*)",
+      "Bash(set:*)"
     ]
   }
 }

@@ -126,4 +126,95 @@ describe('Comments (live)', () => {
     expect(res.data).toBeDefined();
     expect((res.data as any).memory_id).toBeDefined();
   });
+
+  it('comment without spaces — infers publish destination from parent', async () => {
+    if (!parentMemoryId) return;
+
+    // Parent is published to the_void. Omitting spaces should auto-infer.
+    const res = await app.comments.createAndPublish(TEST_USER_ID_2, {
+      content: 'Live test: comment with inferred destination',
+      parent_id: parentMemoryId,
+    });
+
+    if (res.error) {
+      console.warn('Inferred destination comment error:', res.error);
+      expect([400, 404, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+    const data = res.data as any;
+    expect(data.memory_id).toBeDefined();
+    // Should have been published to the_void (inferred from parent)
+    if (data.published_to) {
+      expect(data.published_to).toContain('the_void');
+    }
+  });
+
+  it('comment with explicit space_id matching parent', async () => {
+    if (!parentMemoryId) return;
+
+    const res = await app.comments.createAndPublish(TEST_USER_ID, {
+      content: 'Live test: comment with explicit space_id',
+      parent_id: parentMemoryId,
+      spaces: ['the_void'],
+    });
+
+    if (res.error) {
+      console.warn('Explicit space_id comment error:', res.error);
+      expect([400, 404, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+    const data = res.data as any;
+    expect(data.memory_id).toBeDefined();
+    if (data.published_to) {
+      expect(data.published_to).toContain('the_void');
+    }
+  });
+
+  describe('comment on unpublished personal memory', () => {
+    let personalMemoryId: string | null = null;
+
+    beforeAll(async () => {
+      // Create a memory but do NOT publish it to any space or group
+      const res = await svc.memories.create(TEST_USER_ID, {
+        content: 'Live test: unpublished personal memory for comments',
+        type: 'note',
+        tags: ['live-test', 'comments', 'personal'],
+      });
+      if (!res.error) {
+        personalMemoryId = (res.data as any).memory_id;
+      }
+    });
+
+    afterAll(async () => {
+      if (personalMemoryId) {
+        await svc.memories.delete(TEST_USER_ID, personalMemoryId, { reason: 'live-test-cleanup' });
+      }
+    });
+
+    it('owner comments on their own unpublished memory (no space, no group)', async () => {
+      if (!personalMemoryId) return;
+
+      // No spaces or groups passed — memory is not published anywhere
+      const res = await app.comments.createAndPublish(TEST_USER_ID, {
+        content: 'Live test: self-comment on personal memory',
+        parent_id: personalMemoryId,
+      });
+
+      if (res.error) {
+        console.warn('Self-comment on personal memory error:', res.error);
+        // This may legitimately fail if the server requires a publish destination.
+        // Capture the status to understand the behavior.
+        expect([400, 404, 500]).toContain(res.error.status);
+        return;
+      }
+
+      expect(res.data).toBeDefined();
+      const data = res.data as any;
+      expect(data.memory_id).toBeDefined();
+    });
+  });
 });

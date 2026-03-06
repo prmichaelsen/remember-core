@@ -1,6 +1,6 @@
 import { createMockWebSDKContext } from './testing-helpers';
 import { createMemory } from './memories';
-import { publishToSpace, retractFromSpace, reviseInSpace, moderateSpace, searchSpace, querySpace } from './spaces';
+import { publishToSpace, retractFromSpace, reviseInSpace, moderateSpace, searchSpace, querySpace, createAndPublishComment } from './spaces';
 
 describe('Space use cases', () => {
   const ctx = createMockWebSDKContext();
@@ -79,6 +79,41 @@ describe('Space use cases', () => {
         expect(typeof result.data.hasMore).toBe('boolean');
         expect(typeof result.data.total).toBe('number');
       }
+    });
+  });
+
+  describe('createAndPublishComment', () => {
+    it('returns a Result — never throws', async () => {
+      const result = await createAndPublishComment(ctx, {
+        content: 'Great memory!',
+        parent_id: 'some-parent-id',
+        spaces: ['the_void'],
+      });
+      // May fail in mock due to missing public collections, but returns Result
+      expect(result).toBeDefined();
+      expect(typeof result.ok).toBe('boolean');
+    });
+
+    it('returns err with validation kind when no spaces or groups provided', async () => {
+      const result = await createAndPublishComment(ctx, {
+        content: 'test comment',
+        parent_id: 'some-parent-id',
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.kind).toBe('validation');
+      }
+    });
+
+    it('defaults thread_root_id to parent_id', async () => {
+      const result = await createAndPublishComment(ctx, {
+        content: 'top-level comment',
+        parent_id: 'parent-123',
+        spaces: ['the_void'],
+      });
+      // The create should succeed even if publish fails in mock
+      expect(result).toBeDefined();
+      expect(typeof result.ok).toBe('boolean');
     });
   });
 

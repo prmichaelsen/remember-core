@@ -63,7 +63,9 @@ export {
   moderateSpace,
   searchSpace,
   querySpace,
+  createAndPublishComment,
 } from './spaces.js';
+export type { CreateCommentInput } from './spaces.js';
 
 // ─── Use Cases: Ghost/Trust ───────────────────────────────────────────
 

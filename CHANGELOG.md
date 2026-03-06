@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.35.0] - 2026-03-06
+
+### Added
+- **`createAndPublishComment`** — compound web SDK operation that creates a comment memory and immediately publishes it to specified spaces and/or groups with no confirmation flow
+- `CreateCommentInput` type with `content`, `parent_id`, `thread_root_id`, `spaces`, `groups`, `tags`
+- OpenAPI spec: `POST /api/app/v1/spaces/comments` endpoint with `CreateCommentInput` / `CreateCommentResult` schemas
+- Generated app client types for the new endpoint
+
 ## [0.34.17] - 2026-03-06
 
 ### Fixed

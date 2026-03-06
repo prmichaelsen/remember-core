@@ -300,6 +300,8 @@ export interface paths {
          * Publish a memory to shared spaces
          * @description Publishes a memory to the specified shared spaces.
          *     Returns a confirmation token that must be confirmed via the svc confirmations endpoint.
+         *     Content is checked by automated moderation. Hateful, extremist, or otherwise
+         *     policy-violating content will be rejected with a validation error.
          */
         post: operations["appPublishToSpace"];
         delete?: never;
@@ -395,6 +397,28 @@ export interface paths {
         put?: never;
         /** Semantic query across shared spaces */
         post: operations["appQuerySpaces"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/app/v1/spaces/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create and publish a comment
+         * @description Creates a comment memory and immediately publishes it to the specified spaces and/or groups.
+         *     Combines create + publish into a single call with no confirmation flow.
+         *     Content is checked by automated moderation.
+         */
+        post: operations["appCreateAndPublishComment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -839,6 +863,11 @@ export interface components {
             limit: number;
             /** @default 0 */
             offset: number;
+            /**
+             * @description Enable content-hash deduplication across collections (default true)
+             * @default true
+             */
+            dedupe: boolean;
         };
         QuerySpaceInput: {
             question: string;
@@ -873,6 +902,26 @@ export interface components {
             status: "success" | "failed" | "skipped";
             error?: string;
         };
+        CreateCommentInput: {
+            /** @description Content of the comment */
+            content: string;
+            /** @description Memory ID being commented on */
+            parent_id: string;
+            /** @description Root memory ID of the thread (defaults to parent_id for top-level comments) */
+            thread_root_id?: string;
+            /** @description Spaces to publish the comment to */
+            spaces?: string[];
+            /** @description Groups to publish the comment to */
+            groups?: string[];
+            tags?: string[];
+        };
+        CreateCommentResult: {
+            memory_id: string;
+            /** Format: date-time */
+            created_at: string;
+            composite_id?: string;
+            published_to: string[];
+        };
         ModerateResult: {
             memory_id: string;
             action: components["schemas"]["ModerationAction"];
@@ -885,9 +934,17 @@ export interface components {
         SearchSpaceResult: {
             spaces_searched: string[] | "all_public";
             groups_searched: string[];
-            memories: {
+            memories: ({
+                /** @description Other collections where this memory also exists (populated when dedupe is enabled) */
+                also_in?: {
+                    /** @description Collection name where the duplicate exists */
+                    source: string;
+                    /** @description UUID of the duplicate memory */
+                    id: string;
+                }[];
+            } & {
                 [key: string]: unknown;
-            }[];
+            })[];
             total: number;
             offset: number;
             limit: number;
@@ -1825,6 +1882,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuerySpaceResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    appCreateAndPublishComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommentInput"];
+            };
+        };
+        responses: {
+            /** @description Comment created and published */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateCommentResult"];
                 };
             };
             400: components["responses"]["ValidationError"];

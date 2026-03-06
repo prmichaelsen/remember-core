@@ -696,6 +696,33 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/app/v1/spaces/comments:
+    post:
+      tags: [spaces]
+      summary: Create and publish a comment
+      description: |
+        Creates a comment memory and immediately publishes it to the specified spaces and/or groups.
+        Combines create + publish into a single call with no confirmation flow.
+        Content is checked by automated moderation.
+      operationId: appCreateAndPublishComment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentInput'
+      responses:
+        '201':
+          description: Comment created and published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateCommentResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   # ============================================================
   # Trust / Ghost Config
   # ============================================================
@@ -1868,6 +1895,50 @@ components:
           enum: [success, failed, skipped]
         error:
           type: string
+
+    CreateCommentInput:
+      type: object
+      required: [content, parent_id]
+      properties:
+        content:
+          type: string
+          description: Content of the comment
+        parent_id:
+          type: string
+          description: Memory ID being commented on
+        thread_root_id:
+          type: string
+          description: Root memory ID of the thread (defaults to parent_id for top-level comments)
+        spaces:
+          type: array
+          items:
+            type: string
+          description: Spaces to publish the comment to
+        groups:
+          type: array
+          items:
+            type: string
+          description: Groups to publish the comment to
+        tags:
+          type: array
+          items:
+            type: string
+
+    CreateCommentResult:
+      type: object
+      required: [memory_id, created_at, published_to]
+      properties:
+        memory_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        composite_id:
+          type: string
+        published_to:
+          type: array
+          items:
+            type: string
 
     ModerateResult:
       type: object

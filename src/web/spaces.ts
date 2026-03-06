@@ -177,6 +177,68 @@ export async function querySpace(
   }
 }
 
+// ─── Create and Publish Comment ──────────────────────────────────────
+
+export interface CreateCommentInput {
+  /** Content of the comment */
+  content: string;
+  /** Memory ID being commented on */
+  parent_id: string;
+  /** Root memory ID of the thread (same as parent_id for top-level comments) */
+  thread_root_id?: string;
+  /** Spaces to publish the comment to */
+  spaces?: string[];
+  /** Groups to publish the comment to */
+  groups?: string[];
+  /** Optional tags */
+  tags?: string[];
+}
+
+/**
+ * Create a comment memory and immediately publish it to the specified spaces.
+ * Combines create + publish into a single atomic-feeling operation.
+ */
+export async function createAndPublishComment(
+  ctx: WebSDKContext,
+  input: CreateCommentInput,
+): Promise<Result<{
+  memory_id: string;
+  created_at: string;
+  composite_id?: string;
+  published_to: string[];
+}>> {
+  try {
+    // 1. Create the comment memory in the user's collection
+    const memory = await ctx.memoryService.create({
+      content: input.content,
+      type: 'comment' as any,
+      parent_id: input.parent_id,
+      thread_root_id: input.thread_root_id ?? input.parent_id,
+      tags: input.tags ?? [],
+    });
+
+    // 2. Publish to spaces/groups (auto-confirmed)
+    const publishResult = await publishToSpace(ctx, {
+      memory_id: memory.memory_id,
+      spaces: input.spaces,
+      groups: input.groups,
+    });
+
+    if (!publishResult.ok) {
+      return err(publishResult.error);
+    }
+
+    return ok({
+      memory_id: memory.memory_id,
+      created_at: memory.created_at,
+      composite_id: publishResult.data.composite_id,
+      published_to: publishResult.data.published_to,
+    });
+  } catch (e) {
+    return err(wrapError(e));
+  }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────
 
 function toSpaceSearchResult(raw: Record<string, unknown>): SpaceSearchResult {

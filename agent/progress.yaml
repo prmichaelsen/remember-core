@@ -346,8 +346,8 @@ milestones:
 
   - id: M22
     name: Content Hash Deduplication
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1.5
     tasks_completed: 4
     tasks_total: 5
@@ -1707,7 +1707,7 @@ tasks:
 
     - id: task-122
       name: API Contract — also_in and dedupe Parameter
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-22-content-hash-dedupe/task-122-api-contract.md
       estimated_hours: 2-3
       dependencies: [task-121]

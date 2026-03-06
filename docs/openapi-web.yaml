@@ -1772,6 +1772,10 @@ components:
           type: integer
           minimum: 0
           default: 0
+        dedupe:
+          type: boolean
+          default: true
+          description: Enable content-hash deduplication across collections (default true)
 
     QuerySpaceInput:
       type: object
@@ -1903,6 +1907,20 @@ components:
           items:
             type: object
             additionalProperties: true
+            properties:
+              also_in:
+                type: array
+                description: Other collections where this memory also exists (populated when dedupe is enabled)
+                items:
+                  type: object
+                  required: [source, id]
+                  properties:
+                    source:
+                      type: string
+                      description: Collection name where the duplicate exists
+                    id:
+                      type: string
+                      description: UUID of the duplicate memory
         total:
           type: integer
         offset:

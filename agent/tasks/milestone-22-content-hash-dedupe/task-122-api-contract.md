@@ -3,7 +3,7 @@
 **Milestone**: [M22 - Content Hash Deduplication](../../milestones/milestone-22-content-hash-dedupe.md)
 **Estimated Time**: 2-3 hours
 **Dependencies**: [Task 121: Service-Layer Deduplication](task-121-service-deduplication.md)
-**Status**: Not Started
+**Status**: Completed
 
 ---
 

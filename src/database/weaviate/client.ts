@@ -142,6 +142,7 @@ export const ALL_MEMORY_PROPERTIES = [
   'spaces', 'space_id', 'author_id', 'ghost_id', 'attribution', 'published_at', 'discovery_count',
   'space_memory_id', 'original_memory_id', 'revised_at', 'revision_count', 'revision_history',
   'deleted_at', 'deleted_by', 'deletion_reason',
+  'content_hash',
 ] as const;
 
 /**

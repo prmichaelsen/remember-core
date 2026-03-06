@@ -24,6 +24,8 @@ export {
 
 export { canModerate, canModerateAny } from './auth-helpers.js';
 
+export { computeContentHash } from './content-hash.js';
+
 export {
   DebugLogger,
   createDebugLogger,

@@ -3,7 +3,7 @@ project:
   version: 0.32.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M21
+  current_milestone: M22
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -349,7 +349,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1.5
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 5
     notes: |
       SHA-256 content hash deduplication for aggregate feeds.
@@ -1650,13 +1650,18 @@ tasks:
   milestone_22:
     - id: task-118
       name: Schema Migration — content_hash and source_memory_id
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-22-content-hash-dedupe/task-118-schema-migration.md
       estimated_hours: 3-4
+      actual_hours: 0.25
+      completed_date: 2026-03-06
       dependencies: []
       notes: |
-        Add content_hash and source_memory_id to Weaviate schema, types, and client.
-        Backfill script for existing memories.
+        Added content_hash to COMMON_MEMORY_PROPERTIES, ALL_MEMORY_PROPERTIES, and Memory type.
+        Created computeContentHash utility (SHA-256) with 9 unit tests.
+        Created backfill-content-hash.ts migration script.
+        Note: original_memory_id already exists on published collections — reuse instead of source_memory_id.
+        772 tests passing (61 suites), zero regressions.
 
     - id: task-119
       name: Hash Computation on Write

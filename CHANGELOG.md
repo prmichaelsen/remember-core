@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.14] - 2026-03-06
+
+### Fixed
+- **Moderation JSON parse failure** — LLM sometimes wraps response in markdown code fences (` ```json ... ``` `), causing `JSON.parse` to fail. Moderation then fail-closed, blocking all publish operations including comments. Now strips code fences before parsing.
+
 ## [0.34.13] - 2026-03-06
 
 ### Fixed

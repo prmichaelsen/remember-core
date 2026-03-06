@@ -361,6 +361,21 @@ milestones:
       See: agent/milestones/milestone-22-content-hash-dedupe.md
       See: agent/design/local.content-hash-dedupe.md
 
+  - id: M23
+    name: GCP Extraction Clients
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 3
+    dependencies: [M17]
+    notes: |
+      Factory functions for Google Cloud Vision (image OCR) and Document AI
+      (scanned PDF OCR) clients. Implements existing VisionClient and
+      DocumentAiClient interfaces. Consumers pass to createDefaultRegistry().
+      Task 127 is a cross-project task in remember-rest-service.
+      See: agent/milestones/milestone-23-gcp-extraction-clients.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -1758,11 +1773,42 @@ tasks:
         Index doc confirmed in Firestore, memory confirmed in Weaviate.
         user_id matches collection owner. Root cause unknown.
 
+  milestone_23:
+    - id: task-125
+      name: Create VisionClient Factory
+      status: not_started
+      file: agent/tasks/milestone-23-gcp-extraction-clients/task-125-create-vision-client-factory.md
+      estimated_hours: 1-2
+      dependencies: []
+      notes: |
+        createVisionClient() using @google-cloud/vision.
+        Returns VisionClient implementing detectText(Buffer).
+
+    - id: task-126
+      name: Create DocumentAiClient Factory
+      status: not_started
+      file: agent/tasks/milestone-23-gcp-extraction-clients/task-126-create-document-ai-client-factory.md
+      estimated_hours: 1-2
+      dependencies: []
+      notes: |
+        createDocumentAiClient() using @google-cloud/documentai.
+        Returns DocumentAiClient implementing extractText(Buffer).
+
+    - id: task-127
+      name: Wire GCP Clients into remember-rest-service
+      status: not_started
+      file: agent/tasks/milestone-23-gcp-extraction-clients/task-127-wire-into-rest-service.md
+      estimated_hours: 1-2
+      dependencies: [task-125, task-126]
+      notes: |
+        Cross-project: install GCP SDKs, create GCloud secrets, update
+        EXTRACTOR_REGISTRY provider to pass VisionClient + DocumentAiClient.
+
 documentation:
   design_documents: 24
-  milestone_documents: 23
+  milestone_documents: 24
   pattern_documents: 29
-  task_documents: 124
+  task_documents: 127
 
 progress:
   planning: 100

@@ -349,7 +349,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1.5
-    tasks_completed: 2
+    tasks_completed: 3
     tasks_total: 5
     notes: |
       SHA-256 content hash deduplication for aggregate feeds.
@@ -1679,12 +1679,16 @@ tasks:
 
     - id: task-120
       name: Origin Link on Publish/Share
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-22-content-hash-dedupe/task-120-origin-link.md
       estimated_hours: 2-3
+      actual_hours: 0.1
+      completed_date: 2026-03-06
       dependencies: [task-118]
       notes: |
-        Set source_memory_id on group/space copies at publish/share time.
+        original_memory_id already existed in schema — just needed to be set.
+        Set on both space and group copies in SpaceService.executePublish().
+        772 tests passing, zero regressions.
 
     - id: task-121
       name: Service-Layer Deduplication

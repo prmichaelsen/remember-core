@@ -793,6 +793,7 @@ export class SpaceService {
           attribution: 'user',
           moderation_status: spaceModerationStatus,
           tags: mergedTags,
+          original_memory_id: request.payload.memory_id,
         };
         delete publishedMemory._additional;
 
@@ -841,6 +842,7 @@ export class SpaceService {
           attribution: 'user',
           moderation_status: groupModerationStatus,
           tags: mergedTags,
+          original_memory_id: request.payload.memory_id,
         };
         delete groupMemory._additional;
 

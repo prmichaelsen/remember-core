@@ -2,7 +2,8 @@
 
 **Concept**: Algorithmic sort mode that intentionally interleaves unrated/underrated memories with high-rated ones to help new content gain traction
 **Created**: 2026-03-05
-**Status**: Proposal
+**Updated**: 2026-03-06
+**Status**: Ready to implement
 
 ---
 
@@ -23,15 +24,37 @@ This is analogous to how social platforms "boost" new content to gather initial 
 
 ---
 
+## Decisions (from clarifications 14-15)
+
+| Decision | Answer |
+|----------|--------|
+| Discovery strategy (MVP) | `recent` — newest unrated first |
+| Discovery threshold | `rating_count < 5` |
+| Interleaving ratio | 4:1, hardcoded (every 5th item is discovery) |
+| Ratio as API param | No, hardcoded for MVP |
+| Discovery exhaustion | Fill remaining slots with rated content |
+| Rated exhaustion | Fill remaining slots with discovery content |
+| Sort mode API | New `byDiscovery` value in existing `sort_mode` enum |
+| Extra API params | None for MVP — `sort_mode: 'byDiscovery'` is sufficient |
+| `is_discovery` flag | Yes, boolean on each returned memory |
+| Applies to search queries | Yes, not just browse-mode |
+| Scope | Spaces, groups, AND personal collections |
+| Pagination | Fetch both pools fully, merge in-memory, apply offset to merged result |
+| Cross-page dedup | Yes, no repeats across pages |
+| Max age for discovery | No limit |
+| Discovery impressions | Use existing `discovery_count` field (already in Weaviate schema) |
+
+---
+
 ## Solution
 
 ### High-Level Approach
 
 `byDiscovery` produces a feed that mixes two pools:
-1. **Rated pool**: Memories with `rating_count >= threshold` (proven quality), sorted by Bayesian average
-2. **Discovery pool**: Memories with `rating_count < threshold` (unproven), selected for exposure
+1. **Rated pool**: Memories with `rating_count >= 5` (proven quality), sorted by `rating_bayesian` DESC
+2. **Discovery pool**: Memories with `rating_count < 5` (unproven), sorted by `created_at` DESC (recency)
 
-The interleaving ratio determines how often a discovery slot appears. For example, a 4:1 ratio means every 5th memory is from the discovery pool.
+The interleaving ratio is 4:1 — every 5th memory is from the discovery pool.
 
 ### Interleaving Strategy
 
@@ -40,128 +63,121 @@ Position 1: Rated (highest Bayesian)
 Position 2: Rated (2nd highest)
 Position 3: Rated (3rd highest)
 Position 4: Rated (4th highest)
-Position 5: Discovery (selected from unrated pool)
+Position 5: Discovery (most recent unrated)
 Position 6: Rated (5th highest)
 ...
-Position 10: Discovery
+Position 10: Discovery (2nd most recent unrated)
 ```
 
-### Discovery Pool Selection
+### Pool Exhaustion
 
-How to pick which unrated memories get discovery slots? Several strategies to consider:
+When one pool runs out:
+- **Discovery pool empty**: Remaining slots filled with rated content (feed becomes pure `byRating`)
+- **Rated pool empty**: Remaining slots filled with discovery content (feed becomes pure `byTime` for unrated)
 
-**Option A — Recency-biased**: Newest unrated memories first. Gives fresh content a chance. Simple, no additional infrastructure.
+### `is_discovery` Flag
 
-**Option B — Random sampling**: Random selection from unrated pool. Ensures diversity. May surface stale content.
-
-**Option C — Density-biased**: Unrated memories with high `relationship_count` first. Already has engagement signal (relationships), likely to be quality. Leverages existing data.
-
-**Option D — Hybrid**: Weighted combination of recency + density. Prioritizes recent content with relationship signals.
-
-### Alternative Approaches Considered
-
-1. **Bayesian alone handles this**: The Bayesian prior (3.0) already places unrated memories in the middle. But "middle" isn't enough — in a feed sorted descending, middle means below all well-rated content. Users rarely scroll that far.
-2. **Random injection at fixed positions**: Simpler but less principled. byDiscovery should be more intentional about what gets boosted.
-3. **Separate "new" section**: Show unrated content in a separate UI section. Adds UI complexity. Users may ignore it.
+Each memory in the response includes `is_discovery: boolean`. Consumers can use this for:
+- UI badges ("New" / "Undiscovered") to encourage rating
+- Analytics tracking (discovery → rating conversion)
+- Client-side filtering if needed
 
 ---
 
 ## Implementation
 
-### Interface
+### API Surface
+
+`byDiscovery` is a new value in the existing `sort_mode` enum:
 
 ```typescript
-interface DiscoveryModeRequest {
-  collectionName: string;
-  /** Ratio of rated:discovery items. Default 4 (every 5th item is discovery) */
-  discoveryRatio?: number;
-  /** How to select discovery items */
-  discoveryStrategy?: 'recent' | 'density' | 'random' | 'hybrid';
-  limit?: number;
-  offset?: number;
-  filters?: SearchFilters;
-}
+type SortMode = 'byTime' | 'byDensity' | 'byRating' | 'byDiscovery';
+```
 
-interface DiscoveryModeResult {
-  memories: DiscoveryMemory[];
-  total: number;
-}
+No additional parameters for MVP. The consumer requests:
 
+```typescript
+searchSpace({ sort_mode: 'byDiscovery', limit: 20 });
+// or
+searchMemories({ sort_mode: 'byDiscovery', limit: 20 });
+```
+
+### Internal Interface
+
+```typescript
 interface DiscoveryMemory extends Memory {
-  /** Whether this item was surfaced as a discovery slot */
   is_discovery: boolean;
 }
 ```
 
+The `discoveryRatio` (4) and strategy (`recent`) are internal constants, not exposed to the API.
+
 ### Query Strategy
 
 Two parallel Weaviate queries:
-1. **Rated query**: `rating_count >= 5`, sort by `rating_bayesian` DESC, limit = `limit * (ratio / (ratio + 1))`
-2. **Discovery query**: `rating_count < 5`, sort by selected strategy, limit = `limit * (1 / (ratio + 1))`
+1. **Rated query**: `rating_count >= 5`, sort by `rating_bayesian` DESC, fetch generously (limit × 2 or all available)
+2. **Discovery query**: `rating_count < 5`, sort by `created_at` DESC, fetch generously
 
-Merge results by interleaving at the configured ratio.
+Both pools are fetched fully, merged in-memory by interleaving at 4:1 ratio, then the requested `offset` and `limit` are applied to the merged result.
 
 ### Pagination
 
-Offset-based pagination is tricky with interleaving — the split between rated and discovery slots must be consistent. The offset applies to the merged result, and the service computes the correct offset for each sub-query based on the ratio.
+Fetch-and-merge approach (Option B from clarification):
+1. Fetch both pools with generous limits
+2. Interleave in-memory at 4:1 ratio
+3. Apply `offset` and `limit` to the merged array
+4. Return the slice
 
----
+This is simpler than computing sub-offsets and guarantees cross-page deduplication — the interleaving is deterministic from the same underlying data.
 
-## Benefits
+### Scope
 
-- **Solves cold start**: New content gets guaranteed exposure slots
-- **Self-correcting**: Once a discovery memory accumulates 5+ ratings, it moves to the rated pool and is ranked on merit
-- **Configurable**: `discoveryRatio` lets consumers tune how aggressive discovery is
-- **Builds on existing infra**: Uses `rating_count`, `rating_bayesian`, `byTime`, `byDensity` — all already implemented
-
----
-
-## Trade-offs
-
-- **Two queries per request**: Parallel Weaviate queries, but still more load than a single-query sort mode. Mitigated by parallel execution (like time-slice search).
-- **Pagination complexity**: Interleaving makes offset calculation non-trivial. Must ensure deterministic ordering within each pool.
-- **Discovery quality varies**: Not all unrated memories deserve exposure. Some may be genuinely low quality. Mitigated by the fact that bad discovery memories will receive low ratings and naturally drop out.
-- **Ratio tuning**: The right `discoveryRatio` may vary by use case. Too aggressive = too much unproven content. Too conservative = cold start persists.
+Works on all collection types:
+- **Space search** (`searchSpace`): Discover unrated public content
+- **Group search**: Discover unrated group content
+- **Personal collections** (`searchMemories`): Find your own unrated content
 
 ---
 
 ## Dependencies
 
-- **Memory Ratings System** (`local.memory-ratings.md`): `rating_count` and `rating_bayesian` fields on Memory
-- **byRating sort mode**: Rated pool uses the same Bayesian sort
-- **byTime / byDensity**: Discovery pool selection strategies reuse existing sort modes
+All satisfied:
+- **Memory Ratings System** (M18, complete): `rating_count`, `rating_bayesian` fields on Memory
+- **byRating sort mode** (complete): Rated pool uses the same Bayesian sort
+- **byTime sort mode** (complete): Discovery pool sorted by recency
+- **`discovery_count` field** (exists): Already in Weaviate schema on published memories
 
 ---
 
 ## Testing Strategy
 
-- **Unit tests**: Interleaving logic (correct ratio, correct pool assignment), pagination offset calculation, `is_discovery` flag
-- **Edge cases**: All memories unrated (100% discovery), all memories rated (0% discovery), fewer discovery items than slots available
-- **Integration tests**: Full query with Weaviate mock, verify rated + discovery items in correct positions
-
----
-
-## Open Questions
-
-- What is the right default `discoveryRatio`? 4:1? 3:1? Should it be tunable per-user or system-wide?
-- Should discovery items be de-duplicated across pages? (User sees discovery item X on page 1, shouldn't see it again on page 2)
-- Should there be a maximum age for discovery items? (Don't boost a 6-month-old unrated memory)
-- Should discovery items that consistently receive low ratings (e.g., rated 1-2 stars after exposure) be penalized and removed from the discovery pool?
-- How does this interact with search queries? If the user is also searching by text, should discovery interleaving still apply, or only for browse-mode (no query)?
+- **Unit tests**: Interleaving logic (correct 4:1 ratio, correct pool assignment), `is_discovery` flag set correctly
+- **Edge cases**:
+  - All memories unrated → 100% discovery, sorted by recency
+  - All memories rated → 0% discovery, pure byRating
+  - Fewer discovery items than slots → rated content fills in
+  - Fewer rated items than slots → discovery content fills in
+  - Empty corpus → empty result
+- **Pagination tests**: Page 1 and page 2 return non-overlapping results, correct offset behavior
+- **Integration tests**: Full query flow with Weaviate mock, verify interleaving positions
 
 ---
 
 ## Future Considerations
 
-- **Discovery budget per memory**: Track how many times a memory has been shown as a discovery slot. After N exposures without ratings, stop boosting it.
-- **ML-based selection**: Replace heuristic discovery selection with a model that predicts which unrated memories are most likely to be high quality.
-- **A/B testing**: Test different ratios and strategies to optimize for rating conversion rate.
+- **Alternative strategies**: `density`, `random`, `hybrid` selection for discovery pool (configurable via API param)
+- **Configurable ratio**: Expose `discoveryRatio` as an API parameter
+- **Discovery budget**: Use `discovery_count` to stop boosting memories after N impressions without ratings
+- **Low-rating penalty**: Remove memories from discovery pool if they receive consistently low ratings after exposure
+- **ML-based selection**: Predict which unrated memories are most likely to be high quality
+- **A/B testing**: Test different ratios and strategies to optimize for rating conversion rate
 
 ---
 
-**Status**: Proposal
-**Recommendation**: Implement after memory ratings MVP (M18) is complete and there's real rating data to work with.
+**Status**: Ready to implement
+**Note**: All dependencies satisfied (M18 complete, schema fields exist). Ready for task creation.
+**Clarifications**: 14, 15
 **Related Documents**:
-- `agent/design/local.memory-ratings.md` (dependency)
+- `agent/design/local.memory-ratings.md` (dependency, complete)
 - `agent/milestones/milestone-11-basic-sort-modes.md` (Phase 2 reference)
 - `agent/design/local.by-recommendation-sort-mode.md` (sibling feature)

@@ -346,16 +346,17 @@ milestones:
 
   - id: M22
     name: Content Hash Deduplication
-    status: completed
-    progress: 100
+    status: in_progress
+    progress: 80
     estimated_weeks: 1.5
     tasks_completed: 4
-    tasks_total: 5
+    tasks_total: 6
     notes: |
       SHA-256 content hash deduplication for aggregate feeds.
       Precedence: space > group > personal. Origin links (source_memory_id)
       for tracking diverged copies. Service-layer dedupe after cross-collection
       merge. API: also_in metadata + dedupe disable parameter.
+      Task-124: Simplify — drop content_hash, dedupe on original_memory_id only.
       See: agent/milestones/milestone-22-content-hash-dedupe.md
       See: agent/design/local.content-hash-dedupe.md
 
@@ -1714,6 +1715,17 @@ tasks:
       notes: |
         Expose also_in in responses. Add dedupe query parameter.
         Update OpenAPI specs.
+
+    - id: task-124
+      name: Switch Dedupe Strategy from Content Hash to Source ID
+      status: not_started
+      file: agent/tasks/milestone-22-content-hash-dedupe/task-124-switch-dedupe-to-source-id.md
+      estimated_hours: 2-4
+      dependencies: [task-118, task-119, task-120, task-121, task-122]
+      notes: |
+        Drop content_hash — dedupe on original_memory_id instead.
+        All duplicates enter via publish/share which already sets original_memory_id.
+        Content hashing is unnecessary complexity for a case that doesn't occur.
 
   unassigned:
     - id: task-115

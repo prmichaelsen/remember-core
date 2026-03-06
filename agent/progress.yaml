@@ -381,9 +381,9 @@ milestones:
   - id: M24
     name: Live E2E Test Coverage
     status: in_progress
-    progress: 25
+    progress: 50
     estimated_weeks: 1
-    tasks_completed: 1
+    tasks_completed: 2
     tasks_total: 4
     notes: |
       Expand live e2e test suite to cover all SVC client resources against
@@ -1842,7 +1842,8 @@ tasks:
 
     - id: task-129
       name: Spaces Live Tests
-      status: not_started
+      status: completed
+      completed: 2026-03-06
       file: agent/tasks/milestone-24-live-e2e-test-coverage/task-129-spaces-live-tests.md
       estimated_hours: 1-2
       dependencies: []

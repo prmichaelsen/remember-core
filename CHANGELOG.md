@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.7] - 2026-03-06
+
+### Added
+- **Spaces live e2e tests** (task-129) — `05-spaces.live.ts`
+  - Publish-confirm-search-retract flow via SVC client
+  - Uses `spaces` array (not `space_name`), `query` for search
+  - 5 test cases, gracefully handles 500s for unconfigured space collections
+
 ## [0.34.6] - 2026-03-06
 
 ### Added

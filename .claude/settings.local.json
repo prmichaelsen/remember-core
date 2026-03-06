@@ -48,7 +48,8 @@
       "Bash(gcloud config:*)",
       "Bash(gcloud logging:*)",
       "Bash(gcloud run:*)",
-      "Bash(npx js-yaml:*)"
+      "Bash(npx js-yaml:*)",
+      "Bash(gcloud secrets:*)"
     ]
   }
 }

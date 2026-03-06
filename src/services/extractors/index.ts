@@ -8,6 +8,8 @@ export type { DocumentAiClient, Logger } from './pdf.extractor.js';
 export { DocxExtractor } from './docx.extractor.js';
 export { ImageExtractor } from './image.extractor.js';
 export type { VisionClient } from './image.extractor.js';
+export { createVisionClient, type VisionClientConfig } from './vision.client.js';
+export { createDocumentAiClient, type DocumentAiClientConfig } from './documentai.client.js';
 export { validateImportItems, type ValidationError } from './validation.js';
 
 /** MIME types supported for file import */

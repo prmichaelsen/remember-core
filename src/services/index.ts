@@ -250,6 +250,8 @@ export type { DocumentAiClient, Logger as ExtractorLogger } from './extractors/i
 export { DocxExtractor } from './extractors/index.js';
 export { ImageExtractor } from './extractors/index.js';
 export type { VisionClient } from './extractors/index.js';
+export { createVisionClient, type VisionClientConfig } from './extractors/index.js';
+export { createDocumentAiClient, type DocumentAiClientConfig } from './extractors/index.js';
 export { validateImportItems, type ValidationError as ImportValidationError } from './extractors/index.js';
 export { ALLOWED_MIME_TYPES } from './extractors/index.js';
 

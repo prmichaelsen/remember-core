@@ -1,9 +1,9 @@
 project:
   name: remember-core
-  version: 0.33.3
+  version: 0.34.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M22
+  current_milestone: M23
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -363,10 +363,10 @@ milestones:
 
   - id: M23
     name: GCP Extraction Clients
-    status: not_started
-    progress: 0
+    status: in_progress
+    progress: 66
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 2
     tasks_total: 3
     dependencies: [M17]
     notes: |
@@ -1776,23 +1776,29 @@ tasks:
   milestone_23:
     - id: task-125
       name: Create VisionClient Factory
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-23-gcp-extraction-clients/task-125-create-vision-client-factory.md
       estimated_hours: 1-2
+      actual_hours: 0.25
+      completed_date: 2026-03-06
       dependencies: []
       notes: |
         createVisionClient() using @google-cloud/vision.
         Returns VisionClient implementing detectText(Buffer).
+        3 unit tests, virtual mock for optional peer dep.
 
     - id: task-126
       name: Create DocumentAiClient Factory
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-23-gcp-extraction-clients/task-126-create-document-ai-client-factory.md
       estimated_hours: 1-2
+      actual_hours: 0.25
+      completed_date: 2026-03-06
       dependencies: []
       notes: |
         createDocumentAiClient() using @google-cloud/documentai.
         Returns DocumentAiClient implementing extractText(Buffer).
+        4 unit tests, virtual mock for optional peer dep.
 
     - id: task-127
       name: Wire GCP Clients into remember-rest-service

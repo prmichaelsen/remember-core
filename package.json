@@ -1,6 +1,6 @@
 {
   "name": "@prmichaelsen/remember-core",
-  "version": "0.33.3",
+  "version": "0.34.0",
   "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
   "type": "module",
   "main": "dist/index.js",
@@ -123,6 +123,8 @@
     "test": "jest --config config/jest.config.js",
     "test:coverage": "jest --config config/jest.config.js --coverage",
     "test:e2e": "jest --config config/jest.e2e.config.js --runInBand",
+    "test:live": "jest --config config/jest.live.config.js",
+    "fetch-e1-secrets": "tsx scripts/fetch-e1-secrets.ts",
     "generate:types:svc": "openapi-typescript docs/openapi.yaml -o src/clients/svc/v1/types.generated.ts",
     "generate:types:app": "openapi-typescript docs/openapi-web.yaml -o src/app/types.generated.ts",
     "generate:types": "npm run generate:types:svc && npm run generate:types:app",
@@ -148,9 +150,11 @@
   },
   "peerDependencies": {
     "jsonwebtoken": "^9.0.0",
-    "unpdf": "^0.12.0 || ^1.0.0",
     "mammoth": "^1.8.0",
-    "turndown": "^7.2.0"
+    "turndown": "^7.2.0",
+    "unpdf": "^0.12.0 || ^1.0.0",
+    "@google-cloud/vision": "^4.0.0",
+    "@google-cloud/documentai": "^8.0.0"
   },
   "peerDependenciesMeta": {
     "jsonwebtoken": {
@@ -164,6 +168,12 @@
     },
     "turndown": {
       "optional": true
+    },
+    "@google-cloud/vision": {
+      "optional": true
+    },
+    "@google-cloud/documentai": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -174,6 +184,7 @@
     "@types/uuid": "^10.0.0",
     "dotenv": "^17.3.1",
     "jest": "^30.2.0",
+    "jsonwebtoken": "^9.0.3",
     "mammoth": "^1.11.0",
     "openapi-typescript": "^7.13.0",
     "ts-jest": "^29.4.6",

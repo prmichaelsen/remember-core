@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.34.9] - 2026-03-06
+
+### Added
+- **Sort modes live e2e tests** (task-131) — `07-sort-modes.live.ts`
+  - byTime, byDensity, byRating queries via SVC client
+  - 3 test cases with beforeAll/afterAll memory lifecycle
+- **Ratings live e2e tests** (task-131) — `08-ratings.live.ts`
+  - Rate memory, get my rating, retract rating
+  - 3 test cases, gracefully handles 500/404 for unconfigured rating storage
+- **M24 Complete** — 8 live e2e test suites, 24 tests total
+
 ## [0.34.8] - 2026-03-06
 
 ### Added

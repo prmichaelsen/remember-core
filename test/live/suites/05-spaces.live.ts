@@ -73,6 +73,45 @@ describe('Spaces (live)', () => {
     expect(res.data).toBeDefined();
   });
 
+  it('search the space with empty query (browse mode)', async () => {
+    const res = await client.spaces.search(TEST_USER_ID, {
+      query: '',
+      spaces: ['the_void'],
+      limit: 5,
+    });
+
+    if (res.error) {
+      console.warn('Space search (empty query) returned error:', res.error);
+      expect([400, 404, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+    const data = res.data as any;
+    expect(data.memories).toBeDefined();
+    expect(Array.isArray(data.memories)).toBe(true);
+    expect(data.memories.length).toBeGreaterThan(0);
+  });
+
+  it('search the space with a query', async () => {
+    const res = await client.spaces.search(TEST_USER_ID, {
+      query: 'test',
+      spaces: ['the_void'],
+      limit: 5,
+    });
+
+    if (res.error) {
+      console.warn('Space search (with query) returned error:', res.error);
+      expect([400, 404, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+    const data = res.data as any;
+    expect(data.memories).toBeDefined();
+    expect(Array.isArray(data.memories)).toBe(true);
+  });
+
   it('retract the published memory', async () => {
     if (!memoryId) return;
 

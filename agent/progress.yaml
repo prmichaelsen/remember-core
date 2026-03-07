@@ -3,7 +3,7 @@ project:
   version: 0.37.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M34
+  current_milestone: M35
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -547,6 +547,21 @@ milestones:
       users/{owner_id}/core/perceptions/{target_user_id}, personality sketch,
       communication style, emotional baseline, REM updates).
       See: agent/design/core-mood-memory.md
+
+  - id: M35
+    name: SpaceService Sort Modes
+    status: not_started
+    progress: 0
+    estimated_weeks: 0.5
+    tasks_completed: 0
+    tasks_total: 3
+    dependencies: [M11, M20, M28, M31]
+    notes: |
+      Add 5 sort modes to SpaceService (byTime, byRating, byProperty, byBroad,
+      byRandom) matching MemoryService equivalents. Cross-collection search +
+      dedup, moderation filtering, space/group validation.
+      Request from remember-mcp agent — unblocks search_space_by tool stubs.
+      See: agent/milestones/milestone-35-space-sort-modes.md
 
 tasks:
   milestone_1:
@@ -2405,11 +2420,35 @@ tasks:
       dependencies: [task-171, task-172, task-173]
       description: "Tests for ClassificationService, REM classification, PerceptionService, REM perception."
 
+  milestone_35:
+    - id: task-176
+      name: Space Sort Mode Types + byTime + byRating
+      status: not_started
+      file: agent/tasks/milestone-35-space-sort-modes/task-176-space-bytime-byrating.md
+      estimated_hours: 3
+      description: "Input/result types for 5 modes. byTime + byRating methods. Extract validation + cross-collection helpers."
+
+    - id: task-177
+      name: SpaceService byProperty + byBroad + byRandom
+      status: not_started
+      file: agent/tasks/milestone-35-space-sort-modes/task-177-space-byproperty-bybroad-byrandom.md
+      estimated_hours: 3
+      dependencies: [task-176]
+      description: "byProperty (generic sort), byBroad (truncated content), byRandom (Fisher-Yates sampling)."
+
+    - id: task-178
+      name: Unit Tests + Barrel Exports
+      status: not_started
+      file: agent/tasks/milestone-35-space-sort-modes/task-178-tests-barrel-exports.md
+      estimated_hours: 3
+      dependencies: [task-176, task-177]
+      description: "Tests for all 5 modes. Barrel exports for new types. Verify no regressions."
+
 documentation:
   design_documents: 27
-  milestone_documents: 35
+  milestone_documents: 36
   pattern_documents: 29
-  task_documents: 174
+  task_documents: 178
 
 progress:
   planning: 100
@@ -2867,13 +2906,8 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - Publish next version to npm (M22 complete)
-  - Resume M20 (Memory Ratings System) — 1/7 tasks complete
-  - Begin M28 (REM Emotional Weighting Schema & Scoring) after M27
-  - M31 (byBroad & byRandom) — independent, can proceed anytime
-  - M32 (Core Mood State) — after M28
-  - M33 (Retrieval Bias & Significance) — after M32
-  - M34 (Classification & User Perception) — after M32
+  - M35: SpaceService Sort Modes (3 tasks, ~0.5 weeks)
+  - Publish next version to npm after M35
   - Migrate agentbase.me from hand-written fetch to app client
 
 notes:

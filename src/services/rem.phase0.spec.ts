@@ -53,8 +53,14 @@ jest.mock('../database/firestore/init.js', () => {
 });
 
 function createMockSubLlm(score = 0.5) {
+  // Build a batch JSON response with all 31 dimensions set to the given score
+  const { DIMENSION_REGISTRY } = require('./emotional-scoring.service.js');
+  const batchResponse: Record<string, number> = {};
+  for (const dim of (DIMENSION_REGISTRY as Array<{ property: string }>)) {
+    batchResponse[dim.property] = score;
+  }
   return {
-    score: jest.fn().mockResolvedValue(String(score)),
+    score: jest.fn().mockResolvedValue(JSON.stringify(batchResponse)),
   };
 }
 
@@ -194,7 +200,7 @@ describe('RemService Phase 0 Scoring', () => {
     expect(result.phase0!.cost_consumed).toBeCloseTo(2.0);
   });
 
-  it('scores all 31 dimensions per memory', async () => {
+  it('scores all 31 dimensions per memory via batch call', async () => {
     await insertMemories(collectionName, 12);
 
     const subLlm = createMockSubLlm(0.7);
@@ -206,8 +212,8 @@ describe('RemService Phase 0 Scoring', () => {
     expect(result.phase0).toBeDefined();
     expect(result.phase0!.memories_scored).toBe(1);
 
-    // Verify sub-LLM was called 31 times (once per dimension)
-    expect(subLlm.score).toHaveBeenCalledTimes(31);
+    // Batch scoring calls sub-LLM once per memory (all 31 dims in one call)
+    expect(subLlm.score).toHaveBeenCalledTimes(1);
   });
 
   it('computes composite scores after dimension scoring', async () => {
@@ -246,18 +252,16 @@ describe('RemService Phase 0 Scoring', () => {
     expect(scoredMemory!.properties.rem_visits).toBe(1);
   });
 
-  it('increments rem_visits on re-scoring', async () => {
-    // Insert already-scored memories with rem_visits = 1
+  it('skips already-scored memories', async () => {
+    // Insert only already-scored memories
     await insertMemories(collectionName, 12, true);
 
-    const service = createService({ scoring_batch_size: 1 });
-    await service.runCycle({ collectionId: collectionName });
+    const service = createService({ scoring_batch_size: 5 });
+    const result = await service.runCycle({ collectionId: collectionName });
 
-    const collection = mockClient.collections.get(collectionName);
-    const objects = Array.from(collection._store.values());
-    const rescoredMemory = objects.find((o) => o.properties.rem_visits === 2);
-
-    expect(rescoredMemory).toBeDefined();
+    // No unscored memories → Phase 0 scores nothing
+    expect(result.phase0).toBeDefined();
+    expect(result.phase0!.memories_scored).toBe(0);
   });
 
   it('Phase 0 failures do not block subsequent phases', async () => {

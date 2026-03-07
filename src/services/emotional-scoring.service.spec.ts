@@ -2,7 +2,9 @@ import {
   EmotionalScoringService,
   DIMENSION_REGISTRY,
   buildScoringPrompt,
+  buildBatchScoringPrompt,
   parseScore,
+  parseBatchScores,
   type SubLlmProvider,
   type ScoringContext,
   type DimensionDefinition,
@@ -280,11 +282,117 @@ describe('EmotionalScoringService', () => {
     });
   });
 
+  // ── buildBatchScoringPrompt ──────────────────────────────────────────
+
+  describe('buildBatchScoringPrompt', () => {
+    it('includes memory content', () => {
+      const prompt = buildBatchScoringPrompt(SAMPLE_MEMORY);
+      expect(prompt).toContain(SAMPLE_MEMORY.content);
+    });
+
+    it('includes all 31 dimension property names', () => {
+      const prompt = buildBatchScoringPrompt(SAMPLE_MEMORY);
+      for (const dim of DIMENSION_REGISTRY) {
+        expect(prompt).toContain(dim.property);
+      }
+    });
+
+    it('includes rubrics for each dimension', () => {
+      const prompt = buildBatchScoringPrompt(SAMPLE_MEMORY);
+      for (const dim of DIMENSION_REGISTRY) {
+        expect(prompt).toContain(dim.rubric.low);
+      }
+    });
+
+    it('shows -1 to 1 range for feel_valence', () => {
+      const prompt = buildBatchScoringPrompt(SAMPLE_MEMORY);
+      expect(prompt).toContain('feel_valence (-1 to 1)');
+    });
+
+    it('includes context when provided', () => {
+      const context: ScoringContext = {
+        relationship_observations: ['Test observation'],
+      };
+      const prompt = buildBatchScoringPrompt(SAMPLE_MEMORY, context);
+      expect(prompt).toContain('Test observation');
+    });
+
+    it('asks for JSON response', () => {
+      const prompt = buildBatchScoringPrompt(SAMPLE_MEMORY);
+      expect(prompt).toContain('JSON object');
+    });
+  });
+
+  // ── parseBatchScores ────────────────────────────────────────────────
+
+  describe('parseBatchScores', () => {
+    it('parses valid JSON response', () => {
+      const scores: Record<string, number> = {};
+      for (const dim of DIMENSION_REGISTRY) {
+        scores[dim.property] = 0.5;
+      }
+      const results = parseBatchScores(JSON.stringify(scores));
+      for (const dim of DIMENSION_REGISTRY) {
+        expect(results[dim.property]).toBe(0.5);
+      }
+    });
+
+    it('handles markdown code-fenced JSON', () => {
+      const scores: Record<string, number> = {};
+      for (const dim of DIMENSION_REGISTRY) {
+        scores[dim.property] = 0.7;
+      }
+      const response = '```json\n' + JSON.stringify(scores) + '\n```';
+      const results = parseBatchScores(response);
+      expect(results['feel_emotional_significance']).toBe(0.7);
+    });
+
+    it('returns null for missing dimensions', () => {
+      const results = parseBatchScores('{"feel_emotional_significance": 0.5}');
+      expect(results['feel_emotional_significance']).toBe(0.5);
+      expect(results['feel_happiness']).toBeNull();
+    });
+
+    it('returns null for out-of-range values', () => {
+      const results = parseBatchScores('{"feel_happiness": 1.5, "feel_valence": -2}');
+      expect(results['feel_happiness']).toBeNull();
+      expect(results['feel_valence']).toBeNull();
+    });
+
+    it('accepts feel_valence in -1 to 1 range', () => {
+      const results = parseBatchScores('{"feel_valence": -0.7}');
+      expect(results['feel_valence']).toBe(-0.7);
+    });
+
+    it('returns all nulls for invalid JSON', () => {
+      const results = parseBatchScores('not json at all');
+      for (const dim of DIMENSION_REGISTRY) {
+        expect(results[dim.property]).toBeNull();
+      }
+    });
+
+    it('returns all nulls for empty response', () => {
+      const results = parseBatchScores('');
+      expect(Object.keys(results)).toHaveLength(31);
+      for (const dim of DIMENSION_REGISTRY) {
+        expect(results[dim.property]).toBeNull();
+      }
+    });
+  });
+
   // ── scoreAllDimensions ──────────────────────────────────────────────
 
   describe('scoreAllDimensions', () => {
+    function buildMockBatchResponse(score: number = 0.5): string {
+      const scores: Record<string, number> = {};
+      for (const dim of DIMENSION_REGISTRY) {
+        scores[dim.property] = dim.property === 'feel_valence' ? score * 2 - 1 : score;
+      }
+      return JSON.stringify(scores);
+    }
+
     it('returns results for all 31 dimensions', async () => {
-      const subLlm = createMockSubLlm('0.5');
+      const subLlm = createMockSubLlm(buildMockBatchResponse());
       const service = new EmotionalScoringService({ subLlm, logger: createMockLogger() });
 
       const results = await service.scoreAllDimensions(SAMPLE_MEMORY);
@@ -295,41 +403,57 @@ describe('EmotionalScoringService', () => {
       }
     });
 
-    it('calls sub-LLM 31 times (one per dimension)', async () => {
-      const subLlm = createMockSubLlm('0.5');
+    it('calls sub-LLM exactly once (batch)', async () => {
+      const subLlm = createMockSubLlm(buildMockBatchResponse());
       const service = new EmotionalScoringService({ subLlm, logger: createMockLogger() });
 
       await service.scoreAllDimensions(SAMPLE_MEMORY);
 
-      expect(subLlm.score).toHaveBeenCalledTimes(31);
+      expect(subLlm.score).toHaveBeenCalledTimes(1);
     });
 
-    it('handles partial failures (some null, some valid)', async () => {
-      let callCount = 0;
-      const subLlm: SubLlmProvider & { score: jest.Mock } = {
-        score: jest.fn().mockImplementation(() => {
-          callCount++;
-          // Fail every 5th call
-          if (callCount % 5 === 0) return Promise.reject(new Error('api_error'));
-          return Promise.resolve('0.6');
-        }),
-      };
-
+    it('requests maxTokens 1024 for batch call', async () => {
+      const subLlm = createMockSubLlm(buildMockBatchResponse());
       const service = new EmotionalScoringService({ subLlm, logger: createMockLogger() });
+
+      await service.scoreAllDimensions(SAMPLE_MEMORY);
+
+      expect(subLlm.score).toHaveBeenCalledWith(expect.any(String), { maxTokens: 1024 });
+    });
+
+    it('handles partial results (some dimensions missing from response)', async () => {
+      // Only return a few dimensions
+      const partial = JSON.stringify({
+        feel_emotional_significance: 0.8,
+        feel_happiness: 0.9,
+      });
+      const subLlm = createMockSubLlm(partial);
+      const service = new EmotionalScoringService({ subLlm, logger: createMockLogger() });
+
       const results = await service.scoreAllDimensions(SAMPLE_MEMORY);
 
-      const validScores = Object.values(results).filter(v => v !== null);
-      const nullScores = Object.values(results).filter(v => v === null);
-
-      // Some should succeed, some should fail
-      expect(validScores.length).toBeGreaterThan(0);
-      expect(nullScores.length).toBeGreaterThan(0);
-      // Total should still be 31
-      expect(validScores.length + nullScores.length).toBe(31);
+      expect(results['feel_emotional_significance']).toBe(0.8);
+      expect(results['feel_happiness']).toBe(0.9);
+      // Missing dimensions should be null
+      expect(results['feel_sadness']).toBeNull();
+      expect(Object.keys(results)).toHaveLength(31);
     });
 
-    it('passes context to each scoring call', async () => {
-      const subLlm = createMockSubLlm('0.5');
+    it('returns all nulls on sub-LLM error', async () => {
+      const subLlm = createMockSubLlm();
+      subLlm.score.mockRejectedValue(new Error('api_error'));
+      const service = new EmotionalScoringService({ subLlm, logger: createMockLogger() });
+
+      const results = await service.scoreAllDimensions(SAMPLE_MEMORY);
+
+      expect(Object.keys(results)).toHaveLength(31);
+      for (const value of Object.values(results)) {
+        expect(value).toBeNull();
+      }
+    });
+
+    it('passes context to the batch prompt', async () => {
+      const subLlm = createMockSubLlm(buildMockBatchResponse());
       const service = new EmotionalScoringService({ subLlm, logger: createMockLogger() });
       const context: ScoringContext = {
         relationship_observations: ['Test observation'],
@@ -337,10 +461,7 @@ describe('EmotionalScoringService', () => {
 
       await service.scoreAllDimensions(SAMPLE_MEMORY, context);
 
-      // Every prompt should include the context
-      for (const call of subLlm.score.mock.calls) {
-        expect(call[0]).toContain('Test observation');
-      }
+      expect(subLlm.score.mock.calls[0][0]).toContain('Test observation');
     });
   });
 

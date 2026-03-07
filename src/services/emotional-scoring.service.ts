@@ -492,6 +492,85 @@ ${contextSection}
 Respond with ONLY a single number ${rangeStr}. No other text.`;
 }
 
+/**
+ * Build a single prompt that asks the sub-LLM to score all 31 dimensions at once.
+ * Returns scores as a JSON object.
+ */
+export function buildBatchScoringPrompt(
+  memory: { content: string; content_type: string; created_at: string },
+  context?: ScoringContext,
+): string {
+  let contextSection = '';
+  if (context) {
+    const parts: string[] = [];
+    if (context.relationship_observations?.length) {
+      parts.push(`Relationship observations:\n${context.relationship_observations.map(o => `  - ${o}`).join('\n')}`);
+    }
+    if (context.nearest_neighbor_scores && Object.keys(context.nearest_neighbor_scores).length > 0) {
+      const entries = Object.entries(context.nearest_neighbor_scores)
+        .map(([dim, score]) => `  ${dim}: ${score.toFixed(2)}`)
+        .join('\n');
+      parts.push(`Similar memories' scores:\n${entries}`);
+    }
+    if (parts.length > 0) {
+      contextSection = `\nCONTEXT:\n${parts.join('\n\n')}\n`;
+    }
+  }
+
+  const dimensionLines = DIMENSION_REGISTRY.map(d => {
+    const rangeStr = d.range.min === -1 ? '-1 to 1' : '0 to 1';
+    return `- ${d.property} (${rangeStr}): ${d.description}
+    low=${d.rubric.low} | mid=${d.rubric.mid} | high=${d.rubric.high}`;
+  }).join('\n');
+
+  return `Score this memory on all 31 emotional/functional dimensions.
+
+MEMORY:
+Content: ${memory.content}
+Type: ${memory.content_type}
+Created: ${memory.created_at}
+${contextSection}
+DIMENSIONS (property, range, description, rubric):
+${dimensionLines}
+
+Respond with ONLY a JSON object mapping each property name to its numeric score. No other text.
+Example: {"feel_emotional_significance": 0.7, "feel_vulnerability": 0.3, ...}`;
+}
+
+/**
+ * Parse the batch JSON response into per-dimension scores.
+ * Returns null for any dimension that is missing or out of range.
+ */
+export function parseBatchScores(
+  response: string,
+): Record<string, number | null> {
+  const results: Record<string, number | null> = {};
+
+  // Initialize all dimensions to null
+  for (const dim of DIMENSION_REGISTRY) {
+    results[dim.property] = null;
+  }
+
+  try {
+    // Extract JSON from response (handle markdown code fences)
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return results;
+
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    for (const dim of DIMENSION_REGISTRY) {
+      const value = parsed[dim.property];
+      if (typeof value === 'number' && !isNaN(value) && value >= dim.range.min && value <= dim.range.max) {
+        results[dim.property] = value;
+      }
+    }
+  } catch {
+    // JSON parse failed — return all nulls
+  }
+
+  return results;
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────
 
 export interface EmotionalScoringServiceParams {
@@ -530,26 +609,27 @@ export class EmotionalScoringService {
   }
 
   /**
-   * Score a single memory on all 31 dimensions.
+   * Score a single memory on all 31 dimensions in a single sub-LLM call.
    * Returns a map of property name to score (or null on failure).
-   * Handles partial failures gracefully.
+   * Handles partial failures gracefully — missing or invalid scores become null.
    */
   async scoreAllDimensions(
     memory: { content: string; content_type: string; created_at: string },
     context?: ScoringContext,
   ): Promise<Record<string, number | null>> {
-    const results: Record<string, number | null> = {};
-
-    for (const dimension of DIMENSION_REGISTRY) {
-      const result = await this.scoreDimension({
-        memory,
-        dimension,
-        context,
-      });
-      results[result.property] = result.score;
+    try {
+      const prompt = buildBatchScoringPrompt(memory, context);
+      const response = await this.subLlm.score(prompt, { maxTokens: 1024 });
+      return parseBatchScores(response);
+    } catch (err) {
+      this.logger.debug?.(`[EmotionalScoring] Batch scoring failed: ${err}`);
+      // Return all nulls on complete failure
+      const results: Record<string, number | null> = {};
+      for (const dim of DIMENSION_REGISTRY) {
+        results[dim.property] = null;
+      }
+      return results;
     }
-
-    return results;
   }
 
   /**

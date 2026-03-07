@@ -42,6 +42,7 @@ export interface ClassificationPipelineDeps {
   moodService?: MoodService;
   ghostCompositeId?: string;
   logger: Logger;
+  classificationBatchSize?: number;
 }
 
 // ─── Prompt Building ─────────────────────────────────────────────────────
@@ -162,7 +163,8 @@ export async function runClassificationPipeline(
   }
 
   // Fetch oldest unclassified memories
-  const memories = await selectUnclassifiedMemories(collection, classifiedIds);
+  const batchSize = deps.classificationBatchSize ?? CLASSIFICATION_BATCH_SIZE;
+  const memories = await selectUnclassifiedMemories(collection, classifiedIds, batchSize);
 
   if (memories.length === 0) {
     logger.info?.('Classification: No unclassified memories');
@@ -271,19 +273,20 @@ export async function runClassificationPipeline(
 async function selectUnclassifiedMemories(
   collection: any,
   classifiedIds: Set<string>,
+  batchSize: number = CLASSIFICATION_BATCH_SIZE,
 ): Promise<any[]> {
   // Fetch recent memories and filter out already-classified ones
   const filter = collection.filter.byProperty('doc_type').equal('memory');
 
   const result = await collection.query.fetchObjects({
     filters: filter,
-    limit: CLASSIFICATION_BATCH_SIZE * 2, // over-fetch to account for filtering
+    limit: batchSize * 2, // over-fetch to account for filtering
     sort: collection.sort.byProperty('created_at', true), // oldest first
   });
 
   return (result.objects ?? [])
     .filter((m: any) => !classifiedIds.has(m.uuid))
-    .slice(0, CLASSIFICATION_BATCH_SIZE);
+    .slice(0, batchSize);
 }
 
 async function findSimilarMemories(

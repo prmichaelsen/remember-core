@@ -23,6 +23,8 @@ export interface RemConfig {
   scoring_batch_size: number;            // Max memories to score per cycle
   scoring_cost_cap: number;              // Max cost (USD) for Phase 0 scoring per cycle
   scoring_cost_per_memory: number;       // Estimated cost per memory (31 Haiku calls)
+  // Classification
+  classification_batch_size: number;     // Max memories to classify per cycle
 }
 
 export const DEFAULT_REM_CONFIG: RemConfig = {
@@ -41,6 +43,8 @@ export const DEFAULT_REM_CONFIG: RemConfig = {
   scoring_batch_size: 10,
   scoring_cost_cap: 5.0,
   scoring_cost_per_memory: 0.0015,
+  // Classification
+  classification_batch_size: 20,
 };
 
 // ─── State Tracking ──────────────────────────────────────────────────────

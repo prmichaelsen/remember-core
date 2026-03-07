@@ -37,6 +37,8 @@ import { runClassificationPipeline, type ClassificationPipelineResult } from './
 import { runAbstractionPhase, type AbstractionPhaseResult } from './rem.abstraction.js';
 import type { EditorialScoringService } from './editorial-scoring.service.js';
 import { runCurationStep, type CurationStepResult } from './curation-step.service.js';
+import { getRemConfigPath } from '../database/firestore/paths.js';
+import { getDocument } from '../database/firestore/init.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -100,6 +102,20 @@ export class RemService {
   async runCycle(options: { collectionId: string }): Promise<RunCycleResult> {
     const start = Date.now();
     const collectionId = options.collectionId;
+
+    // Load runtime config overrides from Firestore
+    try {
+      const { collectionPath, docId } = getRemConfigPath();
+      const remConfigDoc = await getDocument(collectionPath, docId);
+      if (remConfigDoc) {
+        this.config = { ...this.config, ...remConfigDoc };
+        this.logger.info?.('REM config loaded from Firestore', { overrides: Object.keys(remConfigDoc) });
+      }
+    } catch (err) {
+      this.logger.warn?.('Failed to load REM config from Firestore, using defaults', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
     const stats: RunCycleResult = {
       collection_id: collectionId,
       memories_scanned: 0,
@@ -156,6 +172,7 @@ export class RemService {
           moodService: this.deps.moodService,
           ghostCompositeId: this.deps.ghostCompositeId,
           logger: this.logger,
+          classificationBatchSize: this.config.classification_batch_size,
         });
         stats.classification = classResult;
       } catch (err) {
@@ -623,24 +640,8 @@ export class RemService {
 
     const unscored = unscoredResult.objects;
 
-    if (unscored.length >= batchSize) {
-      return unscored.slice(0, batchSize);
-    }
-
-    // Fill remaining slots with outdated memories (oldest rem_touched_at first)
-    const remaining = batchSize - unscored.length;
-    const outdatedFilter = Filters.and(
-      collection.filter.byProperty('doc_type').equal('memory'),
-      collection.filter.byProperty('rem_touched_at').isNull(false),
-    );
-
-    const outdatedResult = await collection.query.fetchObjects({
-      filters: outdatedFilter,
-      limit: remaining,
-      sort: collection.sort.byProperty('rem_touched_at', true),
-    });
-
-    return [...unscored, ...outdatedResult.objects];
+    // Only score unscored memories — already-scored memories are not revisited
+    return unscored.slice(0, batchSize);
   }
 
   private async validateWithHaiku(

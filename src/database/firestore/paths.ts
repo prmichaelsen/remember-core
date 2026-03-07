@@ -231,6 +231,21 @@ export function getClassificationPath(collectionId: string): { collectionPath: s
 }
 
 // ============================================================================
+// REM CONFIG
+// ============================================================================
+
+/**
+ * Get path to REM config document.
+ * Pattern: {BASE}.rem_state (collection), config (docId)
+ *
+ * Stores runtime-tunable REM parameters (batch sizes, thresholds, etc.).
+ * Merged with DEFAULT_REM_CONFIG at cycle start.
+ */
+export function getRemConfigPath(): { collectionPath: string; docId: string } {
+  return { collectionPath: `${BASE}.rem_state`, docId: 'config' };
+}
+
+// ============================================================================
 // CURATED SCORES
 // ============================================================================
 

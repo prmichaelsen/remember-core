@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.48.0] - 2026-03-07
+
+### Added
+- Batch emotional scoring: `scoreAllDimensions` now scores all 31 dimensions in a single sub-LLM call instead of 31 sequential calls (30x fewer API calls per memory)
+- `buildBatchScoringPrompt` and `parseBatchScores` exported from emotional-scoring service
+- Firestore-based REM config: `runCycle()` loads runtime config overrides from `{BASE}.rem_state/config`, merged with defaults at each cycle start
+- `getRemConfigPath()` in Firestore paths
+- `classification_batch_size` added to `RemConfig` (default: 20), configurable via Firestore or constructor
+- Phase transition logging: log Phase 0/1/2/3 boundaries, candidate/cluster counts for observability
+- Regenerate SVC types for byCurated + engagement counter endpoints
+
+### Changed
+- Phase 0 scoring only processes unscored memories — already-scored memories (`rem_touched_at` set) are no longer revisited
+- Classification pipeline accepts `classificationBatchSize` override via deps
+
 ## [0.47.2] - 2026-03-07
 
 ### Changed

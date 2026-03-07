@@ -194,6 +194,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/by-curated": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sort memories by composite curation score (editorial + cluster + PageRank + rating + recency + engagement) */
+        post: operations["memoriesByCurated"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/memories/{id}/click": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Increment click engagement counter for a memory */
+        post: operations["incrementMemoryClick"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/memories/{id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Increment share engagement counter for a memory */
+        post: operations["incrementMemoryShare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/memories/{id}/comment-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Increment comment engagement counter for a memory */
+        post: operations["incrementMemoryCommentCount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/memories/search": {
         parameters: {
             query?: never;
@@ -585,6 +653,23 @@ export interface paths {
         put?: never;
         /** Personalized space memory feed sorted by similarity to user preference centroid */
         post: operations["spacesByRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/spaces/by-curated": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sort space memories by composite curation score */
+        post: operations["spacesByCurated"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1200,6 +1285,61 @@ export interface components {
             }[];
             /** @description Total number of memories in the random pool before sampling */
             total_pool_size: number;
+        };
+        CuratedModeRequest: {
+            /** @description Optional search query for hybrid search re-ranking */
+            query?: string;
+            /** @default 50 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            /**
+             * @default desc
+             * @enum {string}
+             */
+            direction: "asc" | "desc";
+            filters?: components["schemas"]["SearchFilters"];
+            deleted_filter?: components["schemas"]["DeletedFilter"];
+            ghost_context?: components["schemas"]["GhostSearchContext"];
+        };
+        CuratedModeResult: {
+            memories: ({
+                /** @description Composite curation score (0.0-1.0) */
+                curated_score?: number;
+                /** @description True if this memory was interleaved as unscored */
+                is_discovery?: boolean;
+            } & {
+                [key: string]: unknown;
+            })[];
+            total: number;
+            offset: number;
+            limit: number;
+        };
+        CuratedSpaceInput: {
+            /** @description Optional search query for hybrid search re-ranking */
+            query?: string;
+            spaces?: string[];
+            groups?: string[];
+            /**
+             * @default desc
+             * @enum {string}
+             */
+            direction: "asc" | "desc";
+            /** @default 50 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            moderation_filter?: components["schemas"]["ModerationFilter"];
+        };
+        CuratedSpaceResult: {
+            spaces_searched: string[] | "all_public";
+            groups_searched: string[];
+            memories: {
+                [key: string]: unknown;
+            }[];
+            total: number;
+            offset: number;
+            limit: number;
         };
         RecommendationSpaceInput: {
             /** @description User ID for preference centroid computation */
@@ -2124,6 +2264,100 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
         };
     };
+    memoriesByCurated: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CuratedModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Curated-sorted memories with optional sub-score breakdown */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuratedModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    incrementMemoryClick: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Memory UUID */
+                memoryId: components["parameters"]["memoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Click count incremented */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    incrementMemoryShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Memory UUID */
+                memoryId: components["parameters"]["memoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Share count incremented */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    incrementMemoryCommentCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Memory UUID */
+                memoryId: components["parameters"]["memoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Comment count incremented */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
     searchMemories: {
         parameters: {
             query?: never;
@@ -2705,6 +2939,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecommendationSpaceResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    spacesByCurated: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CuratedSpaceInput"];
+            };
+        };
+        responses: {
+            /** @description Curated-sorted space memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CuratedSpaceResult"];
                 };
             };
             400: components["responses"]["ValidationError"];

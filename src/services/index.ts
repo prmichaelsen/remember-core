@@ -495,3 +495,18 @@ export {
   type AnticipatoryLlmProvider,
   type RecentMemory,
 } from './anticipatory.service.js';
+
+// Curation scoring (byCurated sort mode)
+export {
+  recencyScore,
+  normalizedRating,
+  engagementScore,
+  clusterQualityScore,
+  normalizedEditorial,
+  pageRank,
+  computeCuratedScore,
+  CURATED_WEIGHTS,
+  type CuratedSubScores,
+  type RelationshipEdge,
+  type ClusterMembership,
+} from './curation-scoring.js';

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.45.1] - 2026-03-07
+
+### Added
+- Curation scoring foundation: 5 new Weaviate properties (`curated_score`, `editorial_score`, `click_count`, `share_count`, `comment_count`), 6 sub-score pure functions (recency, rating, engagement, cluster quality, editorial, PageRank), weight constants, 35 tests
+
 ## [0.45.0] - 2026-03-07
 
 ### Added

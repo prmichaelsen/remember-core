@@ -153,6 +153,8 @@ export const ALL_MEMORY_PROPERTIES = [
   'functional_aesthetic_quality', 'functional_valence', 'functional_coherence_tension',
   'feel_significance', 'functional_significance', 'total_significance',
   'rem_touched_at', 'rem_visits',
+  // Curation scoring (M36)
+  'curated_score', 'editorial_score', 'click_count', 'share_count', 'comment_count',
 ] as const;
 
 /**

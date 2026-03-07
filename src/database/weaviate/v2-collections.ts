@@ -177,6 +177,13 @@ const COMMON_MEMORY_PROPERTIES = [
   { name: 'rem_touched_at', dataType: configure.dataType.TEXT },
   { name: 'rem_visits', dataType: configure.dataType.INT },
 
+  // Curation scoring (M36)
+  { name: 'curated_score', dataType: configure.dataType.NUMBER },
+  { name: 'editorial_score', dataType: configure.dataType.NUMBER },
+  { name: 'click_count', dataType: configure.dataType.INT },
+  { name: 'share_count', dataType: configure.dataType.INT },
+  { name: 'comment_count', dataType: configure.dataType.INT },
+
 ];
 
 /**

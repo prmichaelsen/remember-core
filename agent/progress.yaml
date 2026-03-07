@@ -3,7 +3,7 @@ project:
   version: 0.37.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M35
+  current_milestone: M36
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -569,7 +569,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 3
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 6
     dependencies: [M10, M20, M28]
     notes: |
@@ -2467,7 +2467,8 @@ tasks:
   milestone_36:
     - id: task-179
       name: Schema Migration + Sub-Score Functions
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-36-by-curated-sort-mode/task-179-schema-sub-score-functions.md
       estimated_hours: 4
       description: "5 new Weaviate properties, 6 sub-score pure functions (recency, rating, engagement, cluster quality, editorial, PageRank), weight constants."

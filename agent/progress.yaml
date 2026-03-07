@@ -445,9 +445,9 @@ milestones:
   - id: M28
     name: "REM Emotional Weighting: Schema & Scoring"
     status: in_progress
-    progress: 50
+    progress: 63
     estimated_weeks: 3
-    tasks_completed: 5
+    tasks_completed: 6
     tasks_total: 8
     started: 2026-03-07
     notes: |
@@ -2186,7 +2186,8 @@ tasks:
       description: "Compute feel_significance, functional_significance, total_significance as weighted sums."
     - id: task-151
       name: REM Metadata Tracking
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-151-rem-metadata-tracking.md
       estimated_hours: 1
       dependencies: [task-149]

@@ -325,6 +325,12 @@ export {
   type SubLlmProvider,
 } from './emotional-scoring.service.js';
 
+// REM metadata tracking
+export {
+  buildRemMetadataUpdate,
+  type RemMetadataUpdate,
+} from './rem-metadata.js';
+
 // Content moderation
 export {
   type ModerationCategory,

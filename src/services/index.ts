@@ -298,6 +298,21 @@ export {
   MIN_SIMILARITY,
 } from './recommendation.service.js';
 
+// Emotional scoring (REM emotional weighting)
+export {
+  EmotionalScoringService,
+  DIMENSION_REGISTRY,
+  buildScoringPrompt,
+  parseScore,
+  createAnthropicSubLlm,
+  type EmotionalScoringServiceParams,
+  type DimensionDefinition,
+  type ScoringContext,
+  type ScoringInput,
+  type ScoringResult,
+  type SubLlmProvider,
+} from './emotional-scoring.service.js';
+
 // Content moderation
 export {
   type ModerationCategory,

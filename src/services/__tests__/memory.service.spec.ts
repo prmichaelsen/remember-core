@@ -1182,4 +1182,102 @@ describe('MemoryService', () => {
       expect(stored!.properties.rem_visits).toBe(0);
     });
   });
+
+  // ── byProperty Sort Mode ───────────────────────────────────────────
+
+  describe('byProperty', () => {
+    beforeEach(async () => {
+      await service.create({ content: 'low trauma', feel_trauma: 0.1 });
+      await service.create({ content: 'high trauma', feel_trauma: 0.9 });
+      await service.create({ content: 'mid trauma', feel_trauma: 0.5 });
+    });
+
+    it('sorts by feel_trauma descending', async () => {
+      const result = await service.byProperty({
+        sort_field: 'feel_trauma',
+        sort_direction: 'desc',
+      });
+      expect(result.memories).toHaveLength(3);
+      expect(result.memories[0].feel_trauma).toBe(0.9);
+      expect(result.memories[2].feel_trauma).toBe(0.1);
+    });
+
+    it('sorts by feel_trauma ascending', async () => {
+      const result = await service.byProperty({
+        sort_field: 'feel_trauma',
+        sort_direction: 'asc',
+      });
+      expect(result.memories[0].feel_trauma).toBe(0.1);
+      expect(result.memories[2].feel_trauma).toBe(0.9);
+    });
+
+    it('returns sort_field and sort_direction in result', async () => {
+      const result = await service.byProperty({
+        sort_field: 'feel_trauma',
+        sort_direction: 'desc',
+      });
+      expect(result.sort_field).toBe('feel_trauma');
+      expect(result.sort_direction).toBe('desc');
+    });
+
+    it('respects limit', async () => {
+      const result = await service.byProperty({
+        sort_field: 'feel_trauma',
+        sort_direction: 'desc',
+        limit: 2,
+      });
+      expect(result.memories).toHaveLength(2);
+      expect(result.limit).toBe(2);
+    });
+
+    it('respects offset', async () => {
+      const result = await service.byProperty({
+        sort_field: 'feel_trauma',
+        sort_direction: 'desc',
+        offset: 1,
+      });
+      expect(result.memories).toHaveLength(2);
+      expect(result.offset).toBe(1);
+    });
+
+    it('rejects invalid sort_field', async () => {
+      await expect(
+        service.byProperty({ sort_field: 'nonexistent_field', sort_direction: 'desc' }),
+      ).rejects.toThrow('Invalid sort_field');
+    });
+
+    it('sorts by total_significance', async () => {
+      await service.create({ content: 'sig', feel_happiness: 1.0, functional_salience: 1.0 });
+      const result = await service.byProperty({
+        sort_field: 'total_significance',
+        sort_direction: 'desc',
+      });
+      expect(result.memories.length).toBeGreaterThan(0);
+    });
+
+    it('sorts by created_at (existing property)', async () => {
+      const result = await service.byProperty({
+        sort_field: 'created_at',
+        sort_direction: 'asc',
+      });
+      expect(result.memories.length).toBeGreaterThan(0);
+    });
+
+    it('sorts by rem_visits', async () => {
+      const result = await service.byProperty({
+        sort_field: 'rem_visits',
+        sort_direction: 'desc',
+      });
+      expect(result.memories.length).toBeGreaterThan(0);
+    });
+
+    it('accepts functional_ properties', async () => {
+      await service.create({ content: 'urgent', functional_urgency: 0.8 });
+      const result = await service.byProperty({
+        sort_field: 'functional_urgency',
+        sort_direction: 'desc',
+      });
+      expect(result.memories.length).toBeGreaterThan(0);
+    });
+  });
 });

@@ -143,6 +143,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/by-property": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sort memories by any Weaviate property (pure sort, no vector search) */
+        post: operations["memoriesByProperty"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/memories/search": {
         parameters: {
             query?: never;
@@ -1068,6 +1085,33 @@ export interface components {
             offset: number;
             limit: number;
         };
+        PropertyModeRequest: {
+            /** @description Any valid Weaviate memory property name (e.g., total_significance, feel_trauma, created_at) */
+            sort_field: string;
+            /**
+             * @description Sort direction
+             * @enum {string}
+             */
+            sort_direction: "asc" | "desc";
+            /** @default 50 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            filters?: components["schemas"]["SearchFilters"];
+            deleted_filter?: components["schemas"]["DeletedFilter"];
+            ghost_context?: components["schemas"]["GhostSearchContext"];
+        };
+        PropertyModeResult: {
+            memories: {
+                [key: string]: unknown;
+            }[];
+            total: number;
+            offset: number;
+            limit: number;
+            sort_field: string;
+            /** @enum {string} */
+            sort_direction: "asc" | "desc";
+        };
         RecommendationSpaceInput: {
             /** @description User ID for preference centroid computation */
             userId: string;
@@ -1911,6 +1955,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecommendationModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesByProperty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PropertyModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Property-sorted memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PropertyModeResult"];
                 };
             };
             401: components["responses"]["UnauthorizedError"];

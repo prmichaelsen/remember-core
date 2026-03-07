@@ -65,6 +65,97 @@ describe('MemoryService', () => {
       expect(stored!.properties.tags).toEqual(['a', 'b']);
       expect(stored!.properties.references).toEqual(['ref1']);
     });
+
+    it('persists emotional dimension values when provided', async () => {
+      const result = await service.create({
+        content: 'emotional memory',
+        feel_happiness: 0.9,
+        feel_sadness: 0.1,
+        feel_valence: -0.5,
+        functional_salience: 0.8,
+      });
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.feel_happiness).toBe(0.9);
+      expect(stored!.properties.feel_sadness).toBe(0.1);
+      expect(stored!.properties.feel_valence).toBe(-0.5);
+      expect(stored!.properties.functional_salience).toBe(0.8);
+    });
+
+    it('leaves dimensions as undefined when not provided', async () => {
+      const result = await service.create({ content: 'simple memory' });
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.feel_happiness).toBeUndefined();
+      expect(stored!.properties.functional_salience).toBeUndefined();
+      expect(stored!.properties.feel_significance).toBeUndefined();
+    });
+
+    it('rejects feel_happiness > 1', async () => {
+      await expect(service.create({
+        content: 'test',
+        feel_happiness: 1.5,
+      })).rejects.toThrow('feel_happiness must be between 0 and 1');
+    });
+
+    it('rejects feel_valence < -1', async () => {
+      await expect(service.create({
+        content: 'test',
+        feel_valence: -2.0,
+      })).rejects.toThrow('feel_valence must be between -1 and 1');
+    });
+
+    it('accepts feel_valence boundary values (-1, 0, 1)', async () => {
+      const r1 = await service.create({ content: 'neg', feel_valence: -1 });
+      expect(collection._store.get(r1.memory_id)!.properties.feel_valence).toBe(-1);
+      const r2 = await service.create({ content: 'zero', feel_valence: 0 });
+      expect(collection._store.get(r2.memory_id)!.properties.feel_valence).toBe(0);
+      const r3 = await service.create({ content: 'pos', feel_valence: 1 });
+      expect(collection._store.get(r3.memory_id)!.properties.feel_valence).toBe(1);
+    });
+
+    it('auto-computes composites when dimensions provided but composites omitted', async () => {
+      const result = await service.create({
+        content: 'test',
+        feel_happiness: 0.8,
+        feel_sadness: 0.2,
+        functional_salience: 0.6,
+      });
+      const stored = collection._store.get(result.memory_id);
+      // feel_significance = avg(0.8, 0.2) = 0.5
+      expect(stored!.properties.feel_significance).toBeCloseTo(0.5);
+      // functional_significance = avg(0.6) = 0.6
+      expect(stored!.properties.functional_significance).toBeCloseTo(0.6);
+      // total = 0.5 + 0.6 = 1.1
+      expect(stored!.properties.total_significance).toBeCloseTo(1.1);
+    });
+
+    it('uses explicit composites when provided', async () => {
+      const result = await service.create({
+        content: 'test',
+        feel_happiness: 0.8,
+        feel_significance: 0.99,
+        total_significance: 1.5,
+      });
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.feel_significance).toBe(0.99);
+      expect(stored!.properties.total_significance).toBe(1.5);
+    });
+
+    it('persists observation text', async () => {
+      const result = await service.create({
+        content: 'test memory',
+        observation: 'This memory reveals important context about the user',
+      });
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.observation).toBe('This memory reveals important context about the user');
+    });
+
+    it('sets rem_visits to 0 and does not allow override', async () => {
+      const result = await service.create({ content: 'test' });
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.rem_visits).toBe(0);
+      // rem_touched_at should not be set
+      expect(stored!.properties.rem_touched_at).toBeUndefined();
+    });
   });
 
   describe('search', () => {
@@ -872,6 +963,223 @@ describe('MemoryService', () => {
 
       const result = await recMemService.byRecommendation({ userId: 'user1', limit: 10 });
       expect(result.fallback_sort_mode).toBeUndefined();
+    });
+
+    it('excludes user own memories via author filter', async () => {
+      // Create memories owned by the current user (userId = 'test-user')
+      await service.create({ content: 'My own memory' });
+
+      const recService = createMockRecommendationService();
+      const recMemService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        recommendationService: recService as any,
+      });
+
+      // Search as the same userId that owns the memories
+      const result = await recMemService.byRecommendation({ userId: userId, limit: 10 });
+      // Own memories should be excluded by the author filter (user_id != userId)
+      expect(result.memories).toHaveLength(0);
+    });
+
+    it('filters results below MIN_SIMILARITY threshold', async () => {
+      // Create memories owned by another user — mock nearVector returns
+      // ascending distance (0, 0.05, 0.1, ...), so similarity = 100%, 95%, 90%...
+      // We need memories with distance > 0.7 (similarity < 30%) to be filtered.
+      // Insert 20 memories to push some past the 0.3 threshold (distance > 0.7 at index 15+)
+      for (let i = 0; i < 20; i++) {
+        const m = await service.create({ content: `Memory ${i}` });
+        await collection.data.update({ id: m.memory_id, properties: { user_id: 'other-user' } });
+      }
+
+      const recService = createMockRecommendationService();
+      const recMemService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        recommendationService: recService as any,
+      });
+
+      const result = await recMemService.byRecommendation({ userId: 'user1', limit: 50 });
+      // All returned memories should have similarity_pct >= 30 (MIN_SIMILARITY * 100)
+      for (const m of result.memories) {
+        expect(m.similarity_pct).toBeGreaterThanOrEqual(30);
+      }
+      // Some memories should have been filtered out (those with distance >= 0.7)
+      expect(result.memories.length).toBeLessThan(20);
+    });
+
+    it('returns empty when all results are below similarity threshold', async () => {
+      // Create one memory owned by another user
+      const m1 = await service.create({ content: 'Memory 1' });
+      await collection.data.update({ id: m1.memory_id, properties: { user_id: 'other-user' } });
+
+      // Mock nearVector to return very high distance (low similarity)
+      const origNearVector = collection.query.nearVector;
+      collection.query.nearVector = jest.fn().mockResolvedValue({
+        objects: [{
+          uuid: m1.memory_id,
+          properties: { ...collection._store.get(m1.memory_id)!.properties },
+          metadata: { distance: 0.95 }, // similarity = 5%, below 30% threshold
+        }],
+      });
+
+      const recService = createMockRecommendationService();
+      const recMemService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        recommendationService: recService as any,
+      });
+
+      const result = await recMemService.byRecommendation({ userId: 'user1', limit: 10 });
+      expect(result.memories).toHaveLength(0);
+
+      // Restore
+      collection.query.nearVector = origNearVector;
+    });
+
+    it('applies SearchFilters correctly', async () => {
+      const m1 = await service.create({ content: 'Memory with tag' });
+      await collection.data.update({
+        id: m1.memory_id,
+        properties: { user_id: 'other-user', tags: ['important'] },
+      });
+      const m2 = await service.create({ content: 'Memory without tag' });
+      await collection.data.update({
+        id: m2.memory_id,
+        properties: { user_id: 'other-user', tags: [] },
+      });
+
+      const recService = createMockRecommendationService();
+      const recMemService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        recommendationService: recService as any,
+      });
+
+      const result = await recMemService.byRecommendation({
+        userId: 'user1',
+        limit: 10,
+        filters: { tags: ['important'] },
+      });
+
+      // Only the memory with the matching tag should be returned
+      const resultIds = result.memories.map((m) => m.id);
+      expect(resultIds).toContain(m1.memory_id);
+      expect(resultIds).not.toContain(m2.memory_id);
+    });
+  });
+
+  // ── Emotional Weighting on Create (M28) ─────────────────────────────
+
+  describe('emotional weighting on create', () => {
+    it('persists feel_* dimensions when provided', async () => {
+      const result = await service.create({
+        content: 'emotional test',
+        feel_happiness: 0.8,
+        feel_sadness: 0.2,
+        feel_valence: 0.5,
+      });
+
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.feel_happiness).toBe(0.8);
+      expect(stored!.properties.feel_sadness).toBe(0.2);
+      expect(stored!.properties.feel_valence).toBe(0.5);
+    });
+
+    it('persists functional_* dimensions when provided', async () => {
+      const result = await service.create({
+        content: 'functional test',
+        functional_salience: 0.9,
+        functional_urgency: 0.1,
+      });
+
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.functional_salience).toBe(0.9);
+      expect(stored!.properties.functional_urgency).toBe(0.1);
+    });
+
+    it('creates without emotional fields (no additional properties set)', async () => {
+      const result = await service.create({ content: 'plain memory' });
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.content).toBe('plain memory');
+      // feel_happiness should not be in properties
+      expect(stored!.properties.feel_happiness).toBeUndefined();
+    });
+
+    it('rejects feel_happiness out of 0-1 range', async () => {
+      await expect(service.create({
+        content: 'test',
+        feel_happiness: 1.5,
+      })).rejects.toThrow('feel_happiness must be between 0 and 1');
+    });
+
+    it('rejects negative feel_happiness', async () => {
+      await expect(service.create({
+        content: 'test',
+        feel_happiness: -0.1,
+      })).rejects.toThrow('feel_happiness must be between 0 and 1');
+    });
+
+    it('rejects feel_valence out of -1 to 1 range', async () => {
+      await expect(service.create({
+        content: 'test',
+        feel_valence: -2.0,
+      })).rejects.toThrow('feel_valence must be between -1 and 1');
+    });
+
+    it('accepts feel_valence at boundary values (-1, 0, 1)', async () => {
+      const r1 = await service.create({ content: 'test', feel_valence: -1 });
+      expect(collection._store.get(r1.memory_id)!.properties.feel_valence).toBe(-1);
+
+      const r2 = await service.create({ content: 'test', feel_valence: 0 });
+      expect(collection._store.get(r2.memory_id)!.properties.feel_valence).toBe(0);
+
+      const r3 = await service.create({ content: 'test', feel_valence: 1 });
+      expect(collection._store.get(r3.memory_id)!.properties.feel_valence).toBe(1);
+    });
+
+    it('auto-computes composites when dimensions provided but composites omitted', async () => {
+      const result = await service.create({
+        content: 'test',
+        feel_happiness: 0.8,
+        feel_sadness: 0.4,
+        functional_salience: 0.6,
+      });
+
+      const stored = collection._store.get(result.memory_id);
+      // feel_significance = avg(0.8, 0.4) = 0.6
+      expect(stored!.properties.feel_significance).toBeCloseTo(0.6);
+      // functional_significance = avg(0.6) = 0.6
+      expect(stored!.properties.functional_significance).toBeCloseTo(0.6);
+      // total_significance = 0.6 + 0.6 = 1.2
+      expect(stored!.properties.total_significance).toBeCloseTo(1.2);
+    });
+
+    it('uses explicit composites when provided directly', async () => {
+      const result = await service.create({
+        content: 'test',
+        feel_happiness: 0.8,
+        feel_significance: 0.99,
+        functional_significance: 0.5,
+        total_significance: 1.49,
+      });
+
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.feel_significance).toBe(0.99);
+      expect(stored!.properties.functional_significance).toBe(0.5);
+      expect(stored!.properties.total_significance).toBe(1.49);
+    });
+
+    it('persists observation text', async () => {
+      const result = await service.create({
+        content: 'test',
+        observation: 'This is a thoughtful entry about relationships',
+      });
+
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.observation).toBe('This is a thoughtful entry about relationships');
+    });
+
+    it('sets rem_visits to 0 on create', async () => {
+      const result = await service.create({ content: 'test' });
+      const stored = collection._store.get(result.memory_id);
+      expect(stored!.properties.rem_visits).toBe(0);
     });
   });
 });

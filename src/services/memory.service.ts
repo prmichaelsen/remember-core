@@ -20,6 +20,12 @@ import { MIN_SIMILARITY } from './recommendation.service.js';
 import { isValidContentType, DEFAULT_CONTENT_TYPE } from '../constants/content-types.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import {
+  ALL_SCORING_DIMENSIONS,
+  COMPOSITE_SCORE_PROPERTIES,
+  FEEL_DIMENSION_PROPERTIES,
+  FUNCTIONAL_DIMENSION_PROPERTIES,
+} from '../database/weaviate/v2-collections.js';
+import {
   buildCombinedSearchFilters,
   buildMemoryOnlyFilters,
   buildDeletedFilter,
@@ -46,6 +52,47 @@ export interface CreateMemoryInput {
   context_summary?: string;
   context_conversation_id?: string;
   follow_up_at?: string;
+
+  // ── REM Emotional Weighting (optional create-time seeding) ────────
+  // Layer 1: Discrete emotions (0-1, except feel_valence: -1 to 1)
+  feel_emotional_significance?: number;
+  feel_vulnerability?: number;
+  feel_trauma?: number;
+  feel_humor?: number;
+  feel_happiness?: number;
+  feel_sadness?: number;
+  feel_fear?: number;
+  feel_anger?: number;
+  feel_surprise?: number;
+  feel_disgust?: number;
+  feel_contempt?: number;
+  feel_embarrassment?: number;
+  feel_shame?: number;
+  feel_guilt?: number;
+  feel_excitement?: number;
+  feel_pride?: number;
+  feel_valence?: number;
+  feel_arousal?: number;
+  feel_dominance?: number;
+  feel_intensity?: number;
+  feel_coherence_tension?: number;
+  // Layer 2: Functional signals (0-1)
+  functional_salience?: number;
+  functional_urgency?: number;
+  functional_social_weight?: number;
+  functional_agency?: number;
+  functional_novelty?: number;
+  functional_retrieval_utility?: number;
+  functional_narrative_importance?: number;
+  functional_aesthetic_quality?: number;
+  functional_valence?: number;
+  functional_coherence_tension?: number;
+  // Composites
+  feel_significance?: number;
+  functional_significance?: number;
+  total_significance?: number;
+  // Observation
+  observation?: string;
 }
 
 export interface CreateMemoryResult {
@@ -227,6 +274,83 @@ export interface DeleteMemoryResult {
   orphaned_relationship_ids: string[];
 }
 
+// ─── Emotional Weighting Helpers ─────────────────────────────────────────
+
+/** Validate emotional/functional dimension ranges on create input */
+function validateDimensionRanges(input: CreateMemoryInput): void {
+  for (const dim of ALL_SCORING_DIMENSIONS) {
+    const value = input[dim as keyof CreateMemoryInput] as number | undefined;
+    if (value === undefined || value === null) continue;
+
+    if (dim === 'feel_valence') {
+      if (value < -1 || value > 1) {
+        throw new Error(`${dim} must be between -1 and 1, got ${value}`);
+      }
+    } else {
+      if (value < 0 || value > 1) {
+        throw new Error(`${dim} must be between 0 and 1, got ${value}`);
+      }
+    }
+  }
+}
+
+/** Compute composite significance from individual dimension values */
+function computeComposites(input: CreateMemoryInput): {
+  feel_significance: number | null;
+  functional_significance: number | null;
+  total_significance: number | null;
+} {
+  // If explicitly provided, use as-is
+  const hasExplicitComposites = input.feel_significance !== undefined
+    || input.functional_significance !== undefined
+    || input.total_significance !== undefined;
+
+  // Gather provided feel dimensions
+  const feelValues: number[] = [];
+  for (const dim of FEEL_DIMENSION_PROPERTIES) {
+    const v = input[dim as keyof CreateMemoryInput] as number | undefined;
+    if (v !== undefined && v !== null) {
+      feelValues.push(dim === 'feel_valence' ? Math.abs(v) : v);
+    }
+  }
+
+  // Gather provided functional dimensions
+  const funcValues: number[] = [];
+  for (const dim of FUNCTIONAL_DIMENSION_PROPERTIES) {
+    const v = input[dim as keyof CreateMemoryInput] as number | undefined;
+    if (v !== undefined && v !== null) {
+      funcValues.push(dim === 'functional_valence' ? Math.abs(v) : v);
+    }
+  }
+
+  const hasDimensions = feelValues.length > 0 || funcValues.length > 0;
+
+  if (hasExplicitComposites) {
+    return {
+      feel_significance: input.feel_significance ?? null,
+      functional_significance: input.functional_significance ?? null,
+      total_significance: input.total_significance ?? null,
+    };
+  }
+
+  if (!hasDimensions) {
+    return { feel_significance: null, functional_significance: null, total_significance: null };
+  }
+
+  // Auto-compute with equal weighting (simple average)
+  const feelSig = feelValues.length > 0
+    ? feelValues.reduce((sum, v) => sum + v, 0) / feelValues.length
+    : null;
+  const funcSig = funcValues.length > 0
+    ? funcValues.reduce((sum, v) => sum + v, 0) / funcValues.length
+    : null;
+  const totalSig = feelSig !== null || funcSig !== null
+    ? (feelSig ?? 0) + (funcSig ?? 0)
+    : null;
+
+  return { feel_significance: feelSig, functional_significance: funcSig, total_significance: totalSig };
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────
 
 /** Normalize trust_score and compute derived rating_avg on a Weaviate document */
@@ -319,6 +443,9 @@ export class MemoryService {
   // ── Create ──────────────────────────────────────────────────────────
 
   async create(input: CreateMemoryInput): Promise<CreateMemoryResult> {
+    // Validate emotional dimension ranges
+    validateDimensionRanges(input);
+
     const now = new Date().toISOString();
     const contentType =
       input.type && isValidContentType(input.type) ? input.type : DEFAULT_CONTENT_TYPE;
@@ -357,6 +484,28 @@ export class MemoryService {
       space_ids: [],
       group_ids: [],
     };
+
+    // Pass through emotional/functional dimensions
+    for (const dim of ALL_SCORING_DIMENSIONS) {
+      const value = input[dim as keyof CreateMemoryInput] as number | undefined;
+      if (value !== undefined) {
+        properties[dim] = value;
+      }
+    }
+
+    // Pass through observation
+    if (input.observation !== undefined) {
+      properties.observation = input.observation;
+    }
+
+    // Compute or pass through composites
+    const composites = computeComposites(input);
+    if (composites.feel_significance !== null) properties.feel_significance = composites.feel_significance;
+    if (composites.functional_significance !== null) properties.functional_significance = composites.functional_significance;
+    if (composites.total_significance !== null) properties.total_significance = composites.total_significance;
+
+    // REM metadata: NOT settable via create (REM-only)
+    properties.rem_visits = 0;
 
     const memoryId = await this.collection.data.insert({ properties });
     this.logger.info('Memory created', { memoryId, userId: this.userId });

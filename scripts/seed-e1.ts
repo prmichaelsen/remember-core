@@ -43,10 +43,10 @@ loadEnv({ path: envPath });
 // --- Imports (after env loaded) ---
 import { initWeaviateClient, getWeaviateClient } from '../src/database/weaviate/client.js';
 import {
-  ensureMemoryCollection,
   getMemoryCollection,
   deleteMemoryCollection,
 } from '../src/database/weaviate/schema.js';
+import { ensureUserCollection } from '../src/database/weaviate/v2-collections.js';
 import { ensurePublicCollection } from '../src/database/weaviate/space-schema.js';
 import { MemoryService } from '../src/services/memory.service.js';
 import { MemoryIndexService } from '../src/services/memory-index.service.js';
@@ -530,8 +530,8 @@ async function main(): Promise<void> {
     }
 
     // --- Ensure collections exist ---
-    await ensureMemoryCollection(TEST_USER_ID);
-    console.log(`  Ensured ${USER_COLLECTION}`);
+    await ensureUserCollection(weaviateClient!, TEST_USER_ID);
+    console.log(`  Ensured ${USER_COLLECTION} (with schema reconciliation)`);
     await ensurePublicCollection(weaviateClient!);
     console.log(`  Ensured ${SPACE_COLLECTION}`);
 

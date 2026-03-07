@@ -145,6 +145,7 @@ export class RemService {
     }
 
     // 4.6. Classification: classify unclassified memories via Haiku
+    this.logger.info?.('Phase 1: Starting classification', { collectionId });
     if (this.deps.classificationService && this.deps.subLlm) {
       try {
         const classResult = await runClassificationPipeline({
@@ -165,6 +166,7 @@ export class RemService {
     }
 
     // 4.7. Mood update: drift dimensions, decay pressures, check thresholds
+    this.logger.info?.('Phase 2: Starting mood update', { collectionId });
     if (this.deps.moodService && this.deps.ghostCompositeId) {
       try {
         const userId = this.extractUserId(collectionId);
@@ -179,11 +181,14 @@ export class RemService {
       }
     }
 
+    this.logger.info?.('Phase 3: Starting relationship discovery', { collectionId });
+
     // 5. Load collection state for memory cursor
     const collectionState = await this.deps.stateStore.getCollectionState(collectionId);
     const memoryCursor = collectionState?.memory_cursor ?? '';
 
     // 6. Select candidates using multi-strategy approach
+    this.logger.info?.('Selecting candidates', { collectionId, memoryCursor: memoryCursor || '(none)' });
     const candidates = await selectCandidates(
       collection,
       memoryCursor,
@@ -193,6 +198,7 @@ export class RemService {
       this.logger,
     );
     stats.memories_scanned = candidates.length;
+    this.logger.info?.('Candidates selected', { count: candidates.length });
 
     if (candidates.length === 0) {
       await this.advanceCursor(collectionId, memoryCursor);
@@ -201,8 +207,10 @@ export class RemService {
     }
 
     // 7. Form clusters
+    this.logger.info?.('Forming clusters', { candidateCount: candidates.length });
     const clusters = await formClusters(collection, candidates, this.config, this.logger);
     stats.clusters_found = clusters.length;
+    this.logger.info?.('Clusters formed', { count: clusters.length });
 
     if (clusters.length === 0) {
       await this.advanceCursor(collectionId, memoryCursor);
@@ -508,6 +516,11 @@ export class RemService {
       this.logger.info?.('Phase 0: No memories to score');
       return stats;
     }
+
+    this.logger.info?.('Phase 0: Selected memories for scoring', {
+      count: memories.length,
+      collectionId,
+    });
 
     // Process batch
     for (const memory of memories) {

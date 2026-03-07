@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.47.2] - 2026-03-07
+
+### Changed
+- Add phase transition logging to REM cycle — log Phase 0/1/2/3 boundaries, candidate/cluster counts, and batch progress for observability
+- Seed script uses `ensureUserCollection` (v2 with schema reconciliation) instead of `ensureMemoryCollection` (v1), ensuring missing properties like `curated_score` and `weight` are added to existing collections
+
 ## [0.47.1] - 2026-03-07
 
 ### Fixed

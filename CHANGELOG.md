@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.40.0] - 2026-03-07
+
+### Added
+- **MoodService** — Firestore CRUD for core mood memory. `CoreMoodMemory` type with 6-dimension `MoodState` (valence, arousal, confidence, social_warmth, coherence, trust), pressure tracking, perception fields, and derived labels. `MoodService` class with getMood, initializeMood, getOrInitialize, updateMood, addPressure, setPressures methods.
+- 12 new tests for mood service CRUD operations, pressure management, and neutral state initialization
+
 ## [0.39.0] - 2026-03-07
 
 ### Added

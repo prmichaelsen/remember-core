@@ -5,7 +5,7 @@
  * (structured numerical data, no semantic content to embed, frequent read/write).
  * Weaviate holds *what the ghost knows*; Firestore holds *what the ghost is*.
  *
- * Firestore path: {BASE}.users/{user_id}/{ghost_composite_id}/core (docId: 'mood')
+ * Firestore path: {BASE}.users/{user_id}/{ghost_composite_id} (docId: 'core')
  *
  * See: agent/design/core-mood-memory.md
  */
@@ -113,8 +113,8 @@ export function createInitialMood(userId: string): CoreMoodMemory {
 
 function getMoodPath(userId: string, ghostCompositeId: string): { collectionPath: string; docId: string } {
   return {
-    collectionPath: `${BASE}.users/${userId}/${ghostCompositeId}/core`,
-    docId: 'mood',
+    collectionPath: `${BASE}.users/${userId}/${ghostCompositeId}`,
+    docId: 'core',
   };
 }
 

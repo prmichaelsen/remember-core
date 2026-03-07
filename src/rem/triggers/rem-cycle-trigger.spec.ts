@@ -1,3 +1,11 @@
+jest.mock('weaviate-client', () => {
+  const actual = jest.requireActual('weaviate-client');
+  return {
+    ...actual,
+    Filters: { and: (...args: any[]) => 'mock-combined-filter' },
+  };
+});
+
 import {
   getReEvaluationCandidates,
   runRemCycleTrigger,
@@ -25,14 +33,9 @@ function makeMemoryObject(id: string, overrides: Record<string, any> = {}) {
 function createMockCollection(objects: any[] = []) {
   return {
     filter: {
-      byProperty: () => ({
-        equal: () => ({
-          and: () => ({
-            byProperty: () => ({
-              isNull: () => 'mock-filter',
-            }),
-          }),
-        }),
+      byProperty: (prop: string) => ({
+        equal: (val: any) => `mock-filter-${prop}-eq-${val}`,
+        isNull: (val: boolean) => `mock-filter-${prop}-isNull-${val}`,
       }),
     },
     sort: {

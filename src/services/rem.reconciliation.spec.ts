@@ -1,3 +1,7 @@
+jest.mock('weaviate-client', () => ({
+  Filters: { and: (...args: any[]) => 'mock-combined-filter' },
+}));
+
 import {
   selectReconciliationCandidates,
   detectConflicts,
@@ -38,21 +42,10 @@ function createMockCollection(
 ) {
   return {
     filter: {
-      byProperty: () => ({
-        equal: () => ({
-          and: () => ({
-            byProperty: () => ({
-              greaterOrEqual: () => ({
-                and: () => ({
-                  byProperty: () => ({
-                    isNull: () => 'mock-filter',
-                  }),
-                }),
-              }),
-              isNull: () => 'mock-filter',
-            }),
-          }),
-        }),
+      byProperty: (prop: string) => ({
+        equal: (val: any) => `mock-filter-${prop}-eq-${val}`,
+        greaterOrEqual: (val: any) => `mock-filter-${prop}-gte-${val}`,
+        isNull: (val: boolean) => `mock-filter-${prop}-isNull-${val}`,
       }),
     },
     sort: {

@@ -8,6 +8,7 @@
  * Has its own cost cap separate from relationship/curation scoring.
  */
 
+import { Filters } from 'weaviate-client';
 import type { Logger } from '../utils/logger.js';
 import { ALL_SCORING_DIMENSIONS } from '../database/weaviate/v2-collections.js';
 import type { EmotionalScoringService, ScoringContext } from './emotional-scoring.service.js';
@@ -58,8 +59,10 @@ export async function selectMemoriesForScoring(
   const memories: Array<{ uuid: string; properties: Record<string, any> }> = [];
 
   // Priority 1: Unscored memories (rem_touched_at is null)
-  const unscoredFilter = collection.filter.byProperty('doc_type').equal('memory')
-    .and().byProperty('rem_touched_at').isNull(true);
+  const unscoredFilter = Filters.and(
+    collection.filter.byProperty('doc_type').equal('memory'),
+    collection.filter.byProperty('rem_touched_at').isNull(true),
+  );
 
   const unscoredResult = await collection.query.fetchObjects({
     filters: unscoredFilter,
@@ -74,8 +77,10 @@ export async function selectMemoriesForScoring(
   // Priority 2: Outdated memories (oldest rem_touched_at first)
   if (memories.length < batchSize) {
     const remaining = batchSize - memories.length;
-    const scoredFilter = collection.filter.byProperty('doc_type').equal('memory')
-      .and().byProperty('rem_touched_at').isNull(false);
+    const scoredFilter = Filters.and(
+      collection.filter.byProperty('doc_type').equal('memory'),
+      collection.filter.byProperty('rem_touched_at').isNull(false),
+    );
 
     const scoredResult = await collection.query.fetchObjects({
       filters: scoredFilter,

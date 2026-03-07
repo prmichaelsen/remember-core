@@ -1,3 +1,7 @@
+jest.mock('weaviate-client', () => ({
+  Filters: { and: (...args: any[]) => 'mock-combined-filter' },
+}));
+
 import {
   computeDecayIncrement,
   selectPruningCandidates,
@@ -45,36 +49,12 @@ function createMockCollection(objects: any[] = [], urgencyObjects?: any[]) {
 
   return {
     filter: {
-      byProperty: () => ({
-        equal: () => ({
-          and: () => ({
-            byProperty: () => ({
-              lessThan: () => ({
-                and: () => ({
-                  byProperty: () => ({
-                    isNull: () => 'mock-prune-filter',
-                  }),
-                }),
-              }),
-              greaterThan: () => 'mock-urgency-filter',
-              isNull: () => 'mock-filter',
-            }),
-          }),
-        }),
-        lessThan: () => ({
-          and: () => ({
-            byProperty: () => ({
-              isNull: () => 'mock-prune-filter',
-            }),
-          }),
-        }),
-        greaterThan: () => ({
-          and: () => ({
-            byProperty: () => ({
-              equal: () => 'mock-filter',
-            }),
-          }),
-        }),
+      byProperty: (prop: string) => ({
+        equal: (val: any) => `mock-filter-${prop}-eq-${val}`,
+        lessThan: (val: any) => `mock-filter-${prop}-lt-${val}`,
+        greaterThan: (val: any) => `mock-filter-${prop}-gt-${val}`,
+        greaterOrEqual: (val: any) => `mock-filter-${prop}-gte-${val}`,
+        isNull: (val: boolean) => `mock-filter-${prop}-isNull-${val}`,
       }),
     },
     sort: {

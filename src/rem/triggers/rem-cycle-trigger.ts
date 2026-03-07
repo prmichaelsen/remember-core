@@ -6,6 +6,7 @@
  * Runs as Phase 2 (Reweight) of the REM cycle.
  */
 
+import { Filters } from 'weaviate-client';
 import type { Logger } from '../../utils/logger.js';
 import { ALL_SCORING_DIMENSIONS } from '../../database/weaviate/v2-collections.js';
 import type { SelectiveReEvaluationService, ReEvaluationContext } from '../reeval/selective-reevaluation.js';
@@ -56,8 +57,10 @@ export async function getReEvaluationCandidates(
   batchSize: number,
 ): Promise<Array<{ uuid: string; properties: Record<string, any> }>> {
   // Select memories scored before the last cycle
-  const filter = collection.filter.byProperty('doc_type').equal('memory')
-    .and().byProperty('rem_touched_at').isNull(false);
+  const filter = Filters.and(
+    collection.filter.byProperty('doc_type').equal('memory'),
+    collection.filter.byProperty('rem_touched_at').isNull(false),
+  );
 
   const result = await collection.query.fetchObjects({
     filters: filter,

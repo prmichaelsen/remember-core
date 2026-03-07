@@ -7,6 +7,7 @@
  * Also decays `functional_urgency` by 10% per cycle.
  */
 
+import { Filters } from 'weaviate-client';
 import type { Logger } from '../utils/logger.js';
 import { COHERENCE_TENSION_THRESHOLD, AGENCY_EXEMPTION_THRESHOLD } from './rem.constants.js';
 
@@ -103,9 +104,11 @@ export async function selectPruningCandidates(
   collection: any,
   batchSize: number,
 ): Promise<Array<{ uuid: string; properties: Record<string, any> }>> {
-  const filter = collection.filter.byProperty('doc_type').equal('memory')
-    .and().byProperty('total_significance').lessThan(SIGNIFICANCE_CEILING)
-    .and().byProperty('deleted_at').isNull(true);
+  const filter = Filters.and(
+    collection.filter.byProperty('doc_type').equal('memory'),
+    collection.filter.byProperty('total_significance').lessThan(SIGNIFICANCE_CEILING),
+    collection.filter.byProperty('deleted_at').isNull(true),
+  );
 
   const result = await collection.query.fetchObjects({
     filters: filter,
@@ -129,8 +132,10 @@ export async function selectUrgencyDecayCandidates(
   collection: any,
   batchSize: number,
 ): Promise<Array<{ uuid: string; properties: Record<string, any> }>> {
-  const filter = collection.filter.byProperty('doc_type').equal('memory')
-    .and().byProperty('functional_urgency').greaterThan(0);
+  const filter = Filters.and(
+    collection.filter.byProperty('doc_type').equal('memory'),
+    collection.filter.byProperty('functional_urgency').greaterThan(0),
+  );
 
   const result = await collection.query.fetchObjects({
     filters: filter,

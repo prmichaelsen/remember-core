@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.45.5] - 2026-03-07
+
+### Fixed
+- **CRITICAL**: Complete Weaviate `.and()` chain fix — 11 call sites across 7 files still used the broken chained `.and()` syntax which does not exist in Weaviate client v3. Replace with `Filters.and(filter1, filter2)`. This was blocking Phase 0 emotional scoring entirely.
+- Harden classification JSON parsing — extract first `{...}` JSON block from mixed text when direct parse fails, reducing ~20% skip rate from Haiku responses
+- Log raw Haiku response (truncated) on classification parse failure for debugging
+- Fix Firestore mood path — `core/mood` → `core` doc, matching design spec for single core document per ghost
+
 ## [0.45.4] - 2026-03-07
 
 ### Added

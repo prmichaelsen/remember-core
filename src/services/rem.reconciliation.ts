@@ -8,6 +8,7 @@
  * High coherence_tension memories resist pruning until tension resolves.
  */
 
+import { Filters } from 'weaviate-client';
 import type { Logger } from '../utils/logger.js';
 import { COHERENCE_TENSION_THRESHOLD } from './rem.constants.js';
 import type { SubLlmProvider } from './emotional-scoring.service.js';
@@ -70,9 +71,11 @@ export async function selectReconciliationCandidates(
   batchSize: number,
   currentCycleTimestamp?: string,
 ): Promise<Array<{ uuid: string; properties: Record<string, any> }>> {
-  const filter = collection.filter.byProperty('doc_type').equal('memory')
-    .and().byProperty('feel_coherence_tension').greaterOrEqual(COHERENCE_TENSION_THRESHOLD)
-    .and().byProperty('deleted_at').isNull(true);
+  const filter = Filters.and(
+    collection.filter.byProperty('doc_type').equal('memory'),
+    collection.filter.byProperty('feel_coherence_tension').greaterOrEqual(COHERENCE_TENSION_THRESHOLD),
+    collection.filter.byProperty('deleted_at').isNull(true),
+  );
 
   const result = await collection.query.fetchObjects({
     filters: filter,

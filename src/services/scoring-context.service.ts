@@ -9,6 +9,7 @@
  * See: agent/design/local.rem-emotional-weighting.md
  */
 
+import { Filters } from 'weaviate-client';
 import type { Logger } from '../utils/logger.js';
 import { ALL_SCORING_DIMENSIONS } from '../database/weaviate/v2-collections.js';
 
@@ -77,8 +78,10 @@ export class ScoringContextService {
   ): Promise<string[]> {
     try {
       // Find relationships that include this memory
-      const filter = collection.filter.byProperty('doc_type').equal('relationship')
-        .and().byProperty('related_memory_ids').containsAny([memoryId]);
+      const filter = Filters.and(
+        collection.filter.byProperty('doc_type').equal('relationship'),
+        collection.filter.byProperty('related_memory_ids').containsAny([memoryId]),
+      );
 
       const result = await collection.query.fetchObjects({
         filters: filter,
@@ -113,8 +116,10 @@ export class ScoringContextService {
 
     try {
       // Filter for scored memories (has total_significance set)
-      const filter = collection.filter.byProperty('total_significance').greaterThan(0)
-        .and().byProperty('doc_type').equal('memory');
+      const filter = Filters.and(
+        collection.filter.byProperty('total_significance').greaterThan(0),
+        collection.filter.byProperty('doc_type').equal('memory'),
+      );
 
       const result = await collection.query.nearObject(memoryId, {
         limit: limit + 1, // +1 to exclude self
@@ -166,8 +171,10 @@ export class ScoringContextService {
 
     try {
       // Fetch all memories with total_significance > 0 (scored)
-      const filter = collection.filter.byProperty('total_significance').greaterThan(0)
-        .and().byProperty('doc_type').equal('memory');
+      const filter = Filters.and(
+        collection.filter.byProperty('total_significance').greaterThan(0),
+        collection.filter.byProperty('doc_type').equal('memory'),
+      );
 
       const result = await collection.query.fetchObjects({
         filters: filter,

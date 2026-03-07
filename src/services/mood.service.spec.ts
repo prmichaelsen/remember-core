@@ -48,7 +48,7 @@ describe('MoodService', () => {
     const initial = createInitialMood(userId);
     const { __store } = require('../database/firestore/init.js');
     const { BASE } = require('../database/firestore/paths.js');
-    __store.set(`${BASE}.users/${userId}/${ghostId}/core/mood`, initial);
+    __store.set(`${BASE}.users/${userId}/${ghostId}/core`, initial);
 
     const mood = await service.getMood(userId, ghostId);
     expect(mood).not.toBeNull();

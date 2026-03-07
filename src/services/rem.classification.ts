@@ -97,8 +97,17 @@ const QUALITY_SET = new Set<string>(QUALITY_SIGNALS);
 export function parseClassificationResponse(raw: string): ClassificationResponse | null {
   try {
     // Strip markdown fences if present
-    const cleaned = raw.replace(/```json?\s*/g, '').replace(/```\s*/g, '').trim();
-    const parsed = JSON.parse(cleaned);
+    let cleaned = raw.replace(/```json?\s*/g, '').replace(/```\s*/g, '').trim();
+
+    // Try direct parse first, then extract first JSON object from mixed text
+    let parsed: any;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) return null;
+      parsed = JSON.parse(jsonMatch[0]);
+    }
 
     // Validate and coerce genre
     const genre = GENRE_SET.has(parsed.genre) ? parsed.genre : 'other';
@@ -187,6 +196,7 @@ export async function runClassificationPipeline(
         stats.memories_skipped++;
         logger.warn?.('Classification: Failed to parse Haiku response', {
           memoryId: memory.uuid,
+          rawResponse: rawResponse.slice(0, 500),
         });
         continue;
       }

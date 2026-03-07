@@ -2121,7 +2121,8 @@ tasks:
       description: "Update OpenAPI spec, regenerate types, add SVC client method."
     - id: task-143
       name: Unit Tests and Edge Cases
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-143-unit-tests-and-edge-cases.md
       estimated_hours: 2-3
       dependencies: [task-138, task-139, task-140, task-141]

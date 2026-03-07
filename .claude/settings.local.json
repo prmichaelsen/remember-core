@@ -56,7 +56,8 @@
       "Bash(chmod +x:*)",
       "Bash(npx tsx:*)",
       "Bash(sort:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(grep:*)"
     ]
   }
 }

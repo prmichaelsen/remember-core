@@ -10,9 +10,10 @@
 
 import type { WeaviateClient } from 'weaviate-client';
 import { getDocument, setDocument, deleteDocument } from '../database/firestore/init.js';
-import { getMemoryRatingsPath } from '../database/firestore/paths.js';
+import { getMemoryRatingsPath, getUserRatingsPath } from '../database/firestore/paths.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import type { MemoryIndexService } from './memory-index.service.js';
+import type { RecommendationService } from './recommendation.service.js';
 import type { Logger } from '../utils/logger.js';
 import type { MemoryRating, RateMemoryInput, RatingResult } from '../types/rating.types.js';
 import { computeBayesianScore, computeRatingAvg, isValidRating } from '../types/rating.types.js';
@@ -20,17 +21,20 @@ import { computeBayesianScore, computeRatingAvg, isValidRating } from '../types/
 export interface RatingServiceParams {
   weaviateClient: WeaviateClient;
   memoryIndexService: MemoryIndexService;
+  recommendationService?: RecommendationService;
   logger?: Logger;
 }
 
 export class RatingService {
   private readonly weaviateClient: WeaviateClient;
   private readonly memoryIndexService: MemoryIndexService;
+  private readonly recommendationService?: RecommendationService;
   private readonly logger: Logger;
 
   constructor(params: RatingServiceParams) {
     this.weaviateClient = params.weaviateClient;
     this.memoryIndexService = params.memoryIndexService;
+    this.recommendationService = params.recommendationService;
     this.logger = params.logger ?? console;
   }
 
@@ -89,6 +93,10 @@ export class RatingService {
     };
     await setDocument(ratingsPath, userId, ratingDoc as any);
 
+    // Dual-write: user-centric index for byRecommendation queries
+    const userRatingsPath = getUserRatingsPath(userId);
+    await setDocument(userRatingsPath, memoryId, { ...ratingDoc, memoryId } as any);
+
     // Compute new aggregates
     let ratingSum = (props.rating_sum as number) ?? 0;
     let ratingCount = (props.rating_count as number) ?? 0;
@@ -115,6 +123,11 @@ export class RatingService {
     });
 
     this.logger.debug?.(`[RatingService] rate: ${memoryId} by ${userId} → ${rating} (was ${previousRating})`);
+
+    // Invalidate preference centroid cache on high rating (4-5 stars)
+    if (rating >= 4 && this.recommendationService) {
+      await this.recommendationService.invalidateCentroid(userId);
+    }
 
     return {
       previousRating,
@@ -144,6 +157,10 @@ export class RatingService {
 
     // Delete Firestore doc
     await deleteDocument(ratingsPath, userId);
+
+    // Dual-delete: user-centric index
+    const userRatingsPath = getUserRatingsPath(userId);
+    await deleteDocument(userRatingsPath, memoryId);
 
     // Resolve collection and fetch current aggregates
     const collectionName = await this.memoryIndexService.lookup(memoryId);

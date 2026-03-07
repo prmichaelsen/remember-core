@@ -171,6 +171,37 @@ export function getMemoryRatingsPath(memoryId: string): string {
 }
 
 // ============================================================================
+// USER RATINGS INDEX (user-centric mirror of memory_ratings)
+// ============================================================================
+
+/**
+ * Get path to a user's ratings index subcollection.
+ * Pattern: {BASE}.user_ratings/{userId}/ratings
+ *
+ * Mirrors memory_ratings but indexed by userId for efficient
+ * "get all memories rated by user X" queries.
+ * Docs keyed by memoryId.
+ */
+export function getUserRatingsPath(userId: string): string {
+  return `${BASE}.user_ratings/${userId}/ratings`;
+}
+
+// ============================================================================
+// PREFERENCE CENTROIDS
+// ============================================================================
+
+/**
+ * Get path to a user's cached preference centroid.
+ * Pattern: {BASE}.preference_centroids
+ *
+ * Stores computed preference centroid vectors for byRecommendation sort mode.
+ * Docs keyed by userId.
+ */
+export function getPreferenceCentroidsPath(): string {
+  return `${BASE}.preference_centroids`;
+}
+
+// ============================================================================
 // MEMORY INDEX
 // ============================================================================
 

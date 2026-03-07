@@ -426,10 +426,10 @@ milestones:
 
   - id: M27
     name: byRecommendation Sort Mode
-    status: not_started
-    progress: 0
+    status: in_progress
+    progress: 29
     estimated_weeks: 1.5
-    tasks_completed: 0
+    tasks_completed: 2
     tasks_total: 7
     notes: |
       Personalized sort mode using vector similarity to user's rating history.

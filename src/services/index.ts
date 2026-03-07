@@ -280,6 +280,18 @@ export {
   type DiscoveryItem,
 } from './discovery.js';
 
+// Recommendation (byRecommendation sort mode)
+export {
+  RecommendationService,
+  type RecommendationServiceParams,
+  type PreferenceCentroid,
+  type CentroidComputationResult,
+  MIN_PROFILE_SIZE,
+  NEGATIVE_WEIGHT,
+  VECTOR_FETCH_CAP,
+  MIN_SIMILARITY,
+} from './recommendation.service.js';
+
 // Content moderation
 export {
   type ModerationCategory,

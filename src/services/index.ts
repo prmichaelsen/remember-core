@@ -464,3 +464,23 @@ export {
   type TrustFlagInput,
   type FirestoreAdapter,
 } from './rem.trust-flagging.js';
+
+// Significance scoring (mood-aware memory significance at creation time)
+export {
+  calculateMemorySignificance,
+  type SignificanceInput,
+  type SignificanceBreakdown,
+} from './significance.service.js';
+
+// Anticipatory emotion (REM cycle forward-looking pressure generation)
+export {
+  createAnticipatoryPressures,
+  buildPatternDetectionPrompt,
+  parsePatternResponse,
+  MAX_ANTICIPATORY_PRESSURES,
+  DEFAULT_ANTICIPATORY_DECAY,
+  MIN_PATTERN_MEMORIES,
+  type DetectedPattern,
+  type AnticipatoryLlmProvider,
+  type RecentMemory,
+} from './anticipatory.service.js';

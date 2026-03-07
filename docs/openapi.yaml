@@ -1423,6 +1423,144 @@ components:
           type: string
           format: date-time
           description: ISO 8601 datetime for agent follow-up reminders
+        # REM Emotional Weighting (optional create-time seeding)
+        feel_emotional_significance:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_vulnerability:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_trauma:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_humor:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_happiness:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_sadness:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_fear:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_anger:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_surprise:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_disgust:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_contempt:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_embarrassment:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_shame:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_guilt:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_excitement:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_pride:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_valence:
+          type: number
+          minimum: -1
+          maximum: 1
+          description: Positive-negative spectrum (-1 to 1)
+        feel_arousal:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_dominance:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_intensity:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_coherence_tension:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_salience:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_urgency:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_social_weight:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_agency:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_novelty:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_retrieval_utility:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_narrative_importance:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_aesthetic_quality:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_valence:
+          type: number
+          minimum: 0
+          maximum: 1
+        functional_coherence_tension:
+          type: number
+          minimum: 0
+          maximum: 1
+        feel_significance:
+          type: number
+          description: Composite — weighted sum of Layer 1 dimensions
+        functional_significance:
+          type: number
+          description: Composite — weighted sum of Layer 2 dimensions
+        total_significance:
+          type: number
+          description: Composite — feel_significance + functional_significance
+        observation:
+          type: string
+          description: LLM-generated summary or insight about the memory
 
     SearchMemoryInput:
       type: object

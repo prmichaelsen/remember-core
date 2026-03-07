@@ -668,6 +668,46 @@ export interface components {
             thread_root_id?: string | null;
             context_summary?: string;
             context_conversation_id?: string;
+            feel_emotional_significance?: number;
+            feel_vulnerability?: number;
+            feel_trauma?: number;
+            feel_humor?: number;
+            feel_happiness?: number;
+            feel_sadness?: number;
+            feel_fear?: number;
+            feel_anger?: number;
+            feel_surprise?: number;
+            feel_disgust?: number;
+            feel_contempt?: number;
+            feel_embarrassment?: number;
+            feel_shame?: number;
+            feel_guilt?: number;
+            feel_excitement?: number;
+            feel_pride?: number;
+            /** @description Positive-negative spectrum (-1 to 1) */
+            feel_valence?: number;
+            feel_arousal?: number;
+            feel_dominance?: number;
+            feel_intensity?: number;
+            feel_coherence_tension?: number;
+            functional_salience?: number;
+            functional_urgency?: number;
+            functional_social_weight?: number;
+            functional_agency?: number;
+            functional_novelty?: number;
+            functional_retrieval_utility?: number;
+            functional_narrative_importance?: number;
+            functional_aesthetic_quality?: number;
+            functional_valence?: number;
+            functional_coherence_tension?: number;
+            /** @description Composite — weighted sum of Layer 1 dimensions */
+            feel_significance?: number;
+            /** @description Composite — weighted sum of Layer 2 dimensions */
+            functional_significance?: number;
+            /** @description Composite — feel_significance + functional_significance */
+            total_significance?: number;
+            /** @description LLM-generated summary or insight about the memory */
+            observation?: string;
         };
         SearchMemoryInput: {
             query: string;

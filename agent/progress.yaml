@@ -445,9 +445,9 @@ milestones:
   - id: M28
     name: "REM Emotional Weighting: Schema & Scoring"
     status: in_progress
-    progress: 25
+    progress: 38
     estimated_weeks: 3
-    tasks_completed: 2
+    tasks_completed: 3
     tasks_total: 8
     started: 2026-03-07
     notes: |
@@ -2124,6 +2124,7 @@ tasks:
       name: Unit Tests and Edge Cases
       status: completed
       completed_date: 2026-03-07
+      actual_hours: 0.17
       file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-143-unit-tests-and-edge-cases.md
       estimated_hours: 2-3
       dependencies: [task-138, task-139, task-140, task-141]

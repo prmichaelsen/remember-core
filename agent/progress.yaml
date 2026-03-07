@@ -444,11 +444,12 @@ milestones:
 
   - id: M28
     name: "REM Emotional Weighting: Schema & Scoring"
-    status: not_started
-    progress: 0
+    status: in_progress
+    progress: 13
     estimated_weeks: 3
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 8
+    started: 2026-03-07
     notes: |
       Foundation for REM emotional weighting. Adds 37 new Weaviate properties
       (31 dimensions + 3 composites + 2 REM metadata + 1 observation),
@@ -2138,7 +2139,8 @@ tasks:
   milestone_28:
     - id: task-145
       name: Weaviate Schema Migration
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-145-weaviate-schema-migration.md
       estimated_hours: 3
       dependencies: []

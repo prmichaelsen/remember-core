@@ -1,9 +1,9 @@
 project:
   name: remember-core
-  version: 0.34.0
+  version: 0.35.6
   started: 2026-02-27
   status: in_progress
-  current_milestone: M25
+  current_milestone: M27
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -408,14 +408,18 @@ milestones:
 
   - id: M26
     name: App Client Comments Resource
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 0.5
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 1
+    started: 2026-03-07
+    completed: 2026-03-07
     notes: |
-      Add CommentsResource to app client SDK wrapping POST /api/app/v1/spaces/comments.
-      OpenAPI spec + generated types already exist. Needs resource, factory wiring, tests.
+      CommentsResource added to app client SDK. createAndPublish() calls
+      POST /api/app/v1/spaces/comments. Infers publish destinations from
+      parent memory when spaces/groups not provided. UUID fallback for
+      composite_id resolution. Live e2e tests added.
       See: agent/milestones/milestone-26-app-client-comments.md
 
   - id: M27

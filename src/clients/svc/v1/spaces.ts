@@ -18,6 +18,7 @@ export interface SpacesResource {
   byProperty(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byBroad(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byRandom(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byCurated(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
 }
 
 export function createSpacesResource(http: HttpClient): SpacesResource {
@@ -60,6 +61,9 @@ export function createSpacesResource(http: HttpClient): SpacesResource {
     },
     byRandom(userId, input) {
       return http.request('POST', '/api/svc/v1/spaces/by-random', { userId, body: input });
+    },
+    byCurated(userId, input) {
+      return http.request('POST', '/api/svc/v1/spaces/by-curated', { userId, body: input });
     },
   };
 }

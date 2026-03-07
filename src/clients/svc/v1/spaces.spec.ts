@@ -145,6 +145,16 @@ describe('SpacesResource', () => {
       body: { spaces: ['the_void'], limit: 5 },
     });
   });
+
+  it('byCurated calls POST /api/svc/v1/spaces/by-curated', async () => {
+    const spaces = createSpacesResource(http);
+    await spaces.byCurated('user1', { spaces: ['the_void'], limit: 10 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/spaces/by-curated', {
+      userId: 'user1',
+      body: { spaces: ['the_void'], limit: 10 },
+    });
+  });
 });
 
 describe('ConfirmationsResource', () => {

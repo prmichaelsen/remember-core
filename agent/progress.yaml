@@ -566,10 +566,11 @@ milestones:
 
   - id: M36
     name: byCurated Sort Mode
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
+    completed: 2026-03-07
     estimated_weeks: 3
-    tasks_completed: 5
+    tasks_completed: 6
     tasks_total: 6
     dependencies: [M10, M20, M28]
     notes: |
@@ -2511,7 +2512,8 @@ tasks:
 
     - id: task-184
       name: Engagement Counters + SVC Client
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-36-by-curated-sort-mode/task-184-engagement-counters-svc-client.md
       estimated_hours: 3
       dependencies: [task-179, task-183]

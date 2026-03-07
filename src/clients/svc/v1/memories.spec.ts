@@ -211,4 +211,41 @@ describe('MemoriesResource', () => {
       body: { limit: 10 },
     });
   });
+
+  it('byCurated calls POST /api/svc/v1/memories/by-curated', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byCurated('user1', { limit: 20, direction: 'desc' });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-curated', {
+      userId: 'user1',
+      body: { limit: 20, direction: 'desc' },
+    });
+  });
+
+  it('incrementClick calls POST /api/svc/v1/memories/:id/click', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.incrementClick('user1', 'mem-abc');
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/mem-abc/click', {
+      userId: 'user1',
+    });
+  });
+
+  it('incrementShare calls POST /api/svc/v1/memories/:id/share', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.incrementShare('user1', 'mem-abc');
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/mem-abc/share', {
+      userId: 'user1',
+    });
+  });
+
+  it('incrementComment calls POST /api/svc/v1/memories/:id/comment-count', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.incrementComment('user1', 'mem-abc');
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/mem-abc/comment-count', {
+      userId: 'user1',
+    });
+  });
 });

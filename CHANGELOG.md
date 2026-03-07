@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.46.0] - 2026-03-07
+
+### Added
+- `MemoryService.incrementClick/Share/Comment()` — engagement counter increment methods
+- SVC client: `memories.byCurated()`, `spaces.byCurated()`, `memories.incrementClick/Share/Comment()` — 5 new methods, 5 unit tests
+- **M36 byCurated Sort Mode complete** — 6 tasks, 70+ tests, hybrid algorithmic sort combining editorial quality, cluster quality, graph centrality, ratings, recency, and engagement into pre-computed `curated_score`
+
 ## [0.45.6] - 2026-03-07
 
 ### Added

@@ -1610,4 +1610,30 @@ export class MemoryService {
       orphaned_relationship_ids: orphanedIds,
     };
   }
+
+  // ── Engagement Counters ───────────────────────────────────────────
+
+  async incrementClick(memoryId: string): Promise<void> {
+    await this.incrementCounter(memoryId, 'click_count');
+  }
+
+  async incrementShare(memoryId: string): Promise<void> {
+    await this.incrementCounter(memoryId, 'share_count');
+  }
+
+  async incrementComment(memoryId: string): Promise<void> {
+    await this.incrementCounter(memoryId, 'comment_count');
+  }
+
+  private async incrementCounter(memoryId: string, field: string): Promise<void> {
+    const existing = await this.collection.query.fetchObjectById(memoryId, {
+      returnProperties: [field],
+    });
+    if (!existing) throw new Error(`Memory not found: ${memoryId}`);
+    const current = (existing.properties?.[field] as number) ?? 0;
+    await this.collection.data.update({
+      id: memoryId,
+      properties: { [field]: current + 1 },
+    });
+  }
 }

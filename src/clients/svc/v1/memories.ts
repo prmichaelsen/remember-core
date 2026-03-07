@@ -35,6 +35,10 @@ export interface MemoriesResource {
   byRecommendation(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byBroad(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byRandom(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byCurated(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  incrementClick(userId: string, memoryId: string): Promise<SdkResponse<void>>;
+  incrementShare(userId: string, memoryId: string): Promise<SdkResponse<void>>;
+  incrementComment(userId: string, memoryId: string): Promise<SdkResponse<void>>;
 }
 
 export function createMemoriesResource(http: HttpClient): MemoriesResource {
@@ -104,6 +108,18 @@ export function createMemoriesResource(http: HttpClient): MemoriesResource {
     },
     byRandom(userId, input) {
       return http.request('POST', '/api/svc/v1/memories/by-random', { userId, body: input });
+    },
+    byCurated(userId, input) {
+      return http.request('POST', '/api/svc/v1/memories/by-curated', { userId, body: input });
+    },
+    incrementClick(userId, memoryId) {
+      return http.request('POST', `/api/svc/v1/memories/${memoryId}/click`, { userId });
+    },
+    incrementShare(userId, memoryId) {
+      return http.request('POST', `/api/svc/v1/memories/${memoryId}/share`, { userId });
+    },
+    incrementComment(userId, memoryId) {
+      return http.request('POST', `/api/svc/v1/memories/${memoryId}/comment-count`, { userId });
     },
   };
 }

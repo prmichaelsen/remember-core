@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.45.3] - 2026-03-07
+
+### Added
+- Curation storage service: Firestore sub-score persistence (`storeCuratedSubScores`, `getCuratedSubScores`), `computeSubScoresForMemory` orchestrator, `scoreBatch` for batch scoring, `getCuratedScorePath` Firestore path helper, 9 tests
+
 ## [0.45.2] - 2026-03-07
 
 ### Added

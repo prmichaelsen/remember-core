@@ -39,4 +39,5 @@ export {
   getCollectionRegistryPath,
   getMemoryIndexPath,
   getClassificationPath,
+  getCuratedScorePath,
 } from './paths.js';

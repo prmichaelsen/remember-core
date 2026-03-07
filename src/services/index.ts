@@ -523,3 +523,14 @@ export {
   type RelationshipEdge,
   type ClusterMembership,
 } from './curation-scoring.js';
+
+// Curation storage (Firestore sub-scores + batch scoring)
+export {
+  storeCuratedSubScores,
+  getCuratedSubScores,
+  computeSubScoresForMemory,
+  scoreBatch,
+  type MemoryWithProperties,
+  type BatchScoringInput,
+  type BatchScoringResult,
+} from './curation-storage.service.js';

@@ -229,3 +229,17 @@ export function getMemoryIndexPath(): string {
 export function getClassificationPath(collectionId: string): { collectionPath: string; docId: string } {
   return { collectionPath: `${BASE}.collections/${collectionId}/core`, docId: 'classifications' };
 }
+
+// ============================================================================
+// CURATED SCORES
+// ============================================================================
+
+/**
+ * Get path to a memory's curated sub-scores document.
+ * Pattern: {BASE}.curated_scores/{collectionId}/memories/{memoryId}
+ *
+ * Stores per-memory sub-score breakdown for API transparency.
+ */
+export function getCuratedScorePath(collectionId: string, memoryId: string): { collectionPath: string; docId: string } {
+  return { collectionPath: `${BASE}.curated_scores/${collectionId}/memories`, docId: memoryId };
+}

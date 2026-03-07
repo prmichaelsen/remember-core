@@ -58,6 +58,9 @@ export {
   type RecommendedMemory,
   type PropertyModeRequest,
   type PropertyModeResult,
+  type BroadSearchResult,
+  type BroadModeRequest,
+  type BroadModeResult,
 } from './memory.service.js';
 
 export {

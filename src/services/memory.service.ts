@@ -255,6 +255,40 @@ export interface PropertyModeResult {
   sort_direction: 'asc' | 'desc';
 }
 
+// ── byBroad Sort Mode ─────────────────────────────────────────────────
+
+export interface BroadSearchResult {
+  memory_id: string;
+  title?: string;
+  content_type: string;
+  content_head: string;
+  content_mid: string;
+  content_tail: string;
+  created_at: string;
+  tags: string[];
+  weight: number;
+  total_significance?: number;
+  feel_significance?: number;
+  functional_significance?: number;
+}
+
+export interface BroadModeRequest {
+  query?: string;
+  sort_order?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+  filters?: SearchFilters;
+  deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
+}
+
+export interface BroadModeResult {
+  results: BroadSearchResult[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 export interface UpdateMemoryInput {
   memory_id: string;
   content?: string;
@@ -294,6 +328,26 @@ export interface DeleteMemoryResult {
   memory_id: string;
   deleted_at: string;
   orphaned_relationship_ids: string[];
+}
+
+// ─── Content Slicing (byBroad) ──────────────────────────────────────────
+
+export function sliceContent(content: string): { head: string; mid: string; tail: string } {
+  const SLICE_SIZE = 100;
+  if (content.length <= SLICE_SIZE * 3) {
+    if (content.length <= SLICE_SIZE) return { head: content, mid: '', tail: '' };
+    if (content.length <= SLICE_SIZE * 2) {
+      const midpoint = Math.floor(content.length / 2);
+      return { head: content.slice(0, midpoint), mid: '', tail: content.slice(midpoint) };
+    }
+    const third = Math.floor(content.length / 3);
+    return { head: content.slice(0, third), mid: content.slice(third, third * 2), tail: content.slice(third * 2) };
+  }
+  const head = content.slice(0, SLICE_SIZE);
+  const midStart = Math.floor(content.length / 2) - Math.floor(SLICE_SIZE / 2);
+  const mid = content.slice(midStart, midStart + SLICE_SIZE);
+  const tail = content.slice(-SLICE_SIZE);
+  return { head, mid, tail };
 }
 
 // ─── Emotional Weighting Helpers ─────────────────────────────────────────
@@ -1019,6 +1073,80 @@ export class MemoryService {
       limit,
       sort_field,
       sort_direction,
+    };
+  }
+
+  // ── By Broad (truncated content for scan-and-drill-in) ─────────────
+
+  async byBroad(input: BroadModeRequest): Promise<BroadModeResult> {
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const sortOrder = input.sort_order ?? 'desc';
+
+    const memoryFilters = buildMemoryOnlyFilters(this.collection, input.filters);
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+
+    const executeQuery = async (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+
+      const combinedFilters = combineFiltersWithAnd(
+        [deletedFilter, memoryFilters, ...ghostFilters].filter((f) => f !== null),
+      );
+
+      const queryOptions: any = {
+        limit: limit + offset,
+        sort: this.collection.sort.byProperty('created_at', sortOrder === 'asc'),
+      };
+
+      if (combinedFilters) {
+        queryOptions.filters = combinedFilters;
+      }
+
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    const results = await this.retryWithoutDeletedFilter(executeQuery);
+    const paginated = results.objects.slice(offset);
+
+    const broadResults: BroadSearchResult[] = [];
+    for (const obj of paginated) {
+      if (obj.properties.doc_type !== 'memory') continue;
+
+      const content = (obj.properties.content as string) ?? '';
+      const sliced = sliceContent(content);
+
+      const result: BroadSearchResult = {
+        memory_id: obj.uuid,
+        content_type: (obj.properties.content_type as string) ?? 'note',
+        content_head: sliced.head,
+        content_mid: sliced.mid,
+        content_tail: sliced.tail,
+        created_at: (obj.properties.created_at as string) ?? '',
+        tags: (obj.properties.tags as string[]) ?? [],
+        weight: (obj.properties.weight as number) ?? 0.5,
+      };
+
+      if (obj.properties.title) result.title = obj.properties.title as string;
+      if (obj.properties.total_significance != null) result.total_significance = obj.properties.total_significance as number;
+      if (obj.properties.feel_significance != null) result.feel_significance = obj.properties.feel_significance as number;
+      if (obj.properties.functional_significance != null) result.functional_significance = obj.properties.functional_significance as number;
+
+      broadResults.push(result);
+    }
+
+    return {
+      results: broadResults,
+      total: broadResults.length,
+      offset,
+      limit,
     };
   }
 

@@ -1942,6 +1942,15 @@ tasks:
         Index doc confirmed in Firestore, memory confirmed in Weaviate.
         user_id matches collection owner. Root cause unknown.
 
+    - id: task-175
+      name: "Plan REM Feature-Complete Milestone Roadmap"
+      status: completed
+      completed: 2026-03-07
+      file: agent/tasks/unassigned/task-175-rem-feature-complete-planning.md
+      estimated_hours: 2-3
+      dependencies: []
+      description: "Meta-task: audit M30/M32/M34 readiness, identify gaps, produce implementation plan for feature-complete REM cycle."
+
   milestone_23:
     - id: task-125
       name: Create VisionClient Factory
@@ -2207,30 +2216,34 @@ tasks:
   milestone_29:
     - id: task-153
       name: REM Cycle Re-evaluation Trigger
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-29-rem-emotional-weighting-reweighting/task-153-rem-cycle-reevaluation-trigger.md
       estimated_hours: 3
+      actual_hours: 10m
       dependencies: [task-149, task-150]
       description: "Periodic re-evaluation — each REM cycle re-evaluates recent memories in light of newer context."
     - id: task-154
       name: Relationship Formation Trigger
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-29-rem-emotional-weighting-reweighting/task-154-relationship-formation-trigger.md
       estimated_hours: 3
+      actual_hours: 10m
       dependencies: [task-153]
       description: "Event-driven trigger — when REM forms a new relationship, re-score involved memories."
     - id: task-155
       name: Retrieval Threshold Trigger
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-29-rem-emotional-weighting-reweighting/task-155-retrieval-threshold-trigger.md
       estimated_hours: 2
+      actual_hours: 10m
       dependencies: [task-153]
       description: "Usage-driven trigger — re-evaluate when retrieval count crosses a configurable threshold."
     - id: task-156
       name: Selective Re-evaluation
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-29-rem-emotional-weighting-reweighting/task-156-selective-reevaluation.md
       estimated_hours: 3
+      actual_hours: 10m
       dependencies: [task-153]
       description: "Sub-LLM determines which dimensions are impacted by new context; only those are re-scored."
 

@@ -1,4 +1,4 @@
-import { MemoryService } from '../memory.service.js';
+import { MemoryService, sliceContent } from '../memory.service.js';
 import { createMockCollection, createMockLogger } from '../../testing/weaviate-mock.js';
 import { TrustLevel } from '../../types/trust.types.js';
 
@@ -1279,5 +1279,110 @@ describe('MemoryService', () => {
       });
       expect(result.memories.length).toBeGreaterThan(0);
     });
+  });
+
+  describe('byBroad', () => {
+    it('returns truncated content for long memories', async () => {
+      const longContent = 'A'.repeat(500);
+      await service.create({ content: longContent });
+      const result = await service.byBroad({});
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].content_head).toHaveLength(100);
+      expect(result.results[0].content_mid).toHaveLength(100);
+      expect(result.results[0].content_tail).toHaveLength(100);
+    });
+
+    it('returns full content for short memories', async () => {
+      await service.create({ content: 'short' });
+      const result = await service.byBroad({});
+      expect(result.results).toHaveLength(1);
+      expect(result.results[0].content_head).toBe('short');
+      expect(result.results[0].content_mid).toBe('');
+      expect(result.results[0].content_tail).toBe('');
+    });
+
+    it('defaults to limit 50', async () => {
+      const result = await service.byBroad({});
+      expect(result.limit).toBe(50);
+    });
+
+    it('applies custom limit and offset', async () => {
+      await service.create({ content: 'one' });
+      await service.create({ content: 'two' });
+      await service.create({ content: 'three' });
+      const result = await service.byBroad({ limit: 2, offset: 1 });
+      expect(result.limit).toBe(2);
+      expect(result.offset).toBe(1);
+    });
+
+    it('includes optional fields when present', async () => {
+      await service.create({
+        content: 'test memory',
+        title: 'My Title',
+        tags: ['tag1'],
+      });
+      const result = await service.byBroad({});
+      expect(result.results[0].title).toBe('My Title');
+      expect(result.results[0].tags).toEqual(['tag1']);
+    });
+
+    it('includes weight in results', async () => {
+      await service.create({ content: 'weighted', weight: 0.9 });
+      const result = await service.byBroad({});
+      expect(result.results[0].weight).toBe(0.9);
+    });
+  });
+});
+
+describe('sliceContent', () => {
+  it('returns full content for short strings (<=100)', () => {
+    const result = sliceContent('hello');
+    expect(result).toEqual({ head: 'hello', mid: '', tail: '' });
+  });
+
+  it('returns full content for exactly 100 chars', () => {
+    const s = 'x'.repeat(100);
+    const result = sliceContent(s);
+    expect(result).toEqual({ head: s, mid: '', tail: '' });
+  });
+
+  it('splits into head/tail for medium strings (101-200)', () => {
+    const s = 'A'.repeat(150);
+    const result = sliceContent(s);
+    expect(result.head).toHaveLength(75);
+    expect(result.mid).toBe('');
+    expect(result.tail).toHaveLength(75);
+    expect(result.head + result.tail).toBe(s);
+  });
+
+  it('splits into thirds for near-300 strings (201-300)', () => {
+    const s = 'B'.repeat(270);
+    const result = sliceContent(s);
+    const third = Math.floor(270 / 3);
+    expect(result.head).toHaveLength(third);
+    expect(result.mid).toHaveLength(third);
+    expect(result.tail).toBe(s.slice(third * 2));
+  });
+
+  it('returns 100-char slices for long strings (>300)', () => {
+    const s = 'C'.repeat(500);
+    const result = sliceContent(s);
+    expect(result.head).toHaveLength(100);
+    expect(result.mid).toHaveLength(100);
+    expect(result.tail).toHaveLength(100);
+    expect(result.head).toBe(s.slice(0, 100));
+    expect(result.tail).toBe(s.slice(-100));
+  });
+
+  it('returns empty strings for empty input', () => {
+    const result = sliceContent('');
+    expect(result).toEqual({ head: '', mid: '', tail: '' });
+  });
+
+  it('mid slice is centered for long strings', () => {
+    const s = Array.from({ length: 500 }, (_, i) => String.fromCharCode(65 + (i % 26))).join('');
+    const result = sliceContent(s);
+    const midStart = Math.floor(500 / 2) - Math.floor(100 / 2);
+    expect(result.mid).toBe(s.slice(midStart, midStart + 100));
   });
 });

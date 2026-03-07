@@ -534,3 +534,12 @@ export {
   type BatchScoringInput,
   type BatchScoringResult,
 } from './curation-storage.service.js';
+
+// Curation step (REM cycle Step 5 — curation scoring)
+export {
+  runCurationStep,
+  type CurationStepDeps,
+  type CurationStepResult,
+  type CurationMemory,
+  type CurationRelationship,
+} from './curation-step.service.js';

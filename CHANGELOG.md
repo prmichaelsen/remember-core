@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.45.4] - 2026-03-07
+
+### Added
+- `runCurationStep` — REM cycle curation scoring step: editorial evaluation, PageRank, cluster quality, composite scoring, Weaviate + Firestore writes, 8 tests
+- Wired curation step into `RemService.runCycle()` as optional Phase 6 (after reconciliation)
+- `RunCycleResult.curation` field for curation step stats
+
 ## [0.45.3] - 2026-03-07
 
 ### Added

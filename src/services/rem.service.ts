@@ -6,6 +6,7 @@
  * Cloud Run handler is a thin wrapper that creates this service and calls runCycle().
  */
 
+import { Filters } from 'weaviate-client';
 import type { WeaviateClient } from 'weaviate-client';
 import type { Logger } from '../utils/logger.js';
 import type { RelationshipService } from './relationship.service.js';
@@ -34,6 +35,8 @@ import { runMoodUpdate, buildThresholdMemoryContent, type MoodUpdateResult } fro
 import type { ClassificationService } from './classification.service.js';
 import { runClassificationPipeline, type ClassificationPipelineResult } from './rem.classification.js';
 import { runAbstractionPhase, type AbstractionPhaseResult } from './rem.abstraction.js';
+import type { EditorialScoringService } from './editorial-scoring.service.js';
+import { runCurationStep, type CurationStepResult } from './curation-step.service.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -54,6 +57,8 @@ export interface RemServiceDeps {
   ghostCompositeId?: string;
   // Classification (optional — classification skipped if not provided)
   classificationService?: ClassificationService;
+  // Curation scoring (optional — curation step skipped if not provided)
+  editorialScoringService?: EditorialScoringService;
 }
 
 export interface Phase0Stats {
@@ -78,6 +83,7 @@ export interface RunCycleResult {
   reconciliation?: ReconciliationResult;
   mood_update?: MoodUpdateResult;
   classification?: ClassificationPipelineResult;
+  curation?: CurationStepResult;
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────
@@ -452,6 +458,32 @@ export class RemService {
       }
     }
 
+    // 12.5. Phase 6: Curation scoring (curated_score computation)
+    if (this.deps.editorialScoringService) {
+      try {
+        // Fetch all memories in collection for curation scoring
+        const allMemories = await this.selectMemoriesForCuration(collection);
+        // Get all relationships for PageRank
+        const allRelationships = await this.getCollectionRelationships(collection, userId);
+
+        const curationResult = await runCurationStep(
+          {
+            editorialService: this.deps.editorialScoringService,
+            collection,
+            collectionId,
+            logger: this.logger,
+          },
+          allMemories,
+          allRelationships,
+        );
+        stats.curation = curationResult;
+      } catch (err) {
+        this.logger.warn?.('Curation scoring failed, continuing', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
     // 13. Advance cursor
     const newCursor = candidates[candidates.length - 1]?.created_at ?? memoryCursor;
     await this.advanceCursor(collectionId, newCursor);
@@ -587,8 +619,10 @@ export class RemService {
     const batchSize = this.config.scoring_batch_size;
 
     // First: unscored memories (rem_touched_at is null)
-    const unscoredFilter = collection.filter.byProperty('doc_type').equal('memory')
-      .and().byProperty('rem_touched_at').isNull(true);
+    const unscoredFilter = Filters.and(
+      collection.filter.byProperty('doc_type').equal('memory'),
+      collection.filter.byProperty('rem_touched_at').isNull(true),
+    );
 
     const unscoredResult = await collection.query.fetchObjects({
       filters: unscoredFilter,
@@ -604,8 +638,10 @@ export class RemService {
 
     // Fill remaining slots with outdated memories (oldest rem_touched_at first)
     const remaining = batchSize - unscored.length;
-    const outdatedFilter = collection.filter.byProperty('doc_type').equal('memory')
-      .and().byProperty('rem_touched_at').isNull(false);
+    const outdatedFilter = Filters.and(
+      collection.filter.byProperty('doc_type').equal('memory'),
+      collection.filter.byProperty('rem_touched_at').isNull(false),
+    );
 
     const outdatedResult = await collection.query.fetchObjects({
       filters: outdatedFilter,
@@ -753,6 +789,49 @@ export class RemService {
       return sourceIds;
     } catch {
       return new Set();
+    }
+  }
+
+  /**
+   * Select memories for curation scoring (all doc_type='memory' in collection).
+   */
+  private async selectMemoriesForCuration(collection: any): Promise<any[]> {
+    const filter = collection.filter.byProperty('doc_type').equal('memory');
+    const result = await collection.query.fetchObjects({
+      filters: filter,
+      limit: this.config.max_candidates_per_run * 2,
+      returnProperties: [
+        'content', 'created_at', 'rating_bayesian', 'editorial_score',
+        'click_count', 'share_count', 'comment_count', 'relationship_count',
+      ],
+    });
+    return result.objects ?? [];
+  }
+
+  /**
+   * Get relationships in a collection for PageRank computation.
+   */
+  private async getCollectionRelationships(collection: any, userId: string): Promise<any[]> {
+    try {
+      const relService = this.deps.relationshipServiceFactory(collection, userId);
+      const result = await relService.search({ limit: 500 });
+      return (result.relationships ?? []).flatMap((r: any) => {
+        const ids = r.related_memory_ids ?? [];
+        const pairs: any[] = [];
+        for (let i = 0; i < ids.length; i++) {
+          for (let j = i + 1; j < ids.length; j++) {
+            pairs.push({
+              source_memory_id: ids[i],
+              target_memory_id: ids[j],
+              strength: r.strength,
+              confidence: r.confidence,
+            });
+          }
+        }
+        return pairs;
+      });
+    } catch {
+      return [];
     }
   }
 

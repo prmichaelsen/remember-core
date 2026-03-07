@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.36.0
+  version: 0.37.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M28

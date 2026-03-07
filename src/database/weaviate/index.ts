@@ -48,4 +48,10 @@ export {
   validateV2CollectionName,
   getCollectionType,
   extractIdFromCollectionName,
+  FEEL_DIMENSION_PROPERTIES,
+  FUNCTIONAL_DIMENSION_PROPERTIES,
+  ALL_SCORING_DIMENSIONS,
+  COMPOSITE_SCORE_PROPERTIES,
+  REM_METADATA_PROPERTIES,
+  EMOTIONAL_WEIGHTING_PROPERTIES,
 } from './v2-collections.js';

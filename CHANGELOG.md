@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.37.0] - 2026-03-07
+
+### Added
+- **REM emotional weighting schema** — 36 new Weaviate properties for emotional scoring: 21 `feel_*` discrete emotions, 10 `functional_*` signals, 3 composite scores (`feel_significance`, `functional_significance`, `total_significance`), and 2 REM metadata fields (`rem_touched_at`, `rem_visits`)
+- Exported property constants: `FEEL_DIMENSION_PROPERTIES`, `FUNCTIONAL_DIMENSION_PROPERTIES`, `ALL_SCORING_DIMENSIONS`, `COMPOSITE_SCORE_PROPERTIES`, `REM_METADATA_PROPERTIES`, `EMOTIONAL_WEIGHTING_PROPERTIES`
+- Backward-compatible migration via existing `reconcileCollectionProperties` — new properties auto-added to existing collections
+
 ## [0.36.0] - 2026-03-07
 
 ### Added

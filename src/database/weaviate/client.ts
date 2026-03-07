@@ -142,6 +142,17 @@ export const ALL_MEMORY_PROPERTIES = [
   'spaces', 'space_id', 'author_id', 'ghost_id', 'attribution', 'published_at', 'discovery_count',
   'space_memory_id', 'original_memory_id', 'revised_at', 'revision_count', 'revision_history',
   'deleted_at', 'deleted_by', 'deletion_reason',
+  // REM Emotional Weighting (M28)
+  'feel_emotional_significance', 'feel_vulnerability', 'feel_trauma', 'feel_humor',
+  'feel_happiness', 'feel_sadness', 'feel_fear', 'feel_anger',
+  'feel_surprise', 'feel_disgust', 'feel_contempt', 'feel_embarrassment',
+  'feel_shame', 'feel_guilt', 'feel_excitement', 'feel_pride',
+  'feel_valence', 'feel_arousal', 'feel_dominance', 'feel_intensity', 'feel_coherence_tension',
+  'functional_salience', 'functional_urgency', 'functional_social_weight', 'functional_agency',
+  'functional_novelty', 'functional_retrieval_utility', 'functional_narrative_importance',
+  'functional_aesthetic_quality', 'functional_valence', 'functional_coherence_tension',
+  'feel_significance', 'functional_significance', 'total_significance',
+  'rem_touched_at', 'rem_visits',
 ] as const;
 
 /**

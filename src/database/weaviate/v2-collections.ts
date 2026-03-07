@@ -131,6 +131,52 @@ const COMMON_MEMORY_PROPERTIES = [
   { name: 'deleted_by', dataType: configure.dataType.TEXT },
   { name: 'deletion_reason', dataType: configure.dataType.TEXT },
 
+  // ── REM Emotional Weighting (M28) ──────────────────────────────────
+
+  // Layer 1: 21 Discrete Emotions (feel_ prefix, 0-1 float; feel_valence: -1 to 1)
+  { name: 'feel_emotional_significance', dataType: configure.dataType.NUMBER },
+  { name: 'feel_vulnerability', dataType: configure.dataType.NUMBER },
+  { name: 'feel_trauma', dataType: configure.dataType.NUMBER },
+  { name: 'feel_humor', dataType: configure.dataType.NUMBER },
+  { name: 'feel_happiness', dataType: configure.dataType.NUMBER },
+  { name: 'feel_sadness', dataType: configure.dataType.NUMBER },
+  { name: 'feel_fear', dataType: configure.dataType.NUMBER },
+  { name: 'feel_anger', dataType: configure.dataType.NUMBER },
+  { name: 'feel_surprise', dataType: configure.dataType.NUMBER },
+  { name: 'feel_disgust', dataType: configure.dataType.NUMBER },
+  { name: 'feel_contempt', dataType: configure.dataType.NUMBER },
+  { name: 'feel_embarrassment', dataType: configure.dataType.NUMBER },
+  { name: 'feel_shame', dataType: configure.dataType.NUMBER },
+  { name: 'feel_guilt', dataType: configure.dataType.NUMBER },
+  { name: 'feel_excitement', dataType: configure.dataType.NUMBER },
+  { name: 'feel_pride', dataType: configure.dataType.NUMBER },
+  { name: 'feel_valence', dataType: configure.dataType.NUMBER },
+  { name: 'feel_arousal', dataType: configure.dataType.NUMBER },
+  { name: 'feel_dominance', dataType: configure.dataType.NUMBER },
+  { name: 'feel_intensity', dataType: configure.dataType.NUMBER },
+  { name: 'feel_coherence_tension', dataType: configure.dataType.NUMBER },
+
+  // Layer 2: 10 Functional Signals (functional_ prefix, 0-1 float)
+  { name: 'functional_salience', dataType: configure.dataType.NUMBER },
+  { name: 'functional_urgency', dataType: configure.dataType.NUMBER },
+  { name: 'functional_social_weight', dataType: configure.dataType.NUMBER },
+  { name: 'functional_agency', dataType: configure.dataType.NUMBER },
+  { name: 'functional_novelty', dataType: configure.dataType.NUMBER },
+  { name: 'functional_retrieval_utility', dataType: configure.dataType.NUMBER },
+  { name: 'functional_narrative_importance', dataType: configure.dataType.NUMBER },
+  { name: 'functional_aesthetic_quality', dataType: configure.dataType.NUMBER },
+  { name: 'functional_valence', dataType: configure.dataType.NUMBER },
+  { name: 'functional_coherence_tension', dataType: configure.dataType.NUMBER },
+
+  // Composite scores
+  { name: 'feel_significance', dataType: configure.dataType.NUMBER },
+  { name: 'functional_significance', dataType: configure.dataType.NUMBER },
+  { name: 'total_significance', dataType: configure.dataType.NUMBER },
+
+  // REM metadata
+  { name: 'rem_touched_at', dataType: configure.dataType.TEXT },
+  { name: 'rem_visits', dataType: configure.dataType.INT },
+
 ];
 
 /**
@@ -169,6 +215,47 @@ const PUBLISHED_MEMORY_PROPERTIES = [
   { name: 'space_id', dataType: configure.dataType.TEXT },
   { name: 'space_memory_id', dataType: configure.dataType.TEXT },
 ];
+
+// ─── Emotional Weighting Property Lists ─────────────────────────────
+
+/** All 21 Layer 1 discrete emotion property names */
+export const FEEL_DIMENSION_PROPERTIES = [
+  'feel_emotional_significance', 'feel_vulnerability', 'feel_trauma', 'feel_humor',
+  'feel_happiness', 'feel_sadness', 'feel_fear', 'feel_anger',
+  'feel_surprise', 'feel_disgust', 'feel_contempt', 'feel_embarrassment',
+  'feel_shame', 'feel_guilt', 'feel_excitement', 'feel_pride',
+  'feel_valence', 'feel_arousal', 'feel_dominance', 'feel_intensity', 'feel_coherence_tension',
+] as const;
+
+/** All 10 Layer 2 functional signal property names */
+export const FUNCTIONAL_DIMENSION_PROPERTIES = [
+  'functional_salience', 'functional_urgency', 'functional_social_weight', 'functional_agency',
+  'functional_novelty', 'functional_retrieval_utility', 'functional_narrative_importance',
+  'functional_aesthetic_quality', 'functional_valence', 'functional_coherence_tension',
+] as const;
+
+/** All 31 scoring dimension property names (Layer 1 + Layer 2) */
+export const ALL_SCORING_DIMENSIONS = [
+  ...FEEL_DIMENSION_PROPERTIES,
+  ...FUNCTIONAL_DIMENSION_PROPERTIES,
+] as const;
+
+/** Composite score property names */
+export const COMPOSITE_SCORE_PROPERTIES = [
+  'feel_significance', 'functional_significance', 'total_significance',
+] as const;
+
+/** REM metadata property names */
+export const REM_METADATA_PROPERTIES = [
+  'rem_touched_at', 'rem_visits',
+] as const;
+
+/** All 36 emotional weighting properties added in M28 */
+export const EMOTIONAL_WEIGHTING_PROPERTIES = [
+  ...ALL_SCORING_DIMENSIONS,
+  ...COMPOSITE_SCORE_PROPERTIES,
+  ...REM_METADATA_PROPERTIES,
+] as const;
 
 /**
  * Create schema for a user's private memory collection

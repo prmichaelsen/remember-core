@@ -66,6 +66,8 @@ export const CONTENT_TYPES: readonly ContentType[] = [
   'profile',
   // Agent
   'agent',
+  // REM-generated
+  'rem',
 ] as const;
 
 /**
@@ -426,6 +428,19 @@ export const CONTENT_TYPE_METADATA: Record<ContentType, ContentTypeMetadata> = {
     ],
     common_fields: ['observations', 'preferences', 'summaries', 'follow_ups'],
   },
+
+  // REM-generated
+  rem: {
+    name: 'rem',
+    category: 'system',
+    description: 'REM-generated semantic memory — synthesized pattern from episodic memories',
+    examples: [
+      'Recurring pattern: pre-meeting anxiety that resolves after the meeting',
+      'Collection exploring themes of impermanence and letting go',
+      'Vegetarian identity: committed since 2024, values-based motivation',
+    ],
+    common_fields: ['source_memory_count', 'abstraction_type'],
+  },
 };
 
 /**
@@ -441,7 +456,7 @@ export const CONTENT_TYPE_CATEGORIES = {
   personal: ['journal', 'memory', 'event'],
   organizational: ['bookmark', 'form', 'location'],
   business: ['invoice', 'contract'],
-  system: ['system', 'action', 'audit', 'history', 'agent'],
+  system: ['system', 'action', 'audit', 'history', 'agent', 'rem'],
   cross_user: ['ghost', 'comment', 'profile'],
 } as const;
 

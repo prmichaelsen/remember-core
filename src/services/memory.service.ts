@@ -1270,9 +1270,7 @@ export class MemoryService {
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
-    if (!input.filters?.types?.includes('rem')) {
-      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
-    }
+    ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
 
     let memoryObj: any = null;
     if (input.memory_id) {

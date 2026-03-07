@@ -75,7 +75,9 @@ export type ContentType =
   // Profile
   | 'profile'
   // Agent
-  | 'agent';
+  | 'agent'
+  // REM-generated
+  | 'rem';
 
 /**
  * Core Memory interface.

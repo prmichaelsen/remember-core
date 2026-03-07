@@ -312,11 +312,13 @@ milestones:
 
   - id: M20
     name: Memory Ratings System
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1.5
-    tasks_completed: 1
+    tasks_completed: 7
     tasks_total: 7
+    started: 2026-03-05
+    completed: 2026-03-05
     notes: |
       1-5 star rating system on memories with Bayesian aggregation and byRating
       sort mode. RatingService (Firestore individual ratings + Weaviate aggregates),
@@ -474,6 +476,67 @@ milestones:
       content_type 'rem'), graduated pruning (decay + soft-delete), trust-level
       flagging (Firestore classifications), and reconciliation (coherence tension).
       See: agent/design/local.rem-emotional-weighting.md, clarifications 18-19
+
+  - id: M31
+    name: byBroad & byRandom Sort Modes
+    status: not_started
+    progress: 0
+    estimated_weeks: 0.5
+    tasks_completed: 0
+    tasks_total: 3
+    dependencies: [M18]
+    notes: |
+      Two new search modes. byBroad: massive results with truncated head/mid/tail
+      content for scan-and-drill-in. byRandom: random sampling via Firestore memory
+      index (enumerate UUIDs, pick N random offsets, batch-fetch from Weaviate).
+      Neither follows standard sort-mode-method pattern.
+      See: agent/design/local.new-search-tools.md
+
+  - id: M32
+    name: Core Mood State
+    status: not_started
+    progress: 0
+    estimated_weeks: 1.5
+    tasks_completed: 0
+    tasks_total: 4
+    dependencies: [M28, M10]
+    notes: |
+      Persistent emotional state register per user in Firestore (users/{user_id}/core/mood).
+      6 dimensions (valence, arousal, confidence, social_warmth, coherence, trust),
+      pressure system, directional state (motivation/goal/purpose), sub-LLM narration
+      (dominant_emotion, color, reasoning). REM cycle updates via drift/decay/narrate.
+      Threshold flags for sustained extreme states.
+      See: agent/design/core-mood-memory.md
+
+  - id: M33
+    name: Retrieval Bias & Significance Scoring
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 3
+    dependencies: [M32]
+    notes: |
+      Wire mood into retrieval (applyMoodBias — post-search reranking with conservative
+      multipliers) and memory creation (calculateMemorySignificance — mood-aware initial
+      weight). Anticipatory emotion in REM (pattern detection, forward projection, pressure).
+      See: agent/design/core-mood-memory.md
+
+  - id: M34
+    name: Memory Classification & User Perception
+    status: not_started
+    progress: 0
+    estimated_weeks: 1.5
+    tasks_completed: 0
+    tasks_total: 4
+    dependencies: [M32, M10]
+    notes: |
+      REM-powered memory classification (genre/quality/thematic groups via Haiku + findSimilar,
+      duplicate detection, Firestore index at users/{user_id}/core/classifications).
+      User perception documents (ghost's model of each user at
+      users/{owner_id}/core/perceptions/{target_user_id}, personality sketch,
+      communication style, emotional baseline, REM updates).
+      See: agent/design/core-mood-memory.md
 
 tasks:
   milestone_1:
@@ -2013,14 +2076,16 @@ tasks:
   milestone_27:
     - id: task-138
       name: Preference Centroid Computation
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-138-preference-centroid-computation.md
       estimated_hours: 2-3
       dependencies: []
       description: "Core vector arithmetic — fetch embeddings, average vectors, subtract weighted negative signal, compute preference centroid."
     - id: task-139
       name: Firestore Centroid Caching
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-139-firestore-centroid-caching.md
       estimated_hours: 1-2
       dependencies: [task-138]
@@ -2179,11 +2244,123 @@ tasks:
       dependencies: [task-158]
       description: "Surface high coherence_tension memories for belief updating. Resist pruning until resolved."
 
+  milestone_31:
+    - id: task-161
+      name: byBroad Core Method
+      status: not_started
+      file: agent/tasks/milestone-31-by-broad-by-random/task-161-by-broad-core-method.md
+      estimated_hours: 3
+      description: "Truncated content response (head/mid/tail ~100 chars). Default limit 50."
+
+    - id: task-162
+      name: byRandom Core Method
+      status: not_started
+      file: agent/tasks/milestone-31-by-broad-by-random/task-162-by-random-core-method.md
+      estimated_hours: 3
+      description: "Random sampling via Firestore memory index. floor(N * rand()) offsets, batch-fetch."
+
+    - id: task-163
+      name: SVC Client, OpenAPI, Unit Tests
+      status: not_started
+      file: agent/tasks/milestone-31-by-broad-by-random/task-163-svc-client-openapi-tests.md
+      estimated_hours: 2
+      dependencies: [task-161, task-162]
+      description: "SVC client methods, OpenAPI endpoints, unit tests for byBroad and byRandom."
+
+  milestone_32:
+    - id: task-164
+      name: Firestore Mood Schema + MoodService CRUD
+      status: not_started
+      file: agent/tasks/milestone-32-core-mood-state/task-164-firestore-mood-schema-service.md
+      estimated_hours: 3
+      description: "CoreMoodMemory type, MoodService, Firestore at users/{user_id}/core/mood."
+
+    - id: task-165
+      name: REM Mood Update
+      status: not_started
+      file: agent/tasks/milestone-32-core-mood-state/task-165-rem-mood-update.md
+      estimated_hours: 5
+      dependencies: [task-164]
+      description: "Pressure aggregation, dimension drift (lr=0.1, inertia=0.7), decay, threshold flags."
+
+    - id: task-166
+      name: Sub-LLM Narration
+      status: not_started
+      file: agent/tasks/milestone-32-core-mood-state/task-166-sub-llm-narration.md
+      estimated_hours: 3
+      dependencies: [task-165]
+      description: "Haiku derives dominant_emotion, color, reasoning, motivation/goal/purpose."
+
+    - id: task-167
+      name: Core Mood Unit Tests
+      status: not_started
+      file: agent/tasks/milestone-32-core-mood-state/task-167-mood-unit-tests.md
+      estimated_hours: 3
+      dependencies: [task-164, task-165, task-166]
+      description: "MoodService CRUD, REM drift/decay, narration, multi-cycle simulation."
+
+  milestone_33:
+    - id: task-168
+      name: Mood-Biased Retrieval Reranking
+      status: not_started
+      file: agent/tasks/milestone-33-retrieval-bias-and-significance/task-168-mood-biased-retrieval.md
+      estimated_hours: 3
+      dependencies: [task-164]
+      description: "applyMoodBias() — post-search reranking with conservative multipliers per mood dimension."
+
+    - id: task-169
+      name: Significance Scoring + Anticipatory Emotion
+      status: not_started
+      file: agent/tasks/milestone-33-retrieval-bias-and-significance/task-169-significance-and-anticipatory.md
+      estimated_hours: 5
+      dependencies: [task-164]
+      description: "calculateMemorySignificance() for new memories. Anticipatory emotion in REM cycle."
+
+    - id: task-170
+      name: Retrieval Bias Unit Tests
+      status: not_started
+      file: agent/tasks/milestone-33-retrieval-bias-and-significance/task-170-retrieval-bias-tests.md
+      estimated_hours: 3
+      dependencies: [task-168, task-169]
+      description: "Tests for mood bias, significance scoring, anticipatory pressures."
+
+  milestone_34:
+    - id: task-171
+      name: Classification Schema + ClassificationService
+      status: not_started
+      file: agent/tasks/milestone-34-classification-and-perception/task-171-classification-schema-service.md
+      estimated_hours: 3
+      description: "Firestore classification index, ClassificationService, 18 genres, 5 quality signals."
+
+    - id: task-172
+      name: REM Classification Pipeline
+      status: not_started
+      file: agent/tasks/milestone-34-classification-and-perception/task-172-rem-classification-pipeline.md
+      estimated_hours: 6
+      dependencies: [task-171]
+      description: "REM classifies via Haiku + findSimilar context. Duplicate detection. Batch capped."
+
+    - id: task-173
+      name: User Perception Service + REM Updates
+      status: not_started
+      file: agent/tasks/milestone-34-classification-and-perception/task-173-user-perception-service.md
+      estimated_hours: 5
+      dependencies: [task-164]
+      description: "UserPerception at users/{owner_id}/core/perceptions/{target}. REM updates. Confidence evolution."
+
+    - id: task-174
+      name: Classification & Perception Unit Tests
+      status: not_started
+      file: agent/tasks/milestone-34-classification-and-perception/task-174-classification-perception-tests.md
+      estimated_hours: 3
+      dependencies: [task-171, task-172, task-173]
+      description: "Tests for ClassificationService, REM classification, PerceptionService, REM perception."
+
 documentation:
-  design_documents: 25
-  milestone_documents: 31
+  design_documents: 27
+  milestone_documents: 35
   pattern_documents: 29
-  task_documents: 159
+  task_documents: 174
 
 progress:
   planning: 100
@@ -2644,6 +2821,10 @@ next_steps:
   - Publish next version to npm (M22 complete)
   - Resume M20 (Memory Ratings System) — 1/7 tasks complete
   - Begin M28 (REM Emotional Weighting Schema & Scoring) after M27
+  - M31 (byBroad & byRandom) — independent, can proceed anytime
+  - M32 (Core Mood State) — after M28
+  - M33 (Retrieval Bias & Significance) — after M32
+  - M34 (Classification & User Perception) — after M32
   - Migrate agentbase.me from hand-written fetch to app client
 
 notes:

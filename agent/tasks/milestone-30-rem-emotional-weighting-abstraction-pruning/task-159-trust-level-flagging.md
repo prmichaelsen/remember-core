@@ -12,7 +12,8 @@
 
 | Decision | Choice | Source |
 |---|---|---|
-| Flag storage | Firestore `classifications` table with `type: 'trust_level_concern'` | Clarification 19 |
+| Flag storage | Firestore, **collection-scoped** — stored per Weaviate collection, with `type: 'trust_level_concern'` | Clarification 19, 21 |
+| Integration point | Phase 0 post-scoring side-effect — async Firestore write, non-blocking | Clarification 21 |
 | Flag content | Human-readable reason string explaining the concern | Clarification 19 |
 | Dismissal | User can dismiss flags; dismissed flags tracked to prevent re-flagging for same issue | Clarification 19 |
 | Trigger signals | High `feel_trauma`, `feel_vulnerability`, `feel_shame` on memories with public/broad trust level | Clarification 19 |
@@ -112,8 +113,8 @@ Implement trust-level flagging — during REM scoring, flag memories where emoti
   }
   ```
 
-- Store in Firestore collection path: `classifications/{flagId}`
-- Query by `user_id` + `type: 'trust_level_concern'` + `status: 'active'` for active flags
+- Store in Firestore collection path: `collections/{collectionId}/classifications/{flagId}` (collection-scoped, NOT per user or root-level)
+- Query by `collection_id` + `type: 'trust_level_concern'` + `status: 'active'` for active flags
 
 ### 4. Implement Dismissal Tracking
 
@@ -139,8 +140,9 @@ Implement trust-level flagging — during REM scoring, flag memories where emoti
 
 **Files**: `src/services/rem.service.ts`
 
-- Trust-level flagging runs as a post-scoring pass within Phase 0 (Score), NOT as a separate numbered phase
+- Trust-level flagging runs as a **post-scoring side-effect** within Phase 0 (Score), NOT as a separate numbered phase
 - After scoring a batch of memories, check each scored memory against flag detection rules
+- Firestore writes are **async and non-blocking** — flag creation must not slow down the scoring pipeline
 - This avoids an extra query pass — piggybacks on the scoring phase when emotional scores are already loaded
 - Does NOT need a separate step in `REM_STEPS` — it is part of the scoring step
 
@@ -150,9 +152,9 @@ Implement trust-level flagging — during REM scoring, flag memories where emoti
 
 - **List active flags**:
   ```typescript
-  async function getActiveTrustFlags(userId: string): Promise<TrustLevelFlag[]>
+  async function getActiveTrustFlags(collectionId: string): Promise<TrustLevelFlag[]>
   ```
-  - Queries Firestore for `user_id` + `type: 'trust_level_concern'` + `status: 'active'`
+  - Queries Firestore at `collections/{collectionId}/classifications` for `type: 'trust_level_concern'` + `status: 'active'`
   - Ordered by `created_at` descending
 
 - This function will be consumed by the app layer (remember-mcp) to display flags in the "rem" tab or a dedicated notifications panel
@@ -173,8 +175,9 @@ Tests to implement:
 - **Dismissal**: Dismissing a flag sets `status: 'dismissed'` and `dismissed_at`
 - **Re-flagging prevention**: Dismissed flag prevents new flag for same memory
 - **Re-flagging exception**: If emotional scores increase by >= 0.2 since dismissal, allow re-flagging
-- **Firestore schema**: Flag stored with correct `type: 'trust_level_concern'` and all required fields
-- **List active flags**: Returns only active (non-dismissed) flags for a user
+- **Firestore schema**: Flag stored at collection-scoped path with correct `type: 'trust_level_concern'` and all required fields
+- **List active flags**: Returns only active (non-dismissed) flags for a collection
+- **Non-blocking**: Firestore writes are async and do not block the scoring pipeline
 
 ---
 
@@ -185,15 +188,15 @@ Tests to implement:
 - [ ] Flags created for public/internal memories with high `feel_shame` (>= 0.7)
 - [ ] Combined threshold (average >= 0.6) triggers flags even if individual scores < 0.7
 - [ ] Memories at trust level >= 3 (Confidential+) are NOT flagged
-- [ ] Flags stored in Firestore `classifications` with `type: 'trust_level_concern'`
+- [ ] Flags stored in Firestore at `collections/{collectionId}/classifications` with `type: 'trust_level_concern'` (collection-scoped)
 - [ ] Each flag includes a human-readable reason string
 - [ ] Reason strings reference the current trust level label
 - [ ] Users can dismiss flags via `dismissFlag()`
 - [ ] Dismissed flags are tracked (`status: 'dismissed'`, `dismissed_at`)
 - [ ] Dismissed flags prevent re-flagging for the same memory
 - [ ] Re-flagging allowed if emotional scores increased significantly (>= 0.2) since dismissal
-- [ ] `getActiveTrustFlags()` returns only active flags for a user
-- [ ] Trust-level flagging runs as part of Phase 0 (Score) — not a separate phase
+- [ ] `getActiveTrustFlags(collectionId)` returns only active flags for a collection
+- [ ] Trust-level flagging runs as part of Phase 0 (Score) — async Firestore write, non-blocking side-effect
 - [ ] All tests pass — colocated at `src/services/rem.trust-flagging.spec.ts`
 
 ---
@@ -203,4 +206,4 @@ Tests to implement:
 - `src/services/rem.trust-flagging.ts` — flag detection rules, reason generation, Firestore CRUD, dismissal tracking
 - `src/services/rem.trust-flagging.spec.ts` — colocated tests
 - Updated `src/services/rem.service.ts` — trust-level flagging wired into scoring phase
-- Firestore `classifications` collection schema for `trust_level_concern` records
+- Firestore `collections/{collectionId}/classifications` subcollection schema for `trust_level_concern` records

@@ -19,6 +19,10 @@ Comprehensive unit tests for MoodService CRUD, REM mood update pipeline, and sub
 
 **IMPORTANT**: Tests are COLOCATED with source files using `.spec.ts` suffix. NEVER use `__tests__/` directories.
 
+## Firestore Path in Tests
+
+All test setup should use the path `users/{uid}/{ghost_composite_id}/core` (NOT `users/{uid}/core/mood`).
+
 ## Test Suites
 
 ### 1. MoodService CRUD (`mood.service.spec.ts`)
@@ -30,6 +34,7 @@ describe('MoodService')
     - valence=0, arousal=0.5, confidence=0.5, social_warmth=0.5, coherence=0.5, trust=0.5
     - empty pressures array
     - empty strings for color, dominant_emotion, reasoning, motivation, goal, purpose
+    - empty perception fields (personality_sketch='', communication_style='', emotional_baseline='', interests=[], patterns=[], needs=[], evolution_notes='', confidence_level=0)
     - rem_cycles_since_shift = 0
     - sets last_updated to current time
 
@@ -46,6 +51,7 @@ describe('MoodService')
     - updates last_updated on every write
     - updates directional state fields (motivation, goal, purpose)
     - updates derived labels (color, dominant_emotion, reasoning)
+    - updates perception fields (personality_sketch, communication_style, etc.)
 
   describe('addPressure')
     - appends pressure to existing pressures array
@@ -101,7 +107,7 @@ describe('REM Mood Update')
 
   describe('rem_cycles_since_shift')
     - increments when no significant mood change
-    - resets to 0 on significant shift
+    - resets to 0 on significant shift (>= 0.1 shift in any single dimension)
 ```
 
 ### 3. Sub-LLM Narration

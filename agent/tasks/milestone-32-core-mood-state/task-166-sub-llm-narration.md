@@ -15,8 +15,9 @@ Implement Haiku-based derivation of `dominant_emotion`, `color`, and `reasoning`
 
 - **Design doc**: `agent/design/core-mood-memory.md` — sections "Deriving Dominant Emotion and Color via Sub-LLM" and "Motivation, Goal, and Purpose"
 - This is step 4 (narrate) of the REM_Mood_Update pipeline
-- Uses `claude-haiku-4-5-20251001` (fast, cheap sub-LLM, ~$0.001/cycle)
+- Model ID should be configurable via `RemConfig` (not hardcoded). Default: `'claude-haiku-4-5-20251001'` (fast, cheap sub-LLM, ~$0.001/cycle)
 - Non-deterministic output is acceptable -- moods aren't deterministic; dimensions are the stable state, labels are the interpretive layer
+- Use structured JSON output pattern for reliable parsing
 
 ## Interface
 
@@ -42,8 +43,9 @@ async function deriveMoodLabels(
     .sort((a, b) => Math.abs(b.magnitude) - Math.abs(a.magnitude))
     .slice(0, 5);
 
+  const modelId = config.narrationModelId ?? 'claude-haiku-4-5-20251001';
   const response = await llm.complete({
-    model: 'claude-haiku-4-5-20251001',
+    model: modelId,
     system: `You are the introspective voice of an AI ghost. Given the ghost's
 current emotional dimensions, active pressures, and sense of purpose, determine:
 1. The single dominant emotion the ghost is feeling right now (one or two words)
@@ -96,8 +98,8 @@ These three directional state fields anchor the ghost's emotional life to intent
 
 ## Steps
 
-1. Implement `deriveMoodLabels(state, pressures, motivation, goal, purpose): Promise<MoodDerivation>` using Haiku
-2. Use the exact system prompt from the design doc (introspective voice, specific, honest, no editorializing)
+1. Implement `deriveMoodLabels(state, pressures, motivation, goal, purpose, config: RemConfig): Promise<MoodDerivation>` — model ID from `config.narrationModelId` (default `'claude-haiku-4-5-20251001'`)
+2. Use the exact prompt spec from the design doc (introspective voice, specific, honest, no editorializing). Use structured JSON output pattern for reliable parsing
 3. Sort pressures by `abs(magnitude)` descending, take top 5 for the prompt
 4. Parse JSON response from Haiku, validate all three fields present
 5. Implement motivation derivation from strongest active pressures

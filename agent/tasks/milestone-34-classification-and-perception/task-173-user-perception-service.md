@@ -14,9 +14,10 @@ Implement user perception documents — the ghost's internal model of each user 
 ## Context
 
 - **Design doc**: `agent/design/core-mood-memory.md` — section "User Perception"
-- Firestore path: `users/{owner_id}/core/perceptions/{target_user_id}`
-- The relationship is many-to-many: a user can have multiple ghosts, a ghost can interact with multiple users
-- Perceptions are stored as a Firestore **subcollection** — one document per ghost-user pair
+- **Perceptions are part of CoreMoodMemory** — NOT separate Firestore documents
+- Perception fields live inside the CoreMoodMemory document (no separate `users/{owner_id}/core/perceptions/{target_user_id}` path)
+- Multi-ghost: each ghost maintains independent perception within its own CoreMoodMemory
+- Perception initialized on ghost-user conversation initialization
 
 ## TypeScript Interface
 
@@ -64,10 +65,16 @@ interface UserPerception {
 }
 ```
 
-## Firestore Paths
+## Storage Model
 
-- **Self-perception** (ghost's model of its owner): `users/{owner_id}/core/perceptions/{owner_id}`
-- **Cross-user perception** (model of another user): `users/{owner_id}/core/perceptions/{other_user_id}`
+Perception fields are embedded inside the CoreMoodMemory document. There are no separate Firestore documents for perceptions.
+
+Each ghost's CoreMoodMemory contains a `perceptions` map keyed by target_user_id:
+```typescript
+// Inside CoreMoodMemory document
+perceptions: Record<string, UserPerception>;
+// e.g. perceptions['user_abc'] = { personality_sketch: '...', ... }
+```
 
 ## Initial State Defaults
 
@@ -87,6 +94,12 @@ const INITIAL_PERCEPTION: Omit<UserPerception, 'owner_id' | 'target_user_id'> = 
 
 Confidence starts at 0.2 — the ghost should be transparent: "I'm still learning how you communicate" is more trustworthy than confidently misreading someone.
 
+### Confidence Formula
+
+```typescript
+confidence_level = min(1.0, 0.2 + (interaction_count * 0.02))
+```
+
 ## How User Perception Interacts with Mood
 
 - **Calibrates arousal**: The ghost uses `emotional_baseline` to interpret user behavior. A normally terse user going silent doesn't spike arousal the way a normally chatty user going silent does.
@@ -99,19 +112,20 @@ Confidence starts at 0.2 — the ghost should be transparent: "I'm still learnin
 
 ```typescript
 class PerceptionService {
-  // Read
+  // Read — reads from CoreMoodMemory.perceptions map
   getPerception(ownerId: string, targetUserId: string): Promise<UserPerception | null>;
   getSelfPerception(ownerId: string): Promise<UserPerception | null>;  // shorthand for getPerception(ownerId, ownerId)
 
-  // Write
+  // Write — updates CoreMoodMemory.perceptions[targetUserId]
+  // Perception initialized on ghost-user conversation initialization
   initializePerception(ownerId: string, targetUserId: string): Promise<UserPerception>;
   getOrInitialize(ownerId: string, targetUserId: string): Promise<UserPerception>;
   updatePerception(ownerId: string, targetUserId: string, update: Partial<UserPerception>): Promise<void>;
 
-  // Evolution notes are append-only
+  // Evolution notes are append-only; uses LLM condense strategy (not hard max)
   appendEvolutionNote(ownerId: string, targetUserId: string, note: string): Promise<void>;
 
-  // Confidence management
+  // Confidence: min(1.0, 0.2 + (interaction_count * 0.02))
   adjustConfidence(ownerId: string, targetUserId: string, delta: number): Promise<void>;  // clamp to [0, 1]
 }
 ```
@@ -121,13 +135,16 @@ class PerceptionService {
 Each REM cycle, the sub-LLM reviews recent interactions against the current perception and proposes updates:
 
 ### Update Rates (drift speed)
-- `personality_sketch`: **Slow drift** — like purpose, only changes after sustained patterns
-- `communication_style`: **Slow drift** — stable trait, rarely changes
-- `emotional_baseline`: **Slow drift** — stable trait
-- `patterns`: **Moderate update** — new patterns added readily, old ones updated
-- `interests`: **Moderate update** — new interests added readily
-- `needs`: **Moderate update** — refined as ghost learns more
+
+Constants defined in `src/services/rem.constants.ts`:
+
+- **Identity fields** (`IDENTITY_DRIFT_RATE = 0.05`): `personality_sketch`, `communication_style`, `emotional_baseline` — slow drift, stable traits
+- **Behavioral fields** (`BEHAVIOR_DRIFT_RATE = 0.15`): `interests`, `patterns`, `needs` — moderate update, more dynamic
 - `evolution_notes`: **Append-only** — never modified or removed, creating a narrative of how the relationship has developed
+
+### Evolution Notes Strategy
+
+Evolution notes use an **LLM condense strategy** (not a hard max count). When notes accumulate, the sub-LLM condenses older notes while preserving dropped notes via a **context pattern scheme** — ensuring no information is permanently lost.
 
 ### Confidence Level Evolution
 - **Rises** with interaction volume and consistency
@@ -148,33 +165,39 @@ Each REM cycle, the sub-LLM reviews recent interactions against the current perc
 
 1. Define `UserPerception` type in `src/services/perception.service.ts`
 2. Create `src/services/perception.service.ts` with `PerceptionService` class
-3. Implement `getPerception(ownerId, targetUserId)` — read from `users/{owner_id}/core/perceptions/{target_user_id}`
+3. Implement `getPerception(ownerId, targetUserId)` — read from `CoreMoodMemory.perceptions[targetUserId]`
 4. Implement `getSelfPerception(ownerId)` — shorthand for `getPerception(ownerId, ownerId)`
-5. Implement `initializePerception(ownerId, targetUserId)` — write initial defaults (confidence=0.2)
+5. Implement `initializePerception(ownerId, targetUserId)` — write initial defaults into CoreMoodMemory.perceptions map (confidence=0.2); triggered on ghost-user conversation initialization
 6. Implement `getOrInitialize(ownerId, targetUserId)` — read, or initialize if not found
-7. Implement `updatePerception(ownerId, targetUserId, update)` — partial Firestore update, sets `last_updated`
-8. Implement `appendEvolutionNote(ownerId, targetUserId, note)` — append to `evolution_notes` array (never remove/modify)
-9. Implement `adjustConfidence(ownerId, targetUserId, delta)` — add delta to confidence, clamp to [0, 1]
+7. Implement `updatePerception(ownerId, targetUserId, update)` — partial update of CoreMoodMemory.perceptions[targetUserId], sets `last_updated`
+8. Implement `appendEvolutionNote(ownerId, targetUserId, note)` — append to `evolution_notes` array; use LLM condense strategy when notes accumulate (dropped notes preserved via context pattern scheme)
+9. Implement `adjustConfidence(ownerId, targetUserId, delta)` — confidence formula: `min(1.0, 0.2 + (interaction_count * 0.02))`, clamp to [0, 1]
 10. Implement REM perception update step:
     - Gather recent interactions
     - Sub-LLM (Haiku) reviews interactions against current perception
-    - Apply slow-drift updates for identity fields, moderate updates for behavioral fields
-    - Append evolution note on significant changes
+    - Apply `IDENTITY_DRIFT_RATE = 0.05` for identity fields (personality_sketch, communication_style, emotional_baseline)
+    - Apply `BEHAVIOR_DRIFT_RATE = 0.15` for behavioral fields (interests, patterns, needs)
+    - Append evolution note on significant changes (LLM condense strategy)
     - Adjust confidence up (consistent data) or down (contradictory data)
-11. Wire REM perception update into `RemService.runCycle()`
-12. Add barrel exports from `src/services/index.ts`
+11. Add drift rate constants and confidence formula to `src/services/rem.constants.ts`
+12. Wire REM perception update into `RemService.runCycle()`
+13. Add barrel exports from `src/services/index.ts`
 
 ## Verification
 
-- [ ] Reads from Firestore subcollection correctly
-- [ ] Self-perception stored at `perceptions/{owner_id}` key
-- [ ] Cross-user perception stored at `perceptions/{other_user_id}` key
+- [ ] Reads from CoreMoodMemory.perceptions map correctly (NOT separate Firestore documents)
+- [ ] Self-perception stored at `CoreMoodMemory.perceptions[owner_id]` key
+- [ ] Cross-user perception stored at `CoreMoodMemory.perceptions[other_user_id]` key
+- [ ] Each ghost maintains independent perception within its own CoreMoodMemory
+- [ ] Perception initialized on ghost-user conversation initialization
 - [ ] Confidence starts at 0.2 on initialization
 - [ ] Confidence increases with consistent interactions
 - [ ] Confidence decreases on contradictory signals
 - [ ] Confidence clamped to [0, 1]
-- [ ] Evolution notes are append-only (never modified or removed)
+- [ ] Evolution notes are append-only; LLM condense strategy (not hard max); dropped notes preserved via context pattern scheme
 - [ ] `last_updated` set on every write
-- [ ] Personality_sketch and communication_style drift slowly
-- [ ] Patterns and interests update more readily
+- [ ] Identity fields drift at `IDENTITY_DRIFT_RATE = 0.05` (personality_sketch, communication_style, emotional_baseline)
+- [ ] Behavioral fields drift at `BEHAVIOR_DRIFT_RATE = 0.15` (interests, patterns, needs)
+- [ ] Confidence formula: `min(1.0, 0.2 + (interaction_count * 0.02))`
+- [ ] Constants defined in `src/services/rem.constants.ts`
 - [ ] Tests colocated: `src/services/perception.service.spec.ts`

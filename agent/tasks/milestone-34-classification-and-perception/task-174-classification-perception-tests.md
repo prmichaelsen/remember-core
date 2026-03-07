@@ -58,22 +58,29 @@ describe('ClassificationService')
 
   describe('classify')
     - adds memory to genre array
-    - adds memory to quality array
-    - adds memory to thematic_group array
+    - adds memory to multiple quality arrays (NOT mutually exclusive)
+    - adds memory to multiple thematic_group arrays (multiple per memory)
+    - thematic groups normalized to snake_case
     - does not duplicate memory_id if already present
     - can classify with genre only
-    - can classify with quality only
-    - can classify with thematic_group only
+    - can classify with qualities only
+    - can classify with thematic_groups only
     - can classify with all three at once
-    - validates genre against 18-value enum
+    - validates genre against 18-value closed set enum
     - validates quality against 5-value enum
-    - accepts any string for thematic_group (emergent)
+    - accepts any string for thematic_group (emergent, snake_case normalized)
     - updates last_updated on write
+
+  describe('addMergeCandidate')
+    - adds merge candidate entry to classifications doc
+    - merge candidate is a near duplicate (not exact match)
+    - stored per collection (collection-scoped)
 
   describe('removeFromIndex')
     - removes memory_id from all genre arrays
     - removes memory_id from all quality arrays
     - removes memory_id from all thematic_group arrays
+    - removes memory_id from merge_candidates
     - handles memory_id not in any array gracefully
 
   describe('getUnclassifiedCount')
@@ -97,21 +104,23 @@ describe('REM Classification Pipeline')
     - passes nearest neighbors to sub-LLM prompt
 
   describe('sub-LLM classification')
-    - assigns genre from predefined 18-value list
-    - assigns quality signal from 5-value enum
-    - generates emergent thematic group names
+    - assigns genre from closed set of 18 values
+    - assigns multiple quality signals per memory (NOT mutually exclusive)
+    - generates emergent thematic group names in snake_case
+    - assigns multiple thematic groups per memory
 
   describe('duplicate detection')
-    - flags near-duplicates as quality: 'duplicate'
+    - flags exact content matches as quality: 'duplicate'
     - does NOT auto-delete duplicates
-    - identifies merge candidates
+    - identifies near duplicates as merge candidates (different from duplicates)
+    - stores merge candidates in classifications Firestore collection
 
   describe('contradiction detection')
     - detects contradictions between memories
-    - creates coherence pressure in mood system when contradictions found
+    - creates coherence pressure with CONTRADICTION_PRESSURE_MAGNITUDE = -0.15
 
   describe('batch processing')
-    - caps at batch size (10-20 per cycle)
+    - caps at CLASSIFICATION_BATCH_SIZE = 20
     - processes remaining in subsequent cycles
 
   describe('error handling')
@@ -129,17 +138,18 @@ describe('REM Classification Pipeline')
 ```
 describe('PerceptionService')
   describe('initializePerception')
-    - creates perception document with correct defaults
+    - creates perception inside CoreMoodMemory.perceptions map (NOT separate Firestore doc)
     - confidence starts at 0.2
+    - initialized on ghost-user conversation initialization
     - empty arrays for interests, patterns, needs, evolution_notes
     - empty strings for personality_sketch, communication_style, emotional_baseline
 
   describe('getPerception')
-    - returns perception when it exists
+    - returns perception from CoreMoodMemory.perceptions map
     - returns null when not found
 
   describe('getSelfPerception')
-    - reads from perceptions/{owner_id} (self-perception path)
+    - reads from CoreMoodMemory.perceptions[owner_id] (self-perception)
     - returns null when not found
 
   describe('getOrInitialize')
@@ -167,22 +177,25 @@ describe('PerceptionService')
 ```
 describe('REM Perception Updates')
   describe('confidence evolution')
+    - confidence formula: min(1.0, 0.2 + (interaction_count * 0.02))
     - confidence increases with consistent interactions
     - confidence decreases on contradictory signals
     - confidence clamped to [0, 1]
 
   describe('field drift rates')
-    - personality_sketch updates slowly (identity, stable trait)
-    - communication_style updates slowly (stable trait)
-    - emotional_baseline updates slowly (stable trait)
-    - patterns update at moderate rate (behavioral, more dynamic)
-    - interests update at moderate rate
-    - needs update at moderate rate
+    - personality_sketch updates at IDENTITY_DRIFT_RATE = 0.05
+    - communication_style updates at IDENTITY_DRIFT_RATE = 0.05
+    - emotional_baseline updates at IDENTITY_DRIFT_RATE = 0.05
+    - patterns update at BEHAVIOR_DRIFT_RATE = 0.15
+    - interests update at BEHAVIOR_DRIFT_RATE = 0.15
+    - needs update at BEHAVIOR_DRIFT_RATE = 0.15
 
   describe('evolution notes')
     - significant changes produce new evolution notes
     - notes are descriptive of what changed
     - notes are never removed
+    - LLM condense strategy (not hard max count)
+    - dropped notes preserved via context pattern scheme
 
   describe('mood interaction')
     - emotional_baseline used to calibrate arousal interpretation
@@ -197,5 +210,9 @@ describe('REM Perception Updates')
 - [ ] Existing tests unaffected
 - [ ] Tests colocated with source files using `.spec.ts` suffix
 - [ ] No `__tests__/` directories created
-- [ ] Genre validation tests cover all 18 values
-- [ ] Quality validation tests cover all 5 values
+- [ ] Genre validation tests cover all 18 values (closed set)
+- [ ] Quality validation tests cover all 5 values (multiple per memory)
+- [ ] Classification tests use collection-scoped paths (not user-scoped)
+- [ ] Perception tests verify storage inside CoreMoodMemory (not separate Firestore docs)
+- [ ] Thematic group tests verify snake_case normalization
+- [ ] Thematic group tests verify multiple groups per memory

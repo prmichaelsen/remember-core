@@ -13,7 +13,7 @@ Create Firestore document schema for core mood memory and implement MoodService 
 ## Context
 
 - **Design doc**: `agent/design/core-mood-memory.md`
-- Firestore path: `users/{user_id}/core/mood`
+- Firestore path: `users/{user_id}/{ghost_composite_id}/core`
 - The mood is NOT a Weaviate memory -- it is a Firestore singleton (structured numerical data, no semantic content to embed, frequent read/write)
 - Weaviate holds *what the ghost knows*; Firestore holds *what the ghost is*
 
@@ -64,6 +64,16 @@ interface CoreMoodMemory {
   // Pressure Sources (the "why")
   pressures: Pressure[];
 
+  // Perception Fields (rolled into CoreMoodMemory, NOT separate documents)
+  personality_sketch: string;       // Brief personality description
+  communication_style: string;      // How the ghost communicates
+  emotional_baseline: string;       // Default emotional tendencies
+  interests: string[];              // Topics/areas of interest
+  patterns: string[];               // Observed behavioral patterns
+  needs: string[];                  // Identified user needs
+  evolution_notes: string;          // How the ghost has changed over time
+  confidence_level: number;         // 0-1, how confident the ghost is in its perception model
+
   // Metadata
   last_updated: string;           // ISO 8601 datetime
   rem_cycles_since_shift: number; // how many cycles since a significant mood change
@@ -104,6 +114,14 @@ const INITIAL_MOOD: Omit<CoreMoodMemory, 'user_id'> = {
   goal: '',
   purpose: '',
   pressures: [],
+  personality_sketch: '',
+  communication_style: '',
+  emotional_baseline: '',
+  interests: [],
+  patterns: [],
+  needs: [],
+  evolution_notes: '',
+  confidence_level: 0,
   last_updated: new Date().toISOString(),
   rem_cycles_since_shift: 0,
 };
@@ -114,7 +132,7 @@ const INITIAL_MOOD: Omit<CoreMoodMemory, 'user_id'> = {
 1. Define `CoreMoodMemory`, `MoodState`, `Pressure`, `MoodDerivation` types in `src/services/mood.service.ts` (or a separate types file if preferred)
 2. Create `src/services/mood.service.ts` with `MoodService` class
 3. Implement the following methods:
-   - `getMood(userId: string): Promise<CoreMoodMemory | null>` — read from `users/{user_id}/core/mood`
+   - `getMood(userId: string, ghostCompositeId: string): Promise<CoreMoodMemory | null>` — read from `users/{user_id}/{ghost_composite_id}/core`
    - `initializeMood(userId: string): Promise<CoreMoodMemory>` — write neutral state defaults
    - `getOrInitialize(userId: string): Promise<CoreMoodMemory>` — read, or initialize if not found
    - `updateMood(userId: string, update: Partial<CoreMoodMemory>): Promise<void>` — partial Firestore update
@@ -124,13 +142,13 @@ const INITIAL_MOOD: Omit<CoreMoodMemory, 'user_id'> = {
 
 ## Firestore Path
 
-- Document path: `users/{user_id}/core/mood`
-- This is a **singleton document** per user (not a subcollection)
+- Document path: `users/{user_id}/{ghost_composite_id}/core`
+- This is a **singleton document** per user+ghost pair (not a subcollection)
 
 ## Verification
 
 - [ ] Reads from Firestore correctly (returns null when not found)
-- [ ] Neutral state initialized with correct defaults (valence=0, others=0.5, empty pressures, empty strings for labels)
+- [ ] Neutral state initialized with correct defaults (valence=0, others=0.5, empty pressures, empty strings for labels, empty perception fields, confidence_level=0)
 - [ ] `getOrInitialize` returns existing mood if present, creates if not
 - [ ] Partial updates work (e.g., updating only `state.valence` without clobbering other fields)
 - [ ] Pressures can be appended via `addPressure`

@@ -17,7 +17,9 @@
 | Pruning interaction | High coherence_tension memories RESIST pruning until resolved | Clarification 19 |
 | Resolution mechanism | Surface contradictory memories that silently coexist; create REM observations noting the conflict | Clarification 19 |
 | What "resolved" means | `feel_coherence_tension` drops below threshold on next scoring cycle (after user addresses the conflict or REM re-evaluates with new context) | Design doc |
-| Output format | REM observations (stored as `observation` property updates or new `rem` memories) | Clarification 19 |
+| Output format | REM observations (stored as `observation` property updates or new `rem` memories with `trust_score: 5`) | Clarification 19, 21 |
+| Relationship classification | Relationship `type` field is for SOURCE only (`user`/`rem`/`rule`). Do NOT add `'reconciliation'` as a relationship type — use a separate classification field instead | Clarification 21 |
+| Shared constants | `COHERENCE_TENSION_THRESHOLD` lives in `src/services/rem.constants.ts` | Clarification 21 |
 
 ---
 
@@ -100,8 +102,9 @@ For each high-tension memory, find its conflicting counterparts:
   - Possible interpretations (change over time, exception vs. pattern, etc.)
   - NO prescriptive advice — surface the conflict, don't resolve it
 - **Output**: Observation text stored as a new `content_type: 'rem'` memory with:
+  - `trust_score: 5` (Secret) — REM observation memories use restricted trust
   - `tags: ['rem-reconciliation', conflict_type]`
-  - Relationship linking it to both conflicting memories (type: `'reconciliation'`)
+  - Relationship linking it to both conflicting memories with `source: 'rem'` and a separate classification field (e.g., `classification: 'reconciliation'`). Do NOT use `type: 'reconciliation'` — the relationship `type` field is reserved for source only (`user`/`rem`/`rule`)
 
 ### 4. Update Source Memory Observations
 
@@ -143,13 +146,14 @@ Task 158 already defines the `COHERENCE_TENSION_EXEMPTION_THRESHOLD` constant an
 
 ### 7. Share Coherence Tension Constants
 
-**File**: `src/services/rem.constants.ts` (new, or add to `rem.types.ts`)
+**File**: `src/services/rem.constants.ts`
 
 - Extract shared constants used by both pruning and reconciliation:
   ```typescript
   export const COHERENCE_TENSION_THRESHOLD = 0.7;  // used by both pruning exemption and reconciliation detection
   ```
 - Import this constant in both `rem.pruning.ts` and `rem.reconciliation.ts`
+- This file is the canonical home for all shared REM constants (see also Tasks 157, 158)
 
 ### 8. Write Tests
 
@@ -162,7 +166,7 @@ Tests to implement:
 - **Conflict pair detection — valence opposition**: Two memories about same topic with opposing valence are paired
 - **Conflict pair detection — identity conflict**: Memory contradicting an existing `rem` abstraction is detected
 - **Haiku observation generation**: Mock Haiku produces neutral, empathetic observation text
-- **REM observation memory creation**: Observation stored as `content_type: 'rem'` with correct tags and relationships
+- **REM observation memory creation**: Observation stored as `content_type: 'rem'` with `trust_score: 5`, correct tags, and relationships using classification field (not type)
 - **Source memory observation update**: Conflicting memories get observation field updated with reconciliation note
 - **Pruning resistance verification**: High-tension memories return 0 from `computeDecayIncrement()` (cross-task integration test)
 - **Pruning resumes after resolution**: When `feel_coherence_tension` drops below threshold, memory becomes pruning-eligible again
@@ -179,11 +183,12 @@ Tests to implement:
 - [ ] Conflict types correctly classified (`valence_opposition`, `factual_contradiction`, `identity_conflict`, `behavioral_inconsistency`)
 - [ ] Haiku generates neutral, empathetic reconciliation observations
 - [ ] Reconciliation observations stored as `content_type: 'rem'` memories
-- [ ] Relationships created linking reconciliation observations to conflicting memories (type: `'reconciliation'`)
+- [ ] Relationships created linking reconciliation observations to conflicting memories with `source: 'rem'` and a separate classification field (NOT `type: 'reconciliation'` — `type` is for source only)
 - [ ] Source memory `observation` fields updated with reconciliation notes
 - [ ] `rem_touched_at` and `rem_visits` updated on processed memories
 - [ ] High `feel_coherence_tension` memories are exempt from pruning decay (shared constant with Task 158)
-- [ ] High `feel_coherence_tension` memories cannot be archived even with low `total_significance`
+- [ ] High `feel_coherence_tension` memories cannot be soft-deleted even with low `total_significance`
+- [ ] REM observation memories use `content_type: 'rem'` with `trust_score: 5`
 - [ ] Pruning resumes automatically when `feel_coherence_tension` drops below threshold
 - [ ] Shared `COHERENCE_TENSION_THRESHOLD` constant used by both pruning and reconciliation
 - [ ] Phase 5 (Reconcile) wired into REM cycle after Phase 4 (Prune)

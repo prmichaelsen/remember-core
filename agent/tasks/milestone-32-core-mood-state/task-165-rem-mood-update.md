@@ -115,7 +115,7 @@ Flag extreme sustained states for special handling. Track via `rem_cycles_since_
 | trust > 0.95 | sustained high trust | 5+ cycles | `over_trust` |
 
 **When a threshold is triggered:**
-1. Create a **high-weight memory** about the sustained state (store in Weaviate as a mood snapshot)
+1. Create a **high-weight memory** about the sustained state (store in Weaviate with `content_type: 'rem'` since all REM-created memories use this content type). Threshold memory content should be a structured description, e.g.: `"Ghost has been in a depressed state for 3 consecutive REM cycles. Valence: -0.72. Primary pressure: [reason]"`
 2. Adjust retrieval bias to surface resolution-oriented memories (the retrieval bias system in Task 168 handles this)
 
 ## Steps
@@ -127,15 +127,18 @@ Flag extreme sustained states for special handling. Track via `rem_cycles_since_
 5. Implement threshold detection — track how many consecutive cycles each extreme condition has been met
 6. On threshold trigger: create a high-weight Weaviate memory describing the sustained state
 7. Wire all steps into `RemService.runCycle()` — after emotional scoring, before any narration step
-8. Update `rem_cycles_since_shift` — increment if no significant mood change detected, reset to 0 on significant shift
+8. Update `rem_cycles_since_shift` — increment if no significant mood change detected, reset to 0 on significant shift. "Significant change" = >= 0.1 shift in any single mood dimension. `rem_cycles_since_shift` is kept as a mood stability metric
 9. Call `MoodService.updateMood()` to persist the updated state
 
 ## Constants
+
+All constants should be defined in `src/services/rem.constants.ts`.
 
 ```typescript
 const LEARNING_RATE = 0.1;
 const INERTIA = 0.7;
 const PRESSURE_REMOVAL_THRESHOLD = 0.05;
+const SIGNIFICANT_CHANGE_THRESHOLD = 0.1; // >= 0.1 shift in any single mood dimension
 
 const THRESHOLDS = {
   existential_crisis: { dimension: 'coherence', op: '<', value: 0.2, cycles: 3 },
@@ -146,6 +149,10 @@ const THRESHOLDS = {
   over_trust: { dimension: 'trust', op: '>', value: 0.95, cycles: 5 },
 };
 ```
+
+## Error Handling
+
+Each phase (aggregate, drift, decay, threshold check) catches its own errors and the cycle continues. Skip only dependent phases on error (e.g., if drift fails, still attempt decay and threshold check where possible).
 
 ## Verification
 

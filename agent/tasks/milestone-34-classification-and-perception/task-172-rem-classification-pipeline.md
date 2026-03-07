@@ -26,16 +26,16 @@ REM_Classification:
     1. Pull unclassified or recently created memories
     2. For each memory, run remember_find_similar to get nearest neighbors
     3. Sub-LLM evaluates the memory alongside its similar matches:
-       - Genre/format (from predefined list of 18)
-       - Quality signal (substantive, draft, low_value, duplicate, stale)
-       - Thematic group (emergent, sub-LLM generated)
-       - Duplicate/overlap detection (is this substantially the same as a similar match?)
-       - Merge candidates (could this be consolidated with a similar memory?)
+       - Genre/format (from closed set of 18 — sub-LLM must pick from predefined list only)
+       - Quality signals (multiple allowed per memory: substantive, draft, low_value, duplicate, stale)
+       - Thematic groups (emergent, sub-LLM generated, `snake_case` normalization, multiple per memory)
+       - Duplicate detection (exact content match — flagged as quality: 'duplicate')
+       - Merge candidates (near duplicates — similar but not identical, stored in classifications Firestore collection)
     4. Write classifications back via ClassificationService
     5. Update Firestore classification index
 ```
 
-## Genres (predefined, 18 values)
+## Genres (closed set, 18 values — sub-LLM must pick from this list only)
 
 `short_story`, `standup_bit`, `poem`, `essay`, `technical_note`, `recipe`, `journal_entry`, `brainstorm`, `conversation_summary`, `code_snippet`, `list`, `letter`, `review`, `tutorial`, `rant`, `dream_log`, `song_lyrics`, `other`
 
@@ -51,8 +51,9 @@ REM_Classification:
 
 Each unclassified memory gets a `findSimilar` call during classification. The sub-LLM sees the memory alongside its nearest neighbors and makes richer judgments:
 
-- **Exact/near duplicates**: "This is the same camping checklist you saved last week, just with two extra items" — flag as `duplicate`, suggest merge
-- **Thematic clustering**: Similar memories that aren't duplicates get grouped into the same thematic cluster automatically
+- **Exact duplicates** (identical content): Flag as `quality: 'duplicate'`
+- **Near duplicates / merge candidates** (similar but not identical): Store as merge candidate in classifications Firestore collection via `ClassificationService.addMergeCandidate()` — these are different concepts from duplicates
+- **Thematic clustering**: Similar memories that aren't duplicates get grouped into the same thematic cluster(s) automatically (multiple thematic groups per memory allowed, `snake_case` normalization)
 - **Evolution detection**: "This is a newer version of an older memory" — flag as superseding, link to the original
 - **Contradiction detection**: "This memory says you hate camping but three other memories describe camping trips you loved" — flag for coherence review (also feeds coherence pressure into mood)
 
@@ -77,7 +78,7 @@ The sub-LLM returns structured JSON with genre, quality signal, thematic group, 
 
 ## Batch Processing
 
-- Cap the number of memories classified per REM cycle (e.g., batch size 10-20)
+- `CLASSIFICATION_BATCH_SIZE = 20` (defined in `src/services/rem.constants.ts`)
 - Process in order of creation date (oldest unclassified first)
 - Track progress via `unclassified_count` in the ClassificationIndex
 
@@ -90,9 +91,9 @@ After classification, the ghost can surface results to the user:
 
 ## Coherence Pressure from Contradictions
 
-When the sub-LLM detects contradictions between memories, this feeds a coherence pressure into the mood system:
+When the sub-LLM detects contradictions between memories, this creates a coherence pressure via the existing pressure system:
 - Create a `Pressure` targeting the `coherence` dimension
-- Negative magnitude (reduces coherence)
+- Magnitude: `CONTRADICTION_PRESSURE_MAGNITUDE = -0.15` (defined in `src/services/rem.constants.ts`)
 - Reason describes the contradiction detected
 
 ## Steps
@@ -103,10 +104,10 @@ When the sub-LLM detects contradictions between memories, this feeds a coherence
 4. Build Haiku prompt with: memory content, neighbor contents, predefined genre list, quality signal options
 5. Parse Haiku response: extract genre, quality signal, thematic group, duplicate flags
 6. Write classifications via `ClassificationService.classify()`
-7. Flag duplicates as `quality: 'duplicate'` (do NOT auto-delete)
-8. Flag merge candidates (store as metadata or tags on the memory)
-9. Create coherence pressures from detected contradictions via `MoodService.addPressure()`
-10. Cap batch size per cycle (10-20 memories)
+7. Flag exact duplicates as `quality: 'duplicate'` (do NOT auto-delete)
+8. Store merge candidates (near duplicates) in classifications Firestore collection via `ClassificationService.addMergeCandidate()`
+9. Create coherence pressures from detected contradictions via `MoodService.addPressure()` with `CONTRADICTION_PRESSURE_MAGNITUDE = -0.15`
+10. Cap batch size per cycle: `CLASSIFICATION_BATCH_SIZE = 20`
 11. Update `unclassified_count` after processing
 12. Handle Haiku errors gracefully — skip memory, retry next cycle
 
@@ -117,9 +118,12 @@ When the sub-LLM detects contradictions between memories, this feeds a coherence
 - [ ] Genres are from the predefined 18-value list
 - [ ] Thematic groups are emergent (sub-LLM generated strings)
 - [ ] Quality signals are from the 5-value enum
-- [ ] Duplicates flagged as `quality: 'duplicate'`, NOT auto-deleted
-- [ ] Contradictions create coherence pressures in the mood system
-- [ ] Batch size capped (10-20 per cycle)
+- [ ] Exact duplicates flagged as `quality: 'duplicate'`, NOT auto-deleted
+- [ ] Near duplicates stored as merge candidates in classifications Firestore collection
+- [ ] Contradictions create coherence pressures with `CONTRADICTION_PRESSURE_MAGNITUDE = -0.15`
+- [ ] Batch size capped at `CLASSIFICATION_BATCH_SIZE = 20`
+- [ ] Thematic groups use `snake_case` normalization; multiple per memory allowed
+- [ ] Constants defined in `src/services/rem.constants.ts`
 - [ ] `unclassified_count` updated after processing
 - [ ] Handles Haiku errors gracefully (skip + retry next cycle)
 - [ ] Tests colocated: appropriate `.spec.ts` file alongside implementation

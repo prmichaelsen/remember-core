@@ -19,7 +19,9 @@
 | UI visibility | Visible in a dedicated "rem" tab in the memories feed (same pattern as existing "agent" tab) | Clarification 19 |
 | LLM for synthesis | Haiku generates the abstraction text | Clarification 19 |
 | Phase placement | REM Phase 3 (Abstract) — runs after Score (0), Replay (1), Reweight (2) | Design doc |
-| Pattern detection input | Clusters from existing REM clustering + emotional score similarity | Design doc |
+| Pattern detection input | Clusters from existing REM clustering + emotional score similarity — use agent judgement for pattern detection algorithms (no prescribed algorithm) | Design doc |
+| Trust score for abstractions | `trust_score: 5` (Secret) — synthetic memories may contain sensitive observations | Clarification 20 |
+| Shared constants | Shared REM constants live in `src/services/rem.constants.ts` | Clarification 20 |
 
 ---
 
@@ -79,7 +81,7 @@ Implement REM Phase 3 (Abstract) — detect recurring patterns in episodic memor
 **File**: `src/services/rem.abstraction.ts` (new)
 
 - **Input**: All memories in a collection with their emotional scores and existing relationships
-- **Detection strategy**:
+- **Detection strategy** (use agent judgement — no prescribed algorithm required):
   1. Query for relationship clusters with 5+ members that share thematic similarity (reuse existing REM clustering output)
   2. Group memories by high emotional score similarity (e.g., multiple memories with high `feel_fear` + matching `functional_narrative_importance`)
   3. Check if a cluster has already been abstracted (query for existing `rem` memories linked to the same source IDs) — skip if so
@@ -113,7 +115,7 @@ Implement REM Phase 3 (Abstract) — detect recurring patterns in episodic memor
   - `observation`: Haiku-generated observation
   - `tags`: `['rem-abstraction', abstraction_type]`
   - `source: 'rem'`
-  - Inherit the `trust_score` from the majority trust level of source memories
+  - `trust_score: 5` (Secret) — abstracted memories are synthetic and may contain sensitive observations; do NOT inherit from source majority
   - Set `rem_touched_at` to current timestamp
   - Set `rem_visits` to 1
 
@@ -153,7 +155,7 @@ Tests to implement:
 - **Pattern detection**: Given N similar memories, detects a valid abstraction candidate
 - **Already-abstracted skip**: If a cluster already has a linked `rem` memory, skip re-abstraction
 - **Haiku synthesis**: Mock Haiku returns appropriate synthesis text for different cluster types
-- **Memory creation**: Created memory has `content_type: 'rem'`, correct tags, correct trust level inheritance
+- **Memory creation**: Created memory has `content_type: 'rem'`, correct tags, `trust_score: 5`
 - **Relationship creation**: Relationship links abstract memory to all source memories with type `'abstraction'`
 - **Search exclusion**: Default search excludes `rem` memories; explicit filter includes them
 - **Below-threshold skip**: Clusters smaller than `min_cluster_size_for_abstraction` are skipped
@@ -172,7 +174,7 @@ Tests to implement:
 - [ ] Relationships link abstract memories to source episodic memories with type `'abstraction'`
 - [ ] Standard search excludes `content_type: 'rem'` memories by default
 - [ ] Opt-in filter `content_type: 'rem'` allows retrieval of REM memories
-- [ ] Trust level inherited from majority of source memories
+- [ ] `trust_score: 5` (Secret) set on all abstracted memories — NOT inherited from source
 - [ ] `rem_touched_at` and `rem_visits` set on created memories
 - [ ] Phase 3 (Abstract) wired into REM cycle after relationship CRUD
 - [ ] `abstractions_created` tracked in `RunCycleResult`

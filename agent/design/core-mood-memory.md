@@ -47,17 +47,19 @@ Introduce a **core mood memory** -- a special singleton memory per user that act
 
 The core mood memory is stored as a **Firestore document**, not a Weaviate memory:
 
-- **Path**: `users/{user_id}/core/mood`
+- **Path**: `users/{user_id}/{ghost_composite_id}/core`
 - **Rationale**: The mood state is structured numerical data with no semantic content to embed. You'd never run a vector similarity search for "find memories similar to my current mood." It's a singleton with frequent read/write -- Firestore is built for exactly this access pattern.
 - **Separation of concerns**: Weaviate holds *what the ghost knows*. Firestore holds *what the ghost is*. The mood isn't a memory -- it's a runtime state register that influences how memories are processed.
+- **Multi-ghost**: Each ghost maintains an independent CoreMoodMemory (including perception fields) at its own `users/{uid}/{ghost_composite_id}/core` path. Ghosts do not share mood or perception state.
 - **Mood history**: When the REM cycle detects significant mood transitions, it can snapshot the state into a Weaviate memory for long-term recall. Those snapshots *are* semantic content worth embedding. But the live register stays in Firestore.
 
 ### Core Mood Memory Schema
 
 ```yaml
 CoreMoodMemory:
-  # Firestore path: users/{user_id}/core/mood
+  # Firestore path: users/{user_id}/{ghost_composite_id}/core
   user_id: string
+  ghost_composite_id: string
 
   # Dimensional State (continuous values)
   state:
@@ -91,6 +93,10 @@ CoreMoodMemory:
   # Metadata
   last_updated: datetime
   rem_cycles_since_shift: int  # how many cycles since a significant mood change
+
+  # Note: All memories created by REM use trust_score: 5 (synthetic content,
+  # may contain sensitive observations). This applies to mood snapshots,
+  # classification metadata, and any other Weaviate memories the REM cycle produces.
 ```
 
 ### Emotion-Analog Dimensions
@@ -403,14 +409,15 @@ REM_Classification:
 
     # Thematic Group -- what cluster does this belong to?
     # These are emergent, not predefined -- the sub-LLM generates them
-    # e.g. "music-production", "relationship-advice", "work-complaints"
+    # Normalized to snake_case, e.g. "music_production", "relationship_advice", "work_complaints"
+    # A memory can belong to multiple thematic groups
 ```
 
 **Firestore Classification Index**:
 
 ```yaml
 ClassificationIndex:
-  # Firestore path: users/{user_id}/core/classifications
+  # Firestore path: collection-scoped (one document per Weaviate collection)
   genres:
     short_story: [memory_id_1, memory_id_7, memory_id_23]
     standup_bit: [memory_id_4, memory_id_15]
@@ -418,8 +425,8 @@ ClassificationIndex:
     # ...
 
   thematic_groups:
-    music-production: [memory_id_3, memory_id_8]
-    ai-architecture: [memory_id_2, memory_id_5, memory_id_11]
+    music_production: [memory_id_3, memory_id_8]
+    ai_architecture: [memory_id_2, memory_id_5, memory_id_11]
     # ...
 
   quality:
@@ -505,19 +512,14 @@ The mood state drives *how* the ghost feels, but it needs a *why*. Three additio
 
 ---
 
-### User Perception
+### User Perception (Embedded in CoreMoodMemory)
 
-The ghost's internal model of a user it interacts with. Since the relationship is many-to-many (a user can have multiple ghosts, a ghost can interact with multiple users), perceptions are stored as a **subcollection** -- one document per ghost-user pair.
+The ghost's internal model of a user it interacts with. Perception fields are stored directly as part of the CoreMoodMemory document -- not as separate Firestore documents. This keeps all ghost state for a given user in a single document at `users/{user_id}/{ghost_composite_id}/core`.
 
-- **Path**: `users/{owner_id}/core/perceptions/{target_user_id}`
-- The owner's own perception (the ghost's model of its owner) lives at `users/{owner_id}/core/perceptions/{owner_id}`
-- Cross-user perceptions (when another user interacts with the ghost) live at `users/{owner_id}/core/perceptions/{other_user_id}`
+The following fields are part of the CoreMoodMemory schema:
 
 ```yaml
-UserPerception:
-  # Firestore path: users/{owner_id}/core/perceptions/{target_user_id}
-  owner_id: string         # The ghost's owner (whose ghost this is)
-  target_user_id: string   # The user being perceived
+  # --- Perception Fields (part of CoreMoodMemory) ---
 
   # Identity Model
   personality_sketch: string       # Sub-LLM generated summary of who this user is
@@ -550,9 +552,10 @@ UserPerception:
   evolution_notes: string[]        # How the perception has changed over time
                                    # e.g. ["initially guarded, has opened up since March",
                                    #        "started delegating more complex tasks"]
+                                   # LLM condense strategy -- dropped notes are preserved
+                                   # via context pattern scheme (not append-only)
 
-  # Metadata
-  last_updated: datetime
+  # Perception Metadata
   confidence_level: float          # 0-1, how confident the ghost is in this model
                                    # Low early on, rises with more interactions
 ```
@@ -565,7 +568,7 @@ UserPerception:
 - **Guides purpose**: The ghost's `purpose` should align with the user's `needs`. If the ghost perceives the user needs a thought partner but its purpose has drifted toward rote task execution, the coherence dimension drops, creating corrective pressure.
 - **Tones response**: The ghost adapts its communication to match the user's style. This isn't just politeness -- it's the ghost demonstrating that it *knows* the user.
 
-**REM cycle updates**: Each cycle, the sub-LLM reviews recent interactions against the current perception and proposes updates. The `personality_sketch` and `communication_style` drift slowly (like purpose). `patterns` and `interests` update more readily. `evolution_notes` are append-only, creating a narrative of how the relationship has developed.
+**REM cycle updates**: Each cycle, the sub-LLM reviews recent interactions against the current perception and proposes updates. The `personality_sketch` and `communication_style` drift slowly (like purpose). `patterns` and `interests` update more readily. `evolution_notes` use an LLM condense strategy -- when notes grow long, the LLM condenses them, and dropped notes are preserved via context pattern scheme.
 
 **Confidence level**: Starts low (~0.2) for new users. The ghost should be transparent about uncertainty -- "I'm still learning how you communicate" is more trustworthy than confidently misreading someone. Confidence rises with interaction volume and consistency. Contradictory signals lower it.
 
@@ -574,7 +577,7 @@ UserPerception:
 ## Dependencies
 
 - **remember-rem**: REM cycle implementation that drives mood consolidation
-- **Firestore**: Storage layer for core documents (`users/{user_id}/core/mood`, `users/{owner_id}/core/perceptions/{target_user_id}`)
+- **Firestore**: Storage layer for core documents (`users/{user_id}/{ghost_composite_id}/core`)
 - **Weight calculation system**: Integrates with existing `computed_weight` from action-audit-memory-types design
 - **LLM access** (optional): For generating natural language `color` narration and motivation/goal/purpose updates during REM cycles
 
@@ -591,17 +594,23 @@ UserPerception:
 
 ## Migration Path
 
-1. Create Firestore document schema at `users/{user_id}/core/mood`
+1. Create Firestore document schema at `users/{user_id}/{ghost_composite_id}/core`
 2. Implement mood initialization (neutral state, default purpose) on first user interaction
 3. Integrate mood reading into retrieval pipeline (bias multiplier)
 4. Integrate mood writing into REM cycle (drift, decay, threshold checks)
 5. Add `color` and `dominant_emotion` generation via sub-LLM call
 6. Add motivation/goal derivation in REM cycle
 7. Add purpose drift (slow, long-term pattern detection)
-8. Create Firestore document schema at `users/{user_id}/core/user-perception`
-9. Add user perception initialization and REM cycle updates
-10. Integrate user perception into mood calibration (arousal, social_warmth baselines)
+8. Add perception field initialization within CoreMoodMemory
+9. Add perception field REM cycle updates
+10. Integrate perception fields into mood calibration (arousal, social_warmth baselines)
 11. Expose mood and perception introspection via new tool or existing query tool
+
+---
+
+## Design Notes
+
+- **Relationship `source` field**: The `source` field on memory relationships is for provenance only (`user` / `rem` / `rule`). Relationship classification (abstraction, reconciliation, etc.) requires a separate field -- `source` should not be overloaded for this purpose.
 
 ---
 
@@ -613,7 +622,7 @@ UserPerception:
 - **Mood-aware response generation**: Feed mood dimensions into system prompts to influence tone
 - **Custom dimensions**: Allow users to define additional emotional dimensions relevant to their use case
 - **Mood reset**: Allow users to manually reset or adjust their ghost's mood if it gets stuck
-- **Multi-user perception**: When cross-user interaction is implemented, the ghost maintains separate `user-perception` documents per interacting user, each calibrating trust and mood responses independently
+- **Multi-user perception**: When cross-user interaction is implemented, each ghost's CoreMoodMemory at `users/{uid}/{ghost_composite_id}/core` contains perception fields for its owner; cross-user perceptions will need a separate mechanism
 - **Perception sharing**: Allow the ghost to selectively share its perception of the user with the user ("here's what I've learned about how you work") for transparency and correction
 
 ---

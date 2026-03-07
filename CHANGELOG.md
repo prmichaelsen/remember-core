@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.45.6] - 2026-03-07
+
+### Added
+- `MemoryService.byCurated()` — browse mode (native sort by `curated_score`) and search mode (hybrid search re-ranked by curated_score), with 4:1 unscored memory interleaving
+- `SpaceService.byCurated()` — cross-collection curated sort with space/group support, 5 tests
+- Types: `CuratedModeRequest`, `CuratedModeResult`, `CuratedSpaceInput`, `CuratedSpaceResult`
+
 ## [0.45.5] - 2026-03-07
 
 ### Fixed

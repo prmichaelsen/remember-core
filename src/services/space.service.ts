@@ -379,6 +379,22 @@ export interface RandomSpaceResult {
   total_pool_size: number;
 }
 
+// ── byCurated ──
+
+export interface CuratedSpaceInput extends SpaceSortBaseInput {
+  query?: string;
+  direction?: 'asc' | 'desc';
+}
+
+export interface CuratedSpaceResult {
+  spaces_searched: string[] | 'all_public';
+  groups_searched: string[];
+  memories: Record<string, unknown>[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 // ─── Service ────────────────────────────────────────────────────────────
 
 /**
@@ -1855,6 +1871,55 @@ export class SpaceService {
     });
 
     return { spaces_searched: spacesSearched, groups_searched: groupsSearched, results, total_pool_size: totalPoolSize };
+  }
+
+  // ── By Curated (composite quality score) ──────────────────────────
+
+  async byCurated(input: CuratedSpaceInput, authContext?: AuthContext): Promise<CuratedSpaceResult> {
+    const spaces = input.spaces || [];
+    const groups = input.groups || [];
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const direction = input.direction ?? 'desc';
+
+    this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
+
+    const fetchLimit = (limit + offset) * 2;
+    const hasQuery = input.query?.trim();
+
+    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+      input, spaces, groups,
+      async (collection, baseFilters) => {
+        const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
+
+        if (hasQuery) {
+          const opts: any = { limit: fetchLimit, alpha: 0.7, query: hasQuery };
+          if (combined) opts.filters = combined;
+          return (await collection.query.hybrid(hasQuery, opts)).objects;
+        }
+
+        const opts: any = {
+          limit: fetchLimit,
+          sort: collection.sort.byProperty('curated_score', direction === 'asc'),
+        };
+        if (combined) opts.filters = combined;
+        return (await collection.query.fetchObjects(opts)).objects;
+      },
+    );
+
+    const deduped = dedupeBySourceId(allResults, input.dedupe);
+    deduped.sort((a: any, b: any) => {
+      const aVal = (a.properties?.curated_score as number) ?? 0;
+      const bVal = (b.properties?.curated_score as number) ?? 0;
+      return direction === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+
+    const paginated = deduped.slice(offset, offset + limit);
+    const memories = paginated
+      .filter((obj: any) => obj.properties?.doc_type === 'memory')
+      .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
+
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: memories.length, offset, limit };
   }
 
   // ── Private: Validate Space/Group Input ───────────────────────────

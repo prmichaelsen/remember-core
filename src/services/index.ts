@@ -63,6 +63,8 @@ export {
   type BroadModeResult,
   type RandomModeRequest,
   type RandomModeResult,
+  type CuratedModeRequest,
+  type CuratedModeResult,
 } from './memory.service.js';
 
 export {
@@ -115,6 +117,8 @@ export {
   type BroadSpaceResult,
   type RandomSpaceInput,
   type RandomSpaceResult,
+  type CuratedSpaceInput,
+  type CuratedSpaceResult,
   type ModerationAction,
   type ModerationFilter,
   type RevisionEntry,

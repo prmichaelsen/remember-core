@@ -303,6 +303,25 @@ export interface RandomModeResult {
   total_pool_size: number;
 }
 
+// ── byCurated Sort Mode ─────────────────────────────────────────────────
+
+export interface CuratedModeRequest {
+  query?: string;
+  limit?: number;
+  offset?: number;
+  direction?: 'asc' | 'desc';
+  filters?: SearchFilters;
+  deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
+}
+
+export interface CuratedModeResult {
+  memories: Record<string, unknown>[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 export interface UpdateMemoryInput {
   memory_id: string;
   content?: string;
@@ -1250,6 +1269,128 @@ export class MemoryService {
     return {
       results: memories,
       total_pool_size: totalPoolSize,
+    };
+  }
+
+  // ── By Curated (composite quality score) ──────────────────────────
+
+  async byCurated(input: CuratedModeRequest): Promise<CuratedModeResult> {
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const direction = input.direction ?? 'desc';
+
+    // Build filters
+    const memoryFilters = buildMemoryOnlyFilters(this.collection, input.filters);
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
+    }
+
+    const hasQuery = input.query?.trim();
+    const fetchLimit = (limit + offset) * 2; // generous fetch for interleaving
+
+    // Scored pool: curated_score > 0
+    const executeScoredQuery = async (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+      const scoredFilter = this.collection.filter.byProperty('curated_score').greaterThan(0);
+      const combined = combineFiltersWithAnd(
+        [deletedFilter, memoryFilters, scoredFilter, ...ghostFilters].filter((f) => f !== null),
+      );
+
+      if (hasQuery) {
+        const queryOptions: any = {
+          limit: fetchLimit,
+          alpha: 0.7,
+          query: hasQuery,
+        };
+        if (combined) queryOptions.filters = combined;
+        return this.collection.query.hybrid(hasQuery, queryOptions);
+      }
+
+      const queryOptions: any = {
+        limit: fetchLimit,
+        sort: this.collection.sort.byProperty('curated_score', direction === 'asc'),
+      };
+      if (combined) queryOptions.filters = combined;
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    // Unscored pool: curated_score is 0 or null (for interleaving)
+    const executeUnscoredQuery = async (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+
+      const unscoredFilters: any[] = [];
+      // Weaviate doesn't have isNull for numbers, so we look for curated_score = 0 or
+      // fetch all and filter client-side. Use greaterThan(0) negation via separate query.
+      const combined = combineFiltersWithAnd(
+        [deletedFilter, memoryFilters, ...ghostFilters].filter((f) => f !== null),
+      );
+
+      const queryOptions: any = {
+        limit: Math.ceil(fetchLimit / 4),
+        sort: this.collection.sort.byProperty('created_at', false), // newest first
+      };
+      if (combined) queryOptions.filters = combined;
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    const scoredResults = await this.retryWithoutDeletedFilter(executeScoredQuery);
+    const unscoredResults = await this.retryWithoutDeletedFilter(executeUnscoredQuery);
+
+    // Normalize results
+    const scored: Record<string, unknown>[] = [];
+    for (const obj of scoredResults.objects) {
+      const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
+      if (doc.doc_type === 'memory' && (doc.curated_score as number) > 0) {
+        scored.push(doc);
+      }
+    }
+
+    // If search mode, re-rank scored by curated_score
+    if (hasQuery) {
+      scored.sort((a, b) => {
+        const aScore = (a.curated_score as number) ?? 0;
+        const bScore = (b.curated_score as number) ?? 0;
+        return direction === 'asc' ? aScore - bScore : bScore - aScore;
+      });
+    }
+
+    const unscored: Record<string, unknown>[] = [];
+    for (const obj of unscoredResults.objects) {
+      const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
+      if (doc.doc_type === 'memory' && !(doc.curated_score as number)) {
+        unscored.push(doc);
+      }
+    }
+
+    // Interleave at 4:1 ratio (same as byDiscovery)
+    const interleaved = interleaveDiscovery<Record<string, unknown>>({
+      rated: scored,
+      discovery: unscored,
+      offset,
+      limit,
+    });
+
+    const memories = interleaved.map((item) => ({
+      ...item.item,
+      ...(item.is_discovery ? { is_discovery: true } : {}),
+    }));
+
+    return {
+      memories,
+      total: memories.length,
+      offset,
+      limit,
     };
   }
 

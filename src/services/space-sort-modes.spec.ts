@@ -347,6 +347,59 @@ describe('SpaceService Sort Modes', () => {
     });
   });
 
+  // ── byCurated ──
+
+  describe('byCurated', () => {
+    it('sorts by curated_score descending by default', async () => {
+      await insertSpaceMemory(spacesCollection, { curated_score: 0.3, title: 'Low' });
+      await insertSpaceMemory(spacesCollection, { curated_score: 0.9, title: 'High' });
+      await insertSpaceMemory(spacesCollection, { curated_score: 0.6, title: 'Mid' });
+
+      const result = await service.byCurated({ spaces: ['the_void'] });
+      expect(result.memories).toHaveLength(3);
+      expect(result.memories[0].title).toBe('High');
+      expect(result.memories[2].title).toBe('Low');
+    });
+
+    it('sorts ascending when direction=asc', async () => {
+      await insertSpaceMemory(spacesCollection, { curated_score: 0.9, title: 'High' });
+      await insertSpaceMemory(spacesCollection, { curated_score: 0.1, title: 'Low' });
+
+      const result = await service.byCurated({ spaces: ['the_void'], direction: 'asc' });
+      expect(result.memories[0].title).toBe('Low');
+      expect(result.memories[1].title).toBe('High');
+    });
+
+    it('respects limit and offset', async () => {
+      for (let i = 0; i < 5; i++) {
+        await insertSpaceMemory(spacesCollection, { curated_score: (i + 1) * 0.2, title: `M${i}` });
+      }
+
+      const result = await service.byCurated({ spaces: ['the_void'], limit: 2, offset: 1 });
+      expect(result.memories).toHaveLength(2);
+      expect(result.limit).toBe(2);
+      expect(result.offset).toBe(1);
+    });
+
+    it('returns empty for no memories', async () => {
+      const result = await service.byCurated({ spaces: ['the_void'] });
+      expect(result.memories).toHaveLength(0);
+      expect(result.total).toBe(0);
+    });
+
+    it('merges results from spaces and groups', async () => {
+      const groupCollection = createMockCollection();
+      (weaviateClient as any)._collections.set('Memory_groups_mygroup', groupCollection);
+
+      await insertSpaceMemory(spacesCollection, { curated_score: 0.8, title: 'SpaceMem' });
+      await insertSpaceMemory(groupCollection, { curated_score: 0.9, title: 'GroupMem' });
+
+      const result = await service.byCurated({ spaces: ['the_void'], groups: ['mygroup'] });
+      expect(result.memories).toHaveLength(2);
+      expect(result.memories[0].title).toBe('GroupMem'); // higher score first
+    });
+  });
+
   // ── Cross-collection tests ──
 
   describe('cross-collection', () => {

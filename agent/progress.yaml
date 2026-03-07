@@ -569,7 +569,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 3
-    tasks_completed: 4
+    tasks_completed: 5
     tasks_total: 6
     dependencies: [M10, M20, M28]
     notes: |
@@ -2502,7 +2502,8 @@ tasks:
 
     - id: task-183
       name: byCurated Sort Mode (MemoryService + SpaceService)
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-36-by-curated-sort-mode/task-183-by-curated-sort-mode.md
       estimated_hours: 4
       dependencies: [task-179, task-181]

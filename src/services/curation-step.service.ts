@@ -24,7 +24,7 @@ export interface CurationStepDeps {
   editorialService: EditorialScoringService;
   collection: any; // WeaviateCollection
   collectionId: string;
-  logger?: { info?: (...args: unknown[]) => void; warn?: (...args: unknown[]) => void };
+  logger?: any;
 }
 
 export interface CurationStepResult {

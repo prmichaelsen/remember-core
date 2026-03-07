@@ -814,7 +814,7 @@ export class RemService {
   private async getCollectionRelationships(collection: any, userId: string): Promise<any[]> {
     try {
       const relService = this.deps.relationshipServiceFactory(collection, userId);
-      const result = await relService.search({ limit: 500 });
+      const result = await relService.search({ query: '', limit: 500 });
       return (result.relationships ?? []).flatMap((r: any) => {
         const ids = r.related_memory_ids ?? [];
         const pairs: any[] = [];

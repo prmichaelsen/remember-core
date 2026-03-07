@@ -564,6 +564,22 @@ milestones:
       Request from remember-mcp agent — unblocks search_space_by tool stubs.
       See: agent/milestones/milestone-35-space-sort-modes.md
 
+  - id: M36
+    name: byCurated Sort Mode
+    status: not_started
+    progress: 0
+    estimated_weeks: 3
+    tasks_completed: 0
+    tasks_total: 6
+    dependencies: [M10, M20, M28]
+    notes: |
+      Hybrid algorithmic sort mode combining 6 quality signals (editorial quality,
+      cluster quality, graph centrality, user ratings, recency, engagement) into
+      pre-computed curated_score. Updated during REM cycles. Supports browse mode
+      (native sort) and search mode (hybrid search re-rank). Unscored interleaving.
+      See: agent/design/local.by-curated-sort-mode.md
+      See: agent/milestones/milestone-36-by-curated-sort-mode.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -2448,11 +2464,59 @@ tasks:
       dependencies: [task-176, task-177]
       description: "26 tests for all 5 modes + validation + cross-collection. Barrel exports done in task-176."
 
+  milestone_36:
+    - id: task-179
+      name: Schema Migration + Sub-Score Functions
+      status: not_started
+      file: agent/tasks/milestone-36-by-curated-sort-mode/task-179-schema-sub-score-functions.md
+      estimated_hours: 4
+      description: "5 new Weaviate properties, 6 sub-score pure functions (recency, rating, engagement, cluster quality, editorial, PageRank), weight constants."
+
+    - id: task-180
+      name: Haiku Editorial Evaluation Service
+      status: not_started
+      file: agent/tasks/milestone-36-by-curated-sort-mode/task-180-haiku-editorial-evaluation.md
+      estimated_hours: 4
+      dependencies: [task-179]
+      description: "Per-memory Haiku quality evaluation. Evaluate-once-permanent policy. Batch processing with cost cap."
+
+    - id: task-181
+      name: Composite Curation Scoring + Firestore Storage
+      status: not_started
+      file: agent/tasks/milestone-36-by-curated-sort-mode/task-181-composite-scoring-firestore.md
+      estimated_hours: 3
+      dependencies: [task-179, task-180]
+      description: "Weighted composite (w1-w6), curated_score Weaviate write, Firestore sub-score storage for API transparency."
+
+    - id: task-182
+      name: REM Curation Step Integration
+      status: not_started
+      file: agent/tasks/milestone-36-by-curated-sort-mode/task-182-rem-curation-step.md
+      estimated_hours: 4
+      dependencies: [task-180, task-181]
+      description: "Step 5 in REM cycle: editorial pass, cluster quality, PageRank, composite scoring, Weaviate + Firestore writes."
+
+    - id: task-183
+      name: byCurated Sort Mode (MemoryService + SpaceService)
+      status: not_started
+      file: agent/tasks/milestone-36-by-curated-sort-mode/task-183-by-curated-sort-mode.md
+      estimated_hours: 4
+      dependencies: [task-179, task-181]
+      description: "Browse mode (native sort), search mode (hybrid re-rank), unscored interleaving (4:1), SpaceService cross-collection."
+
+    - id: task-184
+      name: Engagement Counters + SVC Client
+      status: not_started
+      file: agent/tasks/milestone-36-by-curated-sort-mode/task-184-engagement-counters-svc-client.md
+      estimated_hours: 3
+      dependencies: [task-179, task-183]
+      description: "click/share/comment increment methods, SVC client byCurated + engagement methods, OpenAPI updates, live e2e tests."
+
 documentation:
   design_documents: 27
-  milestone_documents: 36
+  milestone_documents: 37
   pattern_documents: 29
-  task_documents: 178
+  task_documents: 184
 
 progress:
   planning: 100
@@ -2910,8 +2974,8 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M35: SpaceService Sort Modes (3 tasks, ~0.5 weeks)
-  - Publish next version to npm after M35
+  - M36: byCurated Sort Mode (6 tasks, ~3 weeks)
+  - Publish v0.45.0 to npm (ghost fix + SVC client space sort modes)
   - Migrate agentbase.me from hand-written fetch to app client
 
 notes:

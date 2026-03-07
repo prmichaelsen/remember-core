@@ -147,7 +147,7 @@ describe('RemService Phase 0 Scoring', () => {
     await insertMemories(collectionName, 15);
 
     const service = createService();
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: collectionName });
 
     expect(result.phase0).toBeDefined();
     expect(result.phase0!.memories_scored).toBeGreaterThan(0);
@@ -159,7 +159,7 @@ describe('RemService Phase 0 Scoring', () => {
     await insertMemories(collectionName, 5, false);
 
     const service = createService({ scoring_batch_size: 3 });
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: collectionName });
 
     // Should score the 3 unscored memories first
     expect(result.phase0).toBeDefined();
@@ -170,7 +170,7 @@ describe('RemService Phase 0 Scoring', () => {
     await insertMemories(collectionName, 20);
 
     const service = createService({ scoring_batch_size: 3 });
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: collectionName });
 
     expect(result.phase0).toBeDefined();
     expect(result.phase0!.memories_scored).toBeLessThanOrEqual(3);
@@ -186,7 +186,7 @@ describe('RemService Phase 0 Scoring', () => {
       scoring_cost_cap: 2.5,
     });
 
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: collectionName });
 
     expect(result.phase0).toBeDefined();
     expect(result.phase0!.memories_scored).toBe(2);
@@ -201,7 +201,7 @@ describe('RemService Phase 0 Scoring', () => {
     emotionalScoringService = new EmotionalScoringService({ subLlm, logger });
 
     const service = createService({ scoring_batch_size: 1 });
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: collectionName });
 
     expect(result.phase0).toBeDefined();
     expect(result.phase0!.memories_scored).toBe(1);
@@ -214,7 +214,7 @@ describe('RemService Phase 0 Scoring', () => {
     await insertMemories(collectionName, 12);
 
     const service = createService({ scoring_batch_size: 1 });
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: collectionName });
 
     expect(result.phase0!.memories_scored).toBe(1);
 
@@ -235,7 +235,7 @@ describe('RemService Phase 0 Scoring', () => {
     await insertMemories(collectionName, 12);
 
     const service = createService({ scoring_batch_size: 1 });
-    await service.runCycle();
+    await service.runCycle({ collectionId: collectionName });
 
     const collection = mockClient.collections.get(collectionName);
     const objects = Array.from(collection._store.values());
@@ -251,7 +251,7 @@ describe('RemService Phase 0 Scoring', () => {
     await insertMemories(collectionName, 12, true);
 
     const service = createService({ scoring_batch_size: 1 });
-    await service.runCycle();
+    await service.runCycle({ collectionId: collectionName });
 
     const collection = mockClient.collections.get(collectionName);
     const objects = Array.from(collection._store.values());
@@ -282,7 +282,7 @@ describe('RemService Phase 0 Scoring', () => {
       logger,
     });
 
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: collectionName });
 
     // Phase 0 should have failures but relationship discovery should still run
     expect(result.phase0).toBeDefined();
@@ -295,7 +295,7 @@ describe('RemService Phase 0 Scoring', () => {
     await insertMemories(collectionName, 12, true);
 
     const service = createService({ scoring_batch_size: 5 });
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: collectionName });
 
     // Should still score some (the "outdated" tier)
     expect(result.phase0).toBeDefined();
@@ -314,7 +314,7 @@ describe('RemService Phase 0 Scoring', () => {
       // No emotionalScoringService or scoringContextService
     });
 
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: collectionName });
 
     expect(result.phase0).toBeUndefined();
   });
@@ -326,7 +326,7 @@ describe('RemService Phase 0 Scoring', () => {
     emotionalScoringService = new EmotionalScoringService({ subLlm, logger });
 
     const service = createService({ scoring_batch_size: 1 });
-    await service.runCycle();
+    await service.runCycle({ collectionId: collectionName });
 
     const collection = mockClient.collections.get(collectionName);
     const objects = Array.from(collection._store.values());

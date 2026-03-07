@@ -25,6 +25,7 @@ import { resolve } from 'node:path';
 // --- Parse flags ---
 const args = process.argv.slice(2);
 const isClean = args.includes('--clean');
+const skipWeaviate = args.includes('--skip-weaviate');
 const envFileArg = args.find(a => a.startsWith('--env-file='));
 const envFile = envFileArg ? envFileArg.split('=')[1] : '.env.e1';
 const envPath = resolve(process.cwd(), envFile);
@@ -489,19 +490,28 @@ function generateGhostMemories(ghostId: string, ghostIndex: number): SeedMemory[
 
 async function main(): Promise<void> {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`  E1 Seed Script ${isClean ? '[CLEAN + SEED]' : '[SEED]'}`);
+  const flags = [
+    isClean ? 'CLEAN + SEED' : 'SEED',
+    skipWeaviate ? 'SKIP WEAVIATE' : null,
+  ].filter(Boolean).join(' | ');
+  console.log(`  E1 Seed Script [${flags}]`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   const logger = createLogger('info');
 
-  // Initialize Weaviate
-  await initWeaviateClient({
-    url: process.env.WEAVIATE_REST_URL!,
-    apiKey: process.env.WEAVIATE_API_KEY,
-    openaiApiKey: process.env.OPENAI_API_KEY,
-  });
-  const weaviateClient = getWeaviateClient();
-  console.log('  Weaviate initialized');
+  // Initialize Weaviate (unless skipped)
+  let weaviateClient: Awaited<ReturnType<typeof initWeaviateClient>> | null = null;
+  if (!skipWeaviate) {
+    await initWeaviateClient({
+      url: process.env.WEAVIATE_REST_URL!,
+      apiKey: process.env.WEAVIATE_API_KEY,
+      openaiApiKey: process.env.OPENAI_API_KEY,
+    });
+    weaviateClient = getWeaviateClient();
+    console.log('  Weaviate initialized');
+  } else {
+    console.log('  Weaviate skipped (--skip-weaviate)');
+  }
 
   // Initialize Firestore
   initFirestore({
@@ -510,107 +520,109 @@ async function main(): Promise<void> {
   });
   console.log('  Firestore initialized\n');
 
-  // --- Clean if requested ---
-  if (isClean) {
-    console.log('  Cleaning existing test data...');
-    await deleteMemoryCollection(TEST_USER_ID);
-    console.log(`  Deleted ${USER_COLLECTION}`);
-    console.log('');
-  }
-
-  // --- Ensure collections exist ---
-  await ensureMemoryCollection(TEST_USER_ID);
-  console.log(`  Ensured ${USER_COLLECTION}`);
-  await ensurePublicCollection(weaviateClient);
-  console.log(`  Ensured ${SPACE_COLLECTION}`);
-
-  // --- Check idempotency ---
-  const userCol = getMemoryCollection(TEST_USER_ID);
-  const { totalCount } = await userCol.aggregate.overAll();
-  if (totalCount > 0 && !isClean) {
-    console.log(`\n  ${USER_COLLECTION} already has ${totalCount} memories.`);
-    console.log('  Use --clean to wipe and re-seed.\n');
-    return;
-  }
-
-  const memoryIndex = new MemoryIndexService(logger);
-
-  // --- Seed user collection ---
-  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  Seeding User Collection');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-
-  const userMemService = new MemoryService(
-    userCol,
-    TEST_USER_ID,
-    logger,
-    { memoryIndex },
-  );
-
-  let userMemCount = 0;
-  const baseDate = new Date('2026-02-01T10:00:00Z');
-
-  // Seed topic cluster memories
-  for (const cluster of TOPIC_CLUSTERS) {
-    for (const mem of cluster.memories) {
-      // Vary timestamps across days
-      const offset = userMemCount * 3 * 60 * 60 * 1000; // 3 hours apart
-      const createdAt = new Date(baseDate.getTime() + offset);
-
-      await userMemService.create({
-        content: mem.content,
-        title: mem.title,
-        type: cluster.contentType,
-        tags: [cluster.tag, `content_type:${cluster.contentType}`],
-        context_summary: `Seed memory about ${cluster.topic}`,
-      });
-      userMemCount++;
+  if (!skipWeaviate) {
+    // --- Clean if requested ---
+    if (isClean) {
+      console.log('  Cleaning existing test data...');
+      await deleteMemoryCollection(TEST_USER_ID);
+      console.log(`  Deleted ${USER_COLLECTION}`);
+      console.log('');
     }
-    console.log(`  Seeded ${cluster.memories.length} ${cluster.topic} memories`);
-  }
 
-  // Seed ghost memories
-  for (let i = 0; i < ALL_GHOST_IDS.length; i++) {
-    const ghostId = ALL_GHOST_IDS[i];
-    const ghostMemories = generateGhostMemories(ghostId, i);
-    for (const mem of ghostMemories) {
-      await userMemService.create({
-        content: mem.content,
-        title: mem.title,
-        type: mem.type,
-        tags: mem.tags,
-        context_summary: 'Ghost conversation memory',
-      });
-      userMemCount++;
+    // --- Ensure collections exist ---
+    await ensureMemoryCollection(TEST_USER_ID);
+    console.log(`  Ensured ${USER_COLLECTION}`);
+    await ensurePublicCollection(weaviateClient!);
+    console.log(`  Ensured ${SPACE_COLLECTION}`);
+
+    // --- Check idempotency ---
+    const userCol = getMemoryCollection(TEST_USER_ID);
+    const { totalCount } = await userCol.aggregate.overAll();
+    if (totalCount > 0 && !isClean) {
+      console.log(`\n  ${USER_COLLECTION} already has ${totalCount} memories.`);
+      console.log('  Use --clean to wipe and re-seed.');
+      console.log('  Continuing to Firestore seeding...\n');
+    } else {
+      const memoryIndex = new MemoryIndexService(logger);
+
+      // --- Seed user collection ---
+      console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('  Seeding User Collection');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+      const userMemService = new MemoryService(
+        userCol,
+        TEST_USER_ID,
+        logger,
+        { memoryIndex },
+      );
+
+      let userMemCount = 0;
+      const baseDate = new Date('2026-02-01T10:00:00Z');
+
+      // Seed topic cluster memories
+      for (const cluster of TOPIC_CLUSTERS) {
+        for (const mem of cluster.memories) {
+          // Vary timestamps across days
+          const offset = userMemCount * 3 * 60 * 60 * 1000; // 3 hours apart
+          const createdAt = new Date(baseDate.getTime() + offset);
+
+          await userMemService.create({
+            content: mem.content,
+            title: mem.title,
+            type: cluster.contentType,
+            tags: [cluster.tag, `content_type:${cluster.contentType}`],
+            context_summary: `Seed memory about ${cluster.topic}`,
+          });
+          userMemCount++;
+        }
+        console.log(`  Seeded ${cluster.memories.length} ${cluster.topic} memories`);
+      }
+
+      // Seed ghost memories
+      for (let i = 0; i < ALL_GHOST_IDS.length; i++) {
+        const ghostId = ALL_GHOST_IDS[i];
+        const ghostMemories = generateGhostMemories(ghostId, i);
+        for (const mem of ghostMemories) {
+          await userMemService.create({
+            content: mem.content,
+            title: mem.title,
+            type: mem.type,
+            tags: mem.tags,
+            context_summary: 'Ghost conversation memory',
+          });
+          userMemCount++;
+        }
+        console.log(`  Seeded ${ghostMemories.length} ghost memories for ${ghostId}`);
+      }
+
+      console.log(`\n  Total user memories seeded: ${userMemCount}`);
+
+      // --- Seed space collection ---
+      console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('  Seeding Space Collection');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+      const spaceCol = weaviateClient!.collections.get(SPACE_COLLECTION);
+      const spaceMemService = new MemoryService(
+        spaceCol,
+        TEST_USER_ID,
+        logger,
+        { memoryIndex },
+      );
+
+      for (const mem of SPACE_MEMORIES) {
+        await spaceMemService.create({
+          content: mem.content,
+          title: mem.title,
+          type: mem.type,
+          tags: [`content_type:${mem.type}`],
+          context_summary: 'Space memory seed data',
+        });
+      }
+      console.log(`  Seeded ${SPACE_MEMORIES.length} space memories`);
     }
-    console.log(`  Seeded ${ghostMemories.length} ghost memories for ${ghostId}`);
   }
-
-  console.log(`\n  Total user memories seeded: ${userMemCount}`);
-
-  // --- Seed space collection ---
-  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  Seeding Space Collection');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-
-  const spaceCol = weaviateClient.collections.get(SPACE_COLLECTION);
-  const spaceMemService = new MemoryService(
-    spaceCol,
-    TEST_USER_ID,
-    logger,
-    { memoryIndex },
-  );
-
-  for (const mem of SPACE_MEMORIES) {
-    await spaceMemService.create({
-      content: mem.content,
-      title: mem.title,
-      type: mem.type,
-      tags: [`content_type:${mem.type}`],
-      context_summary: 'Space memory seed data',
-    });
-  }
-  console.log(`  Seeded ${SPACE_MEMORIES.length} space memories`);
 
   // --- Backfill mood state ---
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -624,17 +636,23 @@ async function main(): Promise<void> {
   }
 
   // --- Summary ---
-  const finalCount = await userCol.aggregate.overAll();
-
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('  Seed Complete');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-  console.log(`  User collection:  ${USER_COLLECTION} (${finalCount.totalCount} memories)`);
-  console.log(`  Space collection: ${SPACE_COLLECTION} (${SPACE_MEMORIES.length} memories)`);
-  console.log(`  Topic clusters:   ${TOPIC_CLUSTERS.length}`);
+  if (!skipWeaviate) {
+    const userCol = getMemoryCollection(TEST_USER_ID);
+    const finalCount = await userCol.aggregate.overAll();
+    console.log(`  User collection:  ${USER_COLLECTION} (${finalCount.totalCount} memories)`);
+    console.log(`  Space collection: ${SPACE_COLLECTION} (${SPACE_MEMORIES.length} memories)`);
+    console.log(`  Topic clusters:   ${TOPIC_CLUSTERS.length}`);
+  } else {
+    console.log('  Weaviate:         skipped');
+  }
   console.log(`  Ghosts:           ${ALL_GHOST_IDS.length} (${GHOST_PERSONAL_IDS.length} personal + 1 space)`);
   console.log(`  Mood states:      ${ALL_GHOST_IDS.length} initialized`);
-  console.log(`  Near-duplicates:  yes (carbonara recipe pair, TypeScript generics pair)`);
+  if (!skipWeaviate) {
+    console.log(`  Near-duplicates:  yes (carbonara recipe pair, TypeScript generics pair)`);
+  }
   console.log('');
   console.log('  Next: test with remember-rem');
   console.log(`    npx tsx scripts/test-fanout.ts --collection=${USER_COLLECTION} --env-file=.env.prod.local --live`);

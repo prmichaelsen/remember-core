@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.47.0] - 2026-03-07
+
+### Changed
+- **BREAKING**: `RemService.runCycle()` now requires `{ collectionId: string }` parameter — removes deprecated cursor-based collection picking in favor of explicit collection targeting via scheduler/worker jobs
+- `RemJobWorker.execute()` now passes `collection_id` from job params to `runCycle()`, fixing bug where REM cycles ran against wrong collection
+- Remove `saveCursor()` calls from `runCycle()` — collection-level cursor is obsolete with job-based architecture (per-collection memory cursor via `saveCollectionState` is preserved)
+- Remove `getNextMemoryCollection` import from `rem.service.ts`
+
+### Added
+- `--skip-weaviate` flag for `seed:e1` script — seed only Firestore (mood state) without requiring Weaviate connection
+
+### Fixed
+- REM worker running against wrong Weaviate collection — `runCycle()` was using internal cursor instead of job's `collection_id`
+
 ## [0.46.0] - 2026-03-07
 
 ### Added

@@ -109,20 +109,6 @@ describe('RemService', () => {
     __store.clear();
   });
 
-  it('returns early when no collections exist', async () => {
-    const service = new RemService({
-      weaviateClient: mockClient as any,
-      relationshipServiceFactory: createRelationshipService,
-      stateStore,
-      haikuClient: createMockHaikuClient(),
-      logger,
-    });
-
-    const result = await service.runCycle();
-    expect(result.collection_id).toBeNull();
-    expect(result.memories_scanned).toBe(0);
-  });
-
   it('skips collections below min size', async () => {
     // Insert fewer memories than min_collection_size
     await insertMemories('Memory_users_alice', 5);
@@ -136,7 +122,7 @@ describe('RemService', () => {
       logger,
     });
 
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: 'Memory_users_alice' });
     expect(result.collection_id).toBe('Memory_users_alice');
     expect(result.memories_scanned).toBe(0);
   });
@@ -154,7 +140,7 @@ describe('RemService', () => {
       logger,
     });
 
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: 'Memory_users_bob' });
     expect(result.collection_id).toBe('Memory_users_bob');
     expect(result.memories_scanned).toBeGreaterThan(0);
   });
@@ -171,7 +157,7 @@ describe('RemService', () => {
       logger,
     });
 
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: 'Memory_users_carol' });
 
     // Check if any relationships were created with source=rem
     if (result.relationships_created > 0) {
@@ -201,57 +187,12 @@ describe('RemService', () => {
       logger,
     });
 
-    const result = await service.runCycle();
+    const result = await service.runCycle({ collectionId: 'Memory_users_dave' });
     expect(result.relationships_created).toBe(0);
     // skipped_by_haiku may be > 0 if clusters were found
   });
 
-  it('wraps around to first collection after last', async () => {
-    await insertMemories('Memory_users_alice', 5);
-    await insertMemories('Memory_users_bob', 5);
-
-    // Set cursor to last collection
-    const { setDocument } = require('../database/firestore/init.js');
-    const { BASE } = require('../database/firestore/paths.js');
-    await setDocument(`${BASE}.rem_state`, 'cursor', {
-      last_collection_id: 'Memory_users_bob',
-      last_run_at: new Date().toISOString(),
-    });
-
-    const service = new RemService({
-      weaviateClient: mockClient as any,
-      relationshipServiceFactory: createRelationshipService,
-      stateStore,
-      haikuClient: createMockHaikuClient(),
-      config: { min_collection_size: 100 }, // high threshold so it skips fast
-      logger,
-    });
-
-    const result = await service.runCycle();
-    // Should wrap to first collection (alice)
-    expect(result.collection_id).toBe('Memory_users_alice');
-  });
-
-  it('persists cursor after completion', async () => {
-    await insertMemories('Memory_users_eve', 60);
-
-    const service = new RemService({
-      weaviateClient: mockClient as any,
-      relationshipServiceFactory: createRelationshipService,
-      stateStore,
-      haikuClient: createMockHaikuClient(),
-      config: { min_collection_size: 10 },
-      logger,
-    });
-
-    await service.runCycle();
-
-    const cursor = await stateStore.getCursor();
-    expect(cursor).not.toBeNull();
-    expect(cursor?.last_collection_id).toBe('Memory_users_eve');
-  });
-
-  it('logs cursor state and collection selection', async () => {
+  it('logs collection selection and cycle progress', async () => {
     await insertMemories('Memory_users_frank', 60);
 
     const loggerSpy = {
@@ -270,15 +211,10 @@ describe('RemService', () => {
       logger: loggerSpy,
     });
 
-    await service.runCycle();
+    await service.runCycle({ collectionId: 'Memory_users_frank' });
 
     // Verify key logging calls
-    expect(loggerSpy.info).toHaveBeenCalledWith('REM cursor loaded', expect.any(Object));
-    expect(loggerSpy.info).toHaveBeenCalledWith('REM cycle starting', expect.objectContaining({
-      collectionId: 'Memory_users_frank',
-      advanced_from: expect.any(String),
-      is_same_collection: expect.any(Boolean),
-    }));
+    expect(loggerSpy.info).toHaveBeenCalledWith('REM cycle starting', { collectionId: 'Memory_users_frank' });
     expect(loggerSpy.info).toHaveBeenCalledWith('Starting cluster formation', expect.any(Object));
     expect(loggerSpy.info).toHaveBeenCalledWith('Cluster formation complete', expect.any(Object));
     expect(loggerSpy.info).toHaveBeenCalledWith('REM cycle complete', expect.objectContaining({
@@ -349,7 +285,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      const result = await service.runCycle();
+      const result = await service.runCycle({ collectionId: 'Memory_users_phase0' });
       expect(result.phase0).toBeDefined();
       expect(result.phase0!.memories_scored).toBe(5);
     });
@@ -366,7 +302,7 @@ describe('RemService', () => {
         logger,
       });
 
-      const result = await service.runCycle();
+      const result = await service.runCycle({ collectionId: 'Memory_users_nophase0' });
       expect(result.phase0).toBeUndefined();
     });
 
@@ -421,7 +357,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      const result = await service.runCycle();
+      const result = await service.runCycle({ collectionId: collName });
 
       // 3 unscored + 1 outdated = 4 (batch size)
       expect(result.phase0!.memories_scored).toBe(4);
@@ -446,7 +382,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      const result = await service.runCycle();
+      const result = await service.runCycle({ collectionId: 'Memory_users_batch' });
       expect(result.phase0!.memories_scored).toBeLessThanOrEqual(3);
     });
 
@@ -472,7 +408,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      const result = await service.runCycle();
+      const result = await service.runCycle({ collectionId: 'Memory_users_costcap' });
       expect(result.phase0!.memories_scored).toBe(2);
       expect(result.phase0!.stopped_by_cost_cap).toBe(true);
     });
@@ -494,7 +430,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      await service.runCycle();
+      await service.runCycle({ collectionId: 'Memory_users_dims' });
 
       // scoreAllDimensions returns all 31 dimensions
       const callResult = await scoringService.scoreAllDimensions.mock.results[0].value;
@@ -536,7 +472,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      await service.runCycle();
+      await service.runCycle({ collectionId: collName });
 
       // Check that composites were stored
       const updated = await collection.query.fetchObjectById(memId);
@@ -581,7 +517,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      await service.runCycle();
+      await service.runCycle({ collectionId: collName });
 
       const updated = await collection.query.fetchObjectById(memId);
       expect(updated!.properties.rem_touched_at).toBeDefined();
@@ -624,7 +560,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      await service.runCycle();
+      await service.runCycle({ collectionId: collName });
 
       const updated = await collection.query.fetchObjectById(memId);
       // Check that dimension scores were persisted
@@ -650,7 +586,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      const result = await service.runCycle();
+      const result = await service.runCycle({ collectionId: 'Memory_users_failsafe' });
 
       // Phase 0 had failures but cycle continued
       expect(result.phase0!.memories_skipped).toBeGreaterThan(0);
@@ -689,7 +625,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      const result = await service.runCycle();
+      const result = await service.runCycle({ collectionId: collName });
 
       // All memories already scored but still processed as "outdated"
       expect(result.phase0).toBeDefined();
@@ -718,7 +654,7 @@ describe('RemService', () => {
         scoringContextService: contextService as any,
       });
 
-      await service.runCycle();
+      await service.runCycle({ collectionId: 'Memory_users_ctx' });
 
       expect(contextService.gatherScoringContext).toHaveBeenCalled();
       expect(scoringService.scoreAllDimensions).toHaveBeenCalledWith(

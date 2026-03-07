@@ -14,7 +14,7 @@ import type { RemConfig } from './rem.types.js';
 import { DEFAULT_REM_CONFIG } from './rem.types.js';
 import type { RemStateStore } from './rem.state.js';
 import type { HaikuClient, HaikuValidationInput } from './rem.haiku.js';
-import { getNextMemoryCollection } from './rem.collections.js';
+
 import {
   selectCandidates,
   formClusters,
@@ -97,10 +97,11 @@ export class RemService {
     this.logger = deps.logger ?? { info() {}, warn() {}, error() {}, debug() {} } as any;
   }
 
-  async runCycle(): Promise<RunCycleResult> {
+  async runCycle(options: { collectionId: string }): Promise<RunCycleResult> {
     const start = Date.now();
+    const collectionId = options.collectionId;
     const stats: RunCycleResult = {
-      collection_id: null,
+      collection_id: collectionId,
       memories_scanned: 0,
       clusters_found: 0,
       relationships_created: 0,
@@ -111,26 +112,7 @@ export class RemService {
       duration_ms: 0,
     };
 
-    // 1. Pick next collection via cursor
-    const cursor = await this.deps.stateStore.getCursor();
-    this.logger.info?.('REM cursor loaded', {
-      last_collection_id: cursor?.last_collection_id ?? '(none)',
-      last_run_at: cursor?.last_run_at ?? '(never)',
-    });
-
-    const collectionId = await getNextMemoryCollection(cursor?.last_collection_id ?? null);
-    if (!collectionId) {
-      this.logger.info?.('No collections to process');
-      stats.duration_ms = Date.now() - start;
-      return stats;
-    }
-    stats.collection_id = collectionId;
-    this.logger.info?.('REM cycle starting', {
-      collectionId,
-      advanced_from: cursor?.last_collection_id ?? '(first run)',
-      is_same_collection: cursor?.last_collection_id === collectionId,
-      wrap_around: cursor?.last_collection_id && cursor.last_collection_id >= collectionId,
-    });
+    this.logger.info?.('REM cycle starting', { collectionId });
 
     // 3. Get collection handle
     const collection = this.deps.weaviateClient.collections.get(collectionId);
@@ -140,10 +122,6 @@ export class RemService {
     const objectCount = aggregate.totalCount ?? 0;
     if (objectCount < this.config.min_collection_size) {
       this.logger.info?.('Collection below min size, skipping', { collectionId, objectCount });
-      await this.deps.stateStore.saveCursor({
-        last_collection_id: collectionId,
-        last_run_at: new Date().toISOString(),
-      });
       stats.duration_ms = Date.now() - start;
       return stats;
     }
@@ -837,10 +815,6 @@ export class RemService {
 
   private async advanceCursor(collectionId: string, memoryCursor: string) {
     const now = new Date().toISOString();
-    await this.deps.stateStore.saveCursor({
-      last_collection_id: collectionId,
-      last_run_at: now,
-    });
     await this.deps.stateStore.saveCollectionState({
       collection_id: collectionId,
       last_processed_at: now,

@@ -72,8 +72,8 @@ export class RemJobWorker {
         return;
       }
 
-      // Run the full REM cycle
-      const result: RunCycleResult = await this.remService.runCycle();
+      // Run the full REM cycle against the job's collection
+      const result: RunCycleResult = await this.remService.runCycle({ collectionId: collection_id });
 
       // Mark all steps completed (runCycle is monolithic)
       const now = new Date().toISOString();

@@ -198,7 +198,7 @@ export async function generateObservation(
   conflict: ConflictPair,
 ): Promise<string> {
   const prompt = buildReconciliationPrompt(conflict);
-  const response = await subLlm.score(prompt);
+  const response = await subLlm.score(prompt, { maxTokens: 256 });
   return response.trim();
 }
 

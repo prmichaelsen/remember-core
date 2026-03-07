@@ -47,7 +47,7 @@ export interface ScoringResult {
 }
 
 export interface SubLlmProvider {
-  score(prompt: string): Promise<string>;
+  score(prompt: string, options?: { maxTokens?: number }): Promise<string>;
 }
 
 // ─── Dimension Registry ──────────────────────────────────────────────────
@@ -591,7 +591,7 @@ export function createAnthropicSubLlm(options: {
   const model = options.model ?? 'claude-haiku-4-5-20251001';
 
   return {
-    async score(prompt: string): Promise<string> {
+    async score(prompt: string, opts?: { maxTokens?: number }): Promise<string> {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -601,7 +601,7 @@ export function createAnthropicSubLlm(options: {
         },
         body: JSON.stringify({
           model,
-          max_tokens: 16,
+          max_tokens: opts?.maxTokens ?? 16,
           messages: [{ role: 'user', content: prompt }],
         }),
       });

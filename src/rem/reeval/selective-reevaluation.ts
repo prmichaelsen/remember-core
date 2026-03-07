@@ -79,7 +79,7 @@ export class SelectiveReEvaluationService {
         context,
       );
 
-      const response = await this.subLlm.score(prompt);
+      const response = await this.subLlm.score(prompt, { maxTokens: 128 });
       const parsed = JSON.parse(response.trim());
 
       if (!Array.isArray(parsed)) {

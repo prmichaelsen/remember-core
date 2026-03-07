@@ -85,7 +85,7 @@ ${neighborSection}
 5. **Merge candidates** — If a neighbor is similar but NOT identical (could be merged/consolidated), list it
 6. **Contradictions** — If the memory contradicts any neighbor, describe the contradiction
 
-Return ONLY valid JSON (no markdown fences):
+CRITICAL: Return ONLY the raw JSON object. Do NOT wrap in markdown fences (\`\`\`json). Do NOT include any text before or after the JSON.
 {"genre":"...","qualities":["..."],"thematic_groups":["..."],"is_duplicate":false,"duplicate_of":null,"merge_candidates":[],"contradictions":[]}`;
 }
 
@@ -189,7 +189,7 @@ export async function runClassificationPipeline(
         neighbors,
       );
 
-      const rawResponse = await subLlm.score(prompt);
+      const rawResponse = await subLlm.score(prompt, { maxTokens: 512 });
       const classification = parseClassificationResponse(rawResponse);
 
       if (!classification) {

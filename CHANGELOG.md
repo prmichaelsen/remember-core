@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.47.1] - 2026-03-07
+
+### Fixed
+- **CRITICAL**: Sub-LLM `max_tokens` was hardcoded to 16 for all callers, truncating JSON/text responses from classification, narration, abstraction, reconciliation, and re-evaluation. Add `maxTokens` option to `SubLlmProvider.score()` with caller-appropriate budgets: classification (512), abstraction (512), narration (256), reconciliation (256), re-evaluation (128), emotional scoring (16, unchanged)
+- Harden classification prompt — explicit "Do NOT wrap in markdown fences" instruction
+
 ## [0.47.0] - 2026-03-07
 
 ### Changed

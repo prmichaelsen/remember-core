@@ -63,7 +63,7 @@ Respond with ONLY valid JSON (no markdown, no explanation):
 
   let raw: string;
   try {
-    raw = await subLlm.score(prompt);
+    raw = await subLlm.score(prompt, { maxTokens: 256 });
   } catch {
     return { ...FALLBACK_DERIVATION };
   }

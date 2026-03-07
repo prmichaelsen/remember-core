@@ -156,7 +156,7 @@ export async function synthesizeAbstraction(
 ): Promise<SynthesisResult | null> {
   try {
     const prompt = buildAbstractionPrompt(candidate);
-    const response = await subLlm.score(prompt);
+    const response = await subLlm.score(prompt, { maxTokens: 512 });
     const parsed = JSON.parse(response.trim());
 
     if (!parsed.content || !parsed.observation || !parsed.abstraction_type) {

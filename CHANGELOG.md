@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.39.0] - 2026-03-07
+
+### Added
+- **REM Cycle Phase 0 Scoring** — emotional scoring runs as Phase 0 before relationship discovery. Selects unscored memories first (`rem_touched_at` is null), then outdated ones. Configurable `scoring_batch_size`, `scoring_cost_cap` (independent from clar-17's $50 cap), and `scoring_cost_per_memory`. Gathers context, scores all 31 dimensions via Haiku, computes composites, updates REM metadata, persists in single Weaviate update. Phase 0 failures do not block subsequent phases.
+- 12 new Phase 0 tests covering priority selection, batch limiting, cost cap, composite computation, metadata tracking, persistence, failure isolation, and context pass-through
+
 ## [0.38.1] - 2026-03-07
 
 ### Added

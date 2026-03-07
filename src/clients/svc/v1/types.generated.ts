@@ -126,6 +126,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/by-recommendation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Personalized memory feed sorted by similarity to user preference centroid */
+        post: operations["memoriesByRecommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/memories/search": {
         parameters: {
             query?: never;
@@ -500,6 +517,23 @@ export interface paths {
         put?: never;
         /** Browse or search spaces with discovery interleaving (rated + unrated at 4:1 ratio) */
         post: operations["spacesByDiscovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/spaces/by-recommendation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Personalized space memory feed sorted by similarity to user preference centroid */
+        post: operations["spacesByRecommendation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -957,6 +991,83 @@ export interface components {
             } & {
                 [key: string]: unknown;
             })[];
+            total: number;
+            offset: number;
+            limit: number;
+        };
+        RecommendationModeRequest: {
+            /** @description User ID for preference centroid computation */
+            userId: string;
+            /** @description Optional search query to narrow candidates */
+            query?: string;
+            /** @default 20 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            filters?: components["schemas"]["SearchFilters"];
+            deleted_filter?: components["schemas"]["DeletedFilter"];
+            ghost_context?: components["schemas"]["GhostSearchContext"];
+        };
+        RecommendationModeResult: {
+            memories: ({
+                /** @description Similarity to user preference centroid (0-100) */
+                similarity_pct?: number;
+            } & {
+                [key: string]: unknown;
+            })[];
+            /** @description Number of highly-rated memories in the centroid */
+            profileSize: number;
+            /** @description True when user has fewer than 5 highly-rated memories */
+            insufficientData: boolean;
+            /**
+             * @description Set when falling back to byDiscovery due to insufficient data
+             * @enum {string}
+             */
+            fallback_sort_mode?: "byDiscovery";
+            total: number;
+            offset: number;
+            limit: number;
+        };
+        RecommendationSpaceInput: {
+            /** @description User ID for preference centroid computation */
+            userId: string;
+            /** @description Optional search query to narrow candidates */
+            query?: string;
+            spaces?: string[];
+            groups?: string[];
+            content_type?: string;
+            tags?: string[];
+            min_weight?: number;
+            max_weight?: number;
+            /** Format: date-time */
+            date_from?: string;
+            /** Format: date-time */
+            date_to?: string;
+            moderation_filter?: components["schemas"]["ModerationFilter"];
+            include_comments?: boolean;
+            /** @default 20 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+        };
+        RecommendationSpaceResult: {
+            spaces_searched: string[] | "all_public";
+            groups_searched: string[];
+            memories: ({
+                /** @description Similarity to user preference centroid (0-100) */
+                similarity_pct?: number;
+            } & {
+                [key: string]: unknown;
+            })[];
+            /** @description Number of highly-rated memories in the centroid */
+            profileSize: number;
+            /** @description True when user has fewer than 5 highly-rated memories */
+            insufficientData: boolean;
+            /**
+             * @description Set when falling back to byDiscovery due to insufficient data
+             * @enum {string}
+             */
+            fallback_sort_mode?: "byDiscovery";
             total: number;
             offset: number;
             limit: number;
@@ -1740,6 +1851,31 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
         };
     };
+    memoriesByRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Recommendation-ranked memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
     searchMemories: {
         parameters: {
             query?: never;
@@ -2295,6 +2431,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DiscoverySpaceResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    spacesByRecommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationSpaceInput"];
+            };
+        };
+        responses: {
+            /** @description Recommendation-ranked space memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationSpaceResult"];
                 };
             };
             400: components["responses"]["ValidationError"];

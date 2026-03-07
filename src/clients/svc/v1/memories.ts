@@ -32,6 +32,7 @@ export interface MemoriesResource {
   getMyRating(userId: string, memoryId: string): Promise<SdkResponse<unknown>>;
   byRating(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byDiscovery(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byRecommendation(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
 }
 
 export function createMemoriesResource(http: HttpClient): MemoriesResource {
@@ -92,6 +93,9 @@ export function createMemoriesResource(http: HttpClient): MemoriesResource {
     },
     byDiscovery(userId, input) {
       return http.request('POST', '/api/svc/v1/memories/by-discovery', { userId, body: input });
+    },
+    byRecommendation(userId, input) {
+      return http.request('POST', '/api/svc/v1/memories/by-recommendation', { userId, body: input });
     },
   };
 }

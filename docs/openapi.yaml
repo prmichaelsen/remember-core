@@ -270,6 +270,27 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/by-recommendation:
+    post:
+      tags: [memories]
+      summary: Personalized memory feed sorted by similarity to user preference centroid
+      operationId: memoriesByRecommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationModeRequest'
+      responses:
+        '200':
+          description: Recommendation-ranked memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationModeResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /api/svc/v1/memories/search:
     post:
       tags: [memories]
@@ -795,6 +816,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscoverySpaceResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/spaces/by-recommendation:
+    post:
+      tags: [spaces]
+      summary: Personalized space memory feed sorted by similarity to user preference centroid
+      operationId: spacesByRecommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationSpaceInput'
+      responses:
+        '200':
+          description: Recommendation-ranked space memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationSpaceResult'
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -1843,6 +1887,155 @@ components:
               is_discovery:
                 type: boolean
             additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    RecommendationModeRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+          description: User ID for preference centroid computation
+        query:
+          type: string
+          description: Optional search query to narrow candidates
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    RecommendationModeResult:
+      type: object
+      required: [memories, profileSize, insufficientData, total, offset, limit]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            properties:
+              similarity_pct:
+                type: number
+                minimum: 0
+                maximum: 100
+                description: Similarity to user preference centroid (0-100)
+            additionalProperties: true
+        profileSize:
+          type: integer
+          description: Number of highly-rated memories in the centroid
+        insufficientData:
+          type: boolean
+          description: True when user has fewer than 5 highly-rated memories
+        fallback_sort_mode:
+          type: string
+          enum: [byDiscovery]
+          description: Set when falling back to byDiscovery due to insufficient data
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    RecommendationSpaceInput:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+          description: User ID for preference centroid computation
+        query:
+          type: string
+          description: Optional search query to narrow candidates
+        spaces:
+          type: array
+          items:
+            type: string
+        groups:
+          type: array
+          items:
+            type: string
+        content_type:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        min_weight:
+          type: number
+        max_weight:
+          type: number
+        date_from:
+          type: string
+          format: date-time
+        date_to:
+          type: string
+          format: date-time
+        moderation_filter:
+          $ref: '#/components/schemas/ModerationFilter'
+        include_comments:
+          type: boolean
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+
+    RecommendationSpaceResult:
+      type: object
+      required: [spaces_searched, groups_searched, memories, profileSize, insufficientData, total, offset, limit]
+      properties:
+        spaces_searched:
+          oneOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+              enum: [all_public]
+        groups_searched:
+          type: array
+          items:
+            type: string
+        memories:
+          type: array
+          items:
+            type: object
+            properties:
+              similarity_pct:
+                type: number
+                minimum: 0
+                maximum: 100
+                description: Similarity to user preference centroid (0-100)
+            additionalProperties: true
+        profileSize:
+          type: integer
+          description: Number of highly-rated memories in the centroid
+        insufficientData:
+          type: boolean
+          description: True when user has fewer than 5 highly-rated memories
+        fallback_sort_mode:
+          type: string
+          enum: [byDiscovery]
+          description: Set when falling back to byDiscovery due to insufficient data
         total:
           type: integer
         offset:

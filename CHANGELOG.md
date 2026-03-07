@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.36.0] - 2026-03-07
+
+### Added
+- **byRecommendation sort mode** — personalized memory search using vector similarity to user's rating history. Builds preference centroid from 4-5 star ratings, subtracts weighted negative signal from 1-2 star ratings, uses nearVector search. Falls back to byDiscovery when insufficient data (< 5 high ratings).
+- `RecommendationService` — centroid computation, Firestore caching with invalidation on new 4-5 star ratings, cross-collection embedding fetch
+- `MemoryService.byRecommendation()` — nearVector search with centroid, similarity_pct per result, already-rated + own-memory exclusion, min similarity threshold (0.3)
+- `RecommendationModeRequest`, `RecommendationModeResult`, `RecommendedMemory` types
+
 ## [0.35.6] - 2026-03-06
 
 ### Fixed

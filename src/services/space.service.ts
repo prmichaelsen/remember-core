@@ -1341,6 +1341,184 @@ export class SpaceService {
     };
   }
 
+  // ── By Recommendation (personalized via preference centroid for spaces/groups) ────
+
+  async byRecommendation(input: RecommendationSpaceInput, authContext?: AuthContext): Promise<RecommendationSpaceResult> {
+    if (!this.recommendationService) {
+      throw new Error('RecommendationService is required for byRecommendation sort mode');
+    }
+
+    const spaces = input.spaces || [];
+    const groups = input.groups || [];
+    const limit = input.limit ?? 20;
+    const offset = input.offset ?? 0;
+
+    // Validate space IDs
+    if (spaces.length > 0) {
+      const invalidSpaces = spaces.filter((s) => !isValidSpaceId(s));
+      if (invalidSpaces.length > 0) {
+        throw new ValidationError(`Invalid space IDs: ${invalidSpaces.join(', ')}`, { spaces: invalidSpaces });
+      }
+    }
+
+    // Validate group IDs
+    if (groups.length > 0) {
+      const invalidGroups = groups.filter((g) => !g || g.includes('.') || g.trim() === '');
+      if (invalidGroups.length > 0) {
+        throw new ValidationError('Group IDs cannot be empty or contain dots');
+      }
+    }
+
+    // Permission check for non-approved moderation filters
+    const moderationFilter = input.moderation_filter || 'approved';
+    if (moderationFilter !== 'approved') {
+      for (const groupId of groups) {
+        if (!canModerate(authContext, groupId)) {
+          throw new ForbiddenError(`Moderator access required to view ${moderationFilter} memories in group ${groupId}`);
+        }
+      }
+      if ((spaces.length > 0 || groups.length === 0) && !canModerateAny(authContext)) {
+        throw new ForbiddenError(`Moderator access required to view ${moderationFilter} memories in spaces`);
+      }
+    }
+
+    // 1. Get or compute centroid
+    const centroidResult = await this.recommendationService.getOrComputeCentroid(input.userId);
+
+    // 2. Fallback to byDiscovery if insufficient data
+    if (centroidResult.insufficientData || !centroidResult.centroid) {
+      const discoveryResults = await this.byDiscovery({
+        query: input.query,
+        spaces: input.spaces,
+        groups: input.groups,
+        content_type: input.content_type,
+        tags: input.tags,
+        min_weight: input.min_weight,
+        max_weight: input.max_weight,
+        date_from: input.date_from,
+        date_to: input.date_to,
+        moderation_filter: input.moderation_filter,
+        include_comments: input.include_comments,
+        limit,
+        offset,
+        dedupe: input.dedupe,
+      });
+
+      return {
+        spaces_searched: discoveryResults.spaces_searched,
+        groups_searched: discoveryResults.groups_searched,
+        memories: discoveryResults.memories.map((m) => ({
+          ...m,
+          similarity_pct: 0,
+        })),
+        profileSize: 0,
+        insufficientData: true,
+        fallback_sort_mode: 'byDiscovery',
+        total: discoveryResults.total,
+        offset: discoveryResults.offset,
+        limit: discoveryResults.limit,
+      };
+    }
+
+    // 3. Build exclusion list: already-rated memory IDs
+    const ratedIds = await this.recommendationService.getAllUserRatedIds(input.userId);
+    const ratedIdSet = new Set(ratedIds);
+
+    // 4. Search each collection with nearVector
+    const searchInput: SearchSpaceInput = {
+      query: '',
+      spaces: input.spaces,
+      groups: input.groups,
+      content_type: input.content_type,
+      tags: input.tags,
+      min_weight: input.min_weight,
+      max_weight: input.max_weight,
+      date_from: input.date_from,
+      date_to: input.date_to,
+      moderation_filter: input.moderation_filter,
+      include_comments: input.include_comments,
+    };
+
+    const fetchLimit = (limit + offset) + ratedIds.length;
+    const allResults: any[] = [];
+
+    const searchCollection = async (collection: any, baseFilters: any[]) => {
+      const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
+      const opts: any = {
+        limit: fetchLimit,
+        returnMetadata: ['distance'],
+      };
+      if (combined) opts.filters = combined;
+
+      const result = await collection.query.nearVector(centroidResult.centroid!.vector, opts);
+      return result.objects;
+    };
+
+    // Search spaces collection
+    if (spaces.length > 0 || groups.length === 0) {
+      await ensurePublicCollection(this.weaviateClient);
+      const spacesCollectionName = getCollectionName(CollectionType.SPACES);
+      const spacesCollection = this.weaviateClient.collections.get(spacesCollectionName);
+      const baseFilters = this.buildBaseFilters(spacesCollection, searchInput);
+
+      if (spaces.length > 0) {
+        baseFilters.push(spacesCollection.filter.byProperty('space_ids').containsAny(spaces));
+      }
+
+      allResults.push(...tagWithSource(await searchCollection(spacesCollection, baseFilters), spacesCollectionName));
+    }
+
+    // Search group collections
+    for (const groupId of groups) {
+      const groupCollectionName = getCollectionName(CollectionType.GROUPS, groupId);
+      const exists = await this.weaviateClient.collections.exists(groupCollectionName);
+      if (!exists) continue;
+
+      const groupCollection = this.weaviateClient.collections.get(groupCollectionName);
+      const baseFilters = this.buildBaseFilters(groupCollection, searchInput);
+
+      allResults.push(...tagWithSource(await searchCollection(groupCollection, baseFilters), groupCollectionName));
+    }
+
+    // 5. Deduplicate by source ID (cross-collection dedup), exclude rated, apply similarity threshold
+    const deduped = dedupeBySourceId(allResults, input.dedupe);
+    const MIN_SIMILARITY_THRESHOLD = MIN_SIMILARITY * 100;
+    const memories: RecommendedSpaceMemory[] = [];
+
+    // Sort by distance (ascending = most similar first)
+    deduped.sort((a: any, b: any) => (a.metadata?.distance ?? 1) - (b.metadata?.distance ?? 1));
+
+    for (const obj of deduped) {
+      if (ratedIdSet.has(obj.uuid)) continue;
+
+      const distance = obj.metadata?.distance ?? 1;
+      const similarityPct = Math.round((1 - distance) * 100);
+      if (similarityPct < MIN_SIMILARITY_THRESHOLD) continue;
+
+      memories.push({
+        id: obj.uuid,
+        ...obj.properties,
+        ...(obj._also_in?.length ? { also_in: obj._also_in } : {}),
+        similarity_pct: similarityPct,
+      });
+    }
+
+    // 6. Apply pagination
+    const paginated = memories.slice(offset, offset + limit);
+    const isAllPublic = spaces.length === 0 && groups.length === 0;
+
+    return {
+      spaces_searched: isAllPublic ? 'all_public' : spaces,
+      groups_searched: groups,
+      memories: paginated,
+      profileSize: centroidResult.centroid!.profileSize,
+      insufficientData: false,
+      total: paginated.length,
+      offset,
+      limit,
+    };
+  }
+
   // ── Private: Build Base Filters ─────────────────────────────────────
 
   private buildBaseFilters(collection: any, input: SearchSpaceInput): any[] {

@@ -1,6 +1,6 @@
 project:
   name: remember-core
-  version: 0.35.6
+  version: 0.36.0
   started: 2026-02-27
   status: in_progress
   current_milestone: M27
@@ -427,9 +427,9 @@ milestones:
   - id: M27
     name: byRecommendation Sort Mode
     status: in_progress
-    progress: 43
+    progress: 71
     estimated_weeks: 1.5
-    tasks_completed: 3
+    tasks_completed: 5
     tasks_total: 7
     notes: |
       Personalized sort mode using vector similarity to user's rating history.
@@ -2100,14 +2100,16 @@ tasks:
       description: "nearVector search using centroid, exclusion filters, similarity threshold, byDiscovery fallback."
     - id: task-141
       name: Wire into SpaceService and Search APIs
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-141-wire-space-service-and-apis.md
       estimated_hours: 1-2
       dependencies: [task-140]
       description: "Add byRecommendation to SpaceService search/query and REST endpoints."
     - id: task-142
       name: SVC Client, OpenAPI, and Generated Types
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-142-svc-client-openapi-types.md
       estimated_hours: 1-2
       dependencies: [task-140, task-141]

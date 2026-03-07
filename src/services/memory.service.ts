@@ -289,6 +289,20 @@ export interface BroadModeResult {
   limit: number;
 }
 
+// ── byRandom Sort Mode ────────────────────────────────────────────────
+
+export interface RandomModeRequest {
+  limit?: number;
+  filters?: SearchFilters;
+  deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
+}
+
+export interface RandomModeResult {
+  results: Record<string, unknown>[];
+  total_pool_size: number;
+}
+
 export interface UpdateMemoryInput {
   memory_id: string;
   content?: string;
@@ -587,6 +601,9 @@ export class MemoryService {
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
+    }
 
     // Use BM25 for wildcard queries since vectorizing '*' is meaningless
     // and fails on collections without a vectorizer configured.
@@ -651,6 +668,9 @@ export class MemoryService {
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
+    }
 
     const executeQuery = async (useDeletedFilter: boolean) => {
       const deletedFilter = useDeletedFilter
@@ -708,6 +728,9 @@ export class MemoryService {
     }
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
     }
 
     // Min relationship count filter
@@ -776,6 +799,9 @@ export class MemoryService {
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
+    }
 
     const executeQuery = async (useDeletedFilter: boolean) => {
       const deletedFilter = useDeletedFilter
@@ -831,6 +857,9 @@ export class MemoryService {
     }
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
     }
 
     const buildBaseFilters = (useDeletedFilter: boolean) => {
@@ -955,6 +984,9 @@ export class MemoryService {
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
+    }
 
     // Exclude user's own memories
     const authorFilter = this.collection.filter.byProperty('user_id').notEqual(input.userId);
@@ -1033,6 +1065,9 @@ export class MemoryService {
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
+    }
 
     const executeQuery = async (useDeletedFilter: boolean) => {
       const deletedFilter = useDeletedFilter
@@ -1090,6 +1125,9 @@ export class MemoryService {
     }
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
     }
 
     const executeQuery = async (useDeletedFilter: boolean) => {
@@ -1150,6 +1188,71 @@ export class MemoryService {
     };
   }
 
+  // ── By Random (random sampling) ──────────────────────────────────────
+
+  async byRandom(input: RandomModeRequest): Promise<RandomModeResult> {
+    const limit = input.limit ?? 10;
+    const POOL_FETCH_LIMIT = 1000;
+
+    const memoryFilters = buildMemoryOnlyFilters(this.collection, input.filters);
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
+    }
+
+    const executeQuery = async (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+
+      const combinedFilters = combineFiltersWithAnd(
+        [deletedFilter, memoryFilters, ...ghostFilters].filter((f) => f !== null),
+      );
+
+      const queryOptions: any = { limit: POOL_FETCH_LIMIT };
+      if (combinedFilters) {
+        queryOptions.filters = combinedFilters;
+      }
+
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    const results = await this.retryWithoutDeletedFilter(executeQuery);
+
+    // Filter to memory docs only
+    const pool = results.objects.filter((obj: any) => obj.properties.doc_type === 'memory');
+    const totalPoolSize = pool.length;
+
+    if (totalPoolSize === 0) {
+      return { results: [], total_pool_size: 0 };
+    }
+
+    // Random sampling using Fisher-Yates partial shuffle
+    const sampleSize = Math.min(limit, totalPoolSize);
+    const indices = Array.from({ length: totalPoolSize }, (_, i) => i);
+    for (let i = totalPoolSize - 1; i > totalPoolSize - 1 - sampleSize && i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+
+    const selectedIndices = indices.slice(totalPoolSize - sampleSize);
+    const memories: Record<string, unknown>[] = selectedIndices.map((idx) => {
+      const obj = pool[idx];
+      return normalizeDoc({ id: obj.uuid, ...obj.properties });
+    });
+
+    return {
+      results: memories,
+      total_pool_size: totalPoolSize,
+    };
+  }
+
   // ── Find Similar (vector) ──────────────────────────────────────────
 
   async findSimilar(input: FindSimilarInput): Promise<FindSimilarResult> {
@@ -1166,6 +1269,9 @@ export class MemoryService {
     }
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
     }
 
     let memoryObj: any = null;
@@ -1232,6 +1338,9 @@ export class MemoryService {
     }
     if (!input.ghost_context?.include_ghost_content) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+    if (!input.filters?.types?.includes('rem')) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
     }
 
     const results = await this.retryWithoutDeletedFilter(async (useDeletedFilter) => {

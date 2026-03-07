@@ -486,10 +486,11 @@ milestones:
 
   - id: M31
     name: byBroad & byRandom Sort Modes
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
+    completed: 2026-03-07
     estimated_weeks: 0.5
-    tasks_completed: 0
+    tasks_completed: 3
     tasks_total: 3
     dependencies: [M18]
     notes: |
@@ -2280,21 +2281,24 @@ tasks:
   milestone_31:
     - id: task-161
       name: byBroad Core Method
-      status: not_started
+      status: completed
+      completed: 2026-03-07
       file: agent/tasks/milestone-31-by-broad-by-random/task-161-by-broad-core-method.md
       estimated_hours: 3
       description: "Truncated content response (head/mid/tail ~100 chars). Default limit 50."
 
     - id: task-162
       name: byRandom Core Method
-      status: not_started
+      status: completed
+      completed: 2026-03-07
       file: agent/tasks/milestone-31-by-broad-by-random/task-162-by-random-core-method.md
       estimated_hours: 3
       description: "Random sampling via Firestore memory index. floor(N * rand()) offsets, batch-fetch."
 
     - id: task-163
       name: SVC Client, OpenAPI, Unit Tests
-      status: not_started
+      status: completed
+      completed: 2026-03-07
       file: agent/tasks/milestone-31-by-broad-by-random/task-163-svc-client-openapi-tests.md
       estimated_hours: 2
       dependencies: [task-161, task-162]
@@ -2303,7 +2307,8 @@ tasks:
   milestone_32:
     - id: task-164
       name: Firestore Mood Schema + MoodService CRUD
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-32-core-mood-state/task-164-firestore-mood-schema-service.md
       estimated_hours: 3
       description: "CoreMoodMemory type, MoodService, Firestore at users/{user_id}/core/mood."

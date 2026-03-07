@@ -160,6 +160,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/by-broad": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fetch memories with truncated content for scan-and-drill-in workflows */
+        post: operations["memoriesByBroad"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/memories/by-random": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Random sampling of memories for serendipitous rediscovery */
+        post: operations["memoriesByRandom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/memories/search": {
         parameters: {
             query?: never;
@@ -1112,6 +1146,61 @@ export interface components {
             /** @enum {string} */
             sort_direction: "asc" | "desc";
         };
+        BroadModeRequest: {
+            /** @description Optional search query */
+            query?: string;
+            /**
+             * @default desc
+             * @enum {string}
+             */
+            sort_order: "asc" | "desc";
+            /** @default 50 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+            filters?: components["schemas"]["SearchFilters"];
+            deleted_filter?: components["schemas"]["DeletedFilter"];
+            ghost_context?: components["schemas"]["GhostSearchContext"];
+        };
+        BroadModeResult: {
+            results: components["schemas"]["BroadSearchResult"][];
+            total: number;
+            offset: number;
+            limit: number;
+        };
+        BroadSearchResult: {
+            /** Format: uuid */
+            memory_id: string;
+            title?: string;
+            content_type: string;
+            /** @description First ~100 characters of content */
+            content_head: string;
+            /** @description ~100 characters from the middle of content */
+            content_mid: string;
+            /** @description Last ~100 characters of content */
+            content_tail: string;
+            /** Format: date-time */
+            created_at: string;
+            tags: string[];
+            weight: number;
+            total_significance?: number | null;
+            feel_significance?: number | null;
+            functional_significance?: number | null;
+        };
+        RandomModeRequest: {
+            /** @default 10 */
+            limit: number;
+            filters?: components["schemas"]["SearchFilters"];
+            deleted_filter?: components["schemas"]["DeletedFilter"];
+            ghost_context?: components["schemas"]["GhostSearchContext"];
+        };
+        RandomModeResult: {
+            results: {
+                [key: string]: unknown;
+            }[];
+            /** @description Total number of memories in the random pool before sampling */
+            total_pool_size: number;
+        };
         RecommendationSpaceInput: {
             /** @description User ID for preference centroid computation */
             userId: string;
@@ -1980,6 +2069,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PropertyModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesByBroad: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Broad search results with truncated content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BroadModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesByRandom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RandomModeRequest"];
+            };
+        };
+        responses: {
+            /** @description Randomly sampled memories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RandomModeResult"];
                 };
             };
             401: components["responses"]["UnauthorizedError"];

@@ -312,6 +312,48 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/by-broad:
+    post:
+      tags: [memories]
+      summary: Fetch memories with truncated content for scan-and-drill-in workflows
+      operationId: memoriesByBroad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadModeRequest'
+      responses:
+        '200':
+          description: Broad search results with truncated content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadModeResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/memories/by-random:
+    post:
+      tags: [memories]
+      summary: Random sampling of memories for serendipitous rediscovery
+      operationId: memoriesByRandom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RandomModeRequest'
+      responses:
+        '200':
+          description: Randomly sampled memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RandomModeResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /api/svc/v1/memories/search:
     post:
       tags: [memories]
@@ -2158,6 +2200,114 @@ components:
         sort_direction:
           type: string
           enum: [asc, desc]
+
+    BroadModeRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Optional search query
+        sort_order:
+          type: string
+          enum: [asc, desc]
+          default: desc
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    BroadModeResult:
+      type: object
+      required: [results, total, offset, limit]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BroadSearchResult'
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    BroadSearchResult:
+      type: object
+      required: [memory_id, content_type, content_head, content_mid, content_tail, created_at, tags, weight]
+      properties:
+        memory_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content_type:
+          type: string
+        content_head:
+          type: string
+          description: First ~100 characters of content
+        content_mid:
+          type: string
+          description: ~100 characters from the middle of content
+        content_tail:
+          type: string
+          description: Last ~100 characters of content
+        created_at:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+        weight:
+          type: number
+        total_significance:
+          type: number
+          nullable: true
+        feel_significance:
+          type: number
+          nullable: true
+        functional_significance:
+          type: number
+          nullable: true
+
+    RandomModeRequest:
+      type: object
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    RandomModeResult:
+      type: object
+      required: [results, total_pool_size]
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total_pool_size:
+          type: integer
+          description: Total number of memories in the random pool before sampling
 
     RecommendationSpaceInput:
       type: object

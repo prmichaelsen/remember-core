@@ -61,6 +61,8 @@ export {
   type BroadSearchResult,
   type BroadModeRequest,
   type BroadModeResult,
+  type RandomModeRequest,
+  type RandomModeResult,
 } from './memory.service.js';
 
 export {
@@ -355,3 +357,14 @@ export {
   createModerationClient,
   createMockModerationClient,
 } from './moderation.service.js';
+
+// Core Mood State
+export {
+  MoodService,
+  NEUTRAL_STATE,
+  createInitialMood,
+  type CoreMoodMemory,
+  type MoodState,
+  type Pressure,
+  type MoodDerivation,
+} from './mood.service.js';

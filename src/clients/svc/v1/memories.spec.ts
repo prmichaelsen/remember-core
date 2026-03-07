@@ -191,4 +191,24 @@ describe('MemoriesResource', () => {
       body: { limit: 20 },
     });
   });
+
+  it('byBroad calls POST /api/svc/v1/memories/by-broad', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byBroad('user1', { limit: 50, sort_order: 'desc' });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-broad', {
+      userId: 'user1',
+      body: { limit: 50, sort_order: 'desc' },
+    });
+  });
+
+  it('byRandom calls POST /api/svc/v1/memories/by-random', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byRandom('user1', { limit: 10 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-random', {
+      userId: 'user1',
+      body: { limit: 10 },
+    });
+  });
 });

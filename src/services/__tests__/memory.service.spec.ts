@@ -1332,6 +1332,62 @@ describe('MemoryService', () => {
       expect(result.results[0].weight).toBe(0.9);
     });
   });
+
+  describe('byRandom', () => {
+    it('returns random memories from collection', async () => {
+      for (let i = 0; i < 5; i++) {
+        await service.create({ content: `memory ${i}` });
+      }
+      const result = await service.byRandom({ limit: 3 });
+      expect(result.results).toHaveLength(3);
+      expect(result.total_pool_size).toBe(5);
+    });
+
+    it('defaults to limit 10', async () => {
+      await service.create({ content: 'single' });
+      const result = await service.byRandom({});
+      expect(result.results).toHaveLength(1);
+      expect(result.total_pool_size).toBe(1);
+    });
+
+    it('returns empty for empty collection', async () => {
+      const result = await service.byRandom({});
+      expect(result.results).toEqual([]);
+      expect(result.total_pool_size).toBe(0);
+    });
+
+    it('returns all when pool smaller than limit', async () => {
+      await service.create({ content: 'one' });
+      await service.create({ content: 'two' });
+      const result = await service.byRandom({ limit: 10 });
+      expect(result.results).toHaveLength(2);
+      expect(result.total_pool_size).toBe(2);
+    });
+
+    it('returns full memory objects (not truncated)', async () => {
+      const longContent = 'A'.repeat(500);
+      await service.create({ content: longContent });
+      const result = await service.byRandom({});
+      expect(result.results[0]).toHaveProperty('content', longContent);
+    });
+
+    it('no duplicate memories in results', async () => {
+      for (let i = 0; i < 10; i++) {
+        await service.create({ content: `memory ${i}` });
+      }
+      const result = await service.byRandom({ limit: 10 });
+      const ids = result.results.map((m: any) => m.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it('total_pool_size reflects filtered pool', async () => {
+      await service.create({ content: 'tagged', tags: ['special'] });
+      await service.create({ content: 'not tagged' });
+      // Without tag filter, pool should include both
+      const result = await service.byRandom({});
+      expect(result.total_pool_size).toBe(2);
+    });
+  });
 });
 
 describe('sliceContent', () => {

@@ -550,10 +550,11 @@ milestones:
 
   - id: M35
     name: SpaceService Sort Modes
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
+    completed: 2026-03-07
     estimated_weeks: 0.5
-    tasks_completed: 2
+    tasks_completed: 3
     tasks_total: 3
     dependencies: [M11, M20, M28, M31]
     notes: |
@@ -2440,11 +2441,12 @@ tasks:
 
     - id: task-178
       name: Unit Tests + Barrel Exports
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-35-space-sort-modes/task-178-tests-barrel-exports.md
       estimated_hours: 3
       dependencies: [task-176, task-177]
-      description: "Tests for all 5 modes. Barrel exports for new types. Verify no regressions."
+      description: "26 tests for all 5 modes + validation + cross-collection. Barrel exports done in task-176."
 
 documentation:
   design_documents: 27

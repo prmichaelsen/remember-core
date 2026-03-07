@@ -26,6 +26,8 @@ import type { ModerationClient } from './moderation.service.js';
 import type { MemoryIndexService } from './memory-index.service.js';
 import { tagWithSource, dedupeBySourceId, type DedupeOptions } from '../utils/dedupe.js';
 import { interleaveDiscovery, DISCOVERY_RATIO, DISCOVERY_THRESHOLD } from './discovery.js';
+import type { RecommendationService } from './recommendation.service.js';
+import { MIN_SIMILARITY } from './recommendation.service.js';
 
 // ─── Shared Types ───────────────────────────────────────────────────────
 
@@ -245,6 +247,41 @@ export interface DiscoverySpaceResult {
   limit: number;
 }
 
+export interface RecommendationSpaceInput {
+  userId: string;
+  query?: string;
+  spaces?: string[];
+  groups?: string[];
+  content_type?: string;
+  tags?: string[];
+  min_weight?: number;
+  max_weight?: number;
+  date_from?: string;
+  date_to?: string;
+  moderation_filter?: ModerationFilter;
+  include_comments?: boolean;
+  limit?: number;
+  offset?: number;
+  dedupe?: DedupeOptions;
+}
+
+export interface RecommendedSpaceMemory {
+  similarity_pct: number;
+  [key: string]: unknown;
+}
+
+export interface RecommendationSpaceResult {
+  spaces_searched: string[] | 'all_public';
+  groups_searched: string[];
+  memories: RecommendedSpaceMemory[];
+  profileSize: number;
+  insufficientData: boolean;
+  fallback_sort_mode?: 'byDiscovery';
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 // ─── Service ────────────────────────────────────────────────────────────
 
 /**
@@ -259,6 +296,7 @@ export interface DiscoverySpaceResult {
 export class SpaceService {
   private moderationClient?: ModerationClient;
   private memoryIndex: MemoryIndexService;
+  private recommendationService?: RecommendationService;
 
   constructor(
     private weaviateClient: any,
@@ -267,9 +305,10 @@ export class SpaceService {
     private confirmationTokenService: ConfirmationTokenService,
     private logger: Logger,
     private memoryIndexService: MemoryIndexService,
-    options?: { moderationClient?: ModerationClient },
+    options?: { moderationClient?: ModerationClient; recommendationService?: RecommendationService },
   ) {
     this.moderationClient = options?.moderationClient;
+    this.recommendationService = options?.recommendationService;
     this.memoryIndex = memoryIndexService;
   }
 

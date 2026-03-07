@@ -149,8 +149,8 @@ export class RecommendationService {
           const obj = await collection.query.fetchObjectById(memoryId, {
             includeVector: true,
           });
-          if (obj?.vectors?.default) {
-            embeddings.push(obj.vectors.default);
+          if (obj?.vectors?.default && Array.isArray(obj.vectors.default)) {
+            embeddings.push(obj.vectors.default as number[]);
           }
         } catch (err) {
           this.logger.debug?.(`[RecommendationService] Failed to fetch vector for ${memoryId}: ${err}`);

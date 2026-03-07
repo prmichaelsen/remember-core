@@ -15,6 +15,8 @@ import type { ContentType } from '../types/index.js';
 import { normalizeTrustScore, isValidTrustLevel, TrustLevel } from '../types/trust.types.js';
 import { computeRatingAvg, type RatingModeRequest, type RatingModeResult, RATING_MIN_THRESHOLD } from '../types/rating.types.js';
 import { interleaveDiscovery, DISCOVERY_RATIO, type DiscoveryItem } from './discovery.js';
+import type { RecommendationService } from './recommendation.service.js';
+import { MIN_SIMILARITY } from './recommendation.service.js';
 import { isValidContentType, DEFAULT_CONTENT_TYPE } from '../constants/content-types.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import {
@@ -159,6 +161,31 @@ export interface DiscoveryModeResult {
   limit: number;
 }
 
+export interface RecommendationModeRequest {
+  userId: string;
+  query?: string;
+  limit?: number;
+  offset?: number;
+  filters?: SearchFilters;
+  deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
+}
+
+export interface RecommendedMemory {
+  similarity_pct: number;
+  [key: string]: unknown;
+}
+
+export interface RecommendationModeResult {
+  memories: RecommendedMemory[];
+  profileSize: number;
+  insufficientData: boolean;
+  fallback_sort_mode?: 'byDiscovery';
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 export interface UpdateMemoryInput {
   memory_id: string;
   content?: string;
@@ -233,6 +260,7 @@ export class MemoryService {
     private options: {
       memoryIndex: MemoryIndexService;
       weaviateClient?: any;
+      recommendationService?: RecommendationService;
     },
   ) {}
 
@@ -679,6 +707,113 @@ export class MemoryService {
     return {
       memories,
       total: memories.length,
+      offset,
+      limit,
+    };
+  }
+
+  // ── By Recommendation (personalized via preference centroid) ───────
+
+  async byRecommendation(input: RecommendationModeRequest): Promise<RecommendationModeResult> {
+    const recommendationService = this.options.recommendationService;
+    if (!recommendationService) {
+      throw new Error('RecommendationService is required for byRecommendation sort mode');
+    }
+
+    const limit = input.limit ?? 20;
+    const offset = input.offset ?? 0;
+
+    // 1. Get or compute centroid
+    const centroidResult = await recommendationService.getOrComputeCentroid(input.userId);
+
+    // 2. Fallback to byDiscovery if insufficient data
+    if (centroidResult.insufficientData || !centroidResult.centroid) {
+      const discoveryResults = await this.byDiscovery({
+        query: input.query,
+        limit,
+        offset,
+        filters: input.filters,
+        deleted_filter: input.deleted_filter,
+        ghost_context: input.ghost_context,
+      });
+
+      return {
+        memories: discoveryResults.memories.map((m) => ({
+          ...m,
+          similarity_pct: 0,
+        })),
+        profileSize: 0,
+        insufficientData: true,
+        fallback_sort_mode: 'byDiscovery',
+        total: discoveryResults.total,
+        offset: discoveryResults.offset,
+        limit: discoveryResults.limit,
+      };
+    }
+
+    // 3. Build exclusion filters: already-rated + own memories
+    const ratedIds = await recommendationService.getAllUserRatedIds(input.userId);
+
+    const memoryFilters = buildMemoryOnlyFilters(this.collection, input.filters);
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+
+    // Exclude user's own memories
+    const authorFilter = this.collection.filter.byProperty('user_id').notEqual(input.userId);
+
+    // 4. Execute nearVector search
+    const results = await this.retryWithoutDeletedFilter(async (useDeletedFilter) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+
+      const allFilters = [deletedFilter, memoryFilters, authorFilter, ...ghostFilters].filter((f) => f !== null);
+      const combinedFilters = combineFiltersWithAnd(allFilters);
+
+      const opts: any = {
+        limit: (limit + offset) + ratedIds.length, // fetch extra to account for post-exclusion
+        returnMetadata: ['distance'],
+      };
+      if (combinedFilters) opts.filters = combinedFilters;
+
+      return this.collection.query.nearVector(centroidResult.centroid!.vector, opts);
+    });
+
+    // 5. Filter out already-rated memories and apply similarity threshold
+    const ratedIdSet = new Set(ratedIds);
+    const MIN_SIMILARITY_THRESHOLD = MIN_SIMILARITY * 100;
+
+    const memories: RecommendedMemory[] = [];
+    for (const obj of results.objects) {
+      if (ratedIdSet.has(obj.uuid)) continue;
+
+      const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
+      if (doc.doc_type !== 'memory') continue;
+
+      const distance = obj.metadata?.distance ?? 1;
+      const similarityPct = Math.round((1 - distance) * 100);
+
+      if (similarityPct < MIN_SIMILARITY_THRESHOLD) continue;
+
+      memories.push({
+        ...doc,
+        similarity_pct: similarityPct,
+      });
+    }
+
+    // 6. Apply pagination
+    const paginated = memories.slice(offset, offset + limit);
+
+    return {
+      memories: paginated,
+      profileSize: centroidResult.centroid!.profileSize,
+      insufficientData: false,
+      total: paginated.length,
       offset,
       limit,
     };

@@ -53,6 +53,9 @@ export {
   type UpdateMemoryResult,
   type DeleteMemoryInput,
   type DeleteMemoryResult,
+  type RecommendationModeRequest,
+  type RecommendationModeResult,
+  type RecommendedMemory,
 } from './memory.service.js';
 
 export {

@@ -427,9 +427,9 @@ milestones:
   - id: M27
     name: byRecommendation Sort Mode
     status: in_progress
-    progress: 29
+    progress: 43
     estimated_weeks: 1.5
-    tasks_completed: 2
+    tasks_completed: 3
     tasks_total: 7
     notes: |
       Personalized sort mode using vector similarity to user's rating history.
@@ -2092,7 +2092,8 @@ tasks:
       description: "Cache centroid in Firestore, invalidate on new 4-5 star rating."
     - id: task-140
       name: byRecommendation Method in MemoryService
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-27-by-recommendation-sort-mode/task-140-by-recommendation-memory-service.md
       estimated_hours: 2-3
       dependencies: [task-138, task-139]

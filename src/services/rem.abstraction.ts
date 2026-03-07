@@ -133,7 +133,7 @@ ${emotionSummary ? `EMOTIONAL PROFILE: ${emotionSummary}` : ''}
 
 Create a synthesis that captures the recurring pattern, theme, or identity evolution across these memories. Include temporal references where relevant.
 
-Respond with ONLY valid JSON:
+Respond with ONLY valid JSON. Do NOT wrap in markdown fences.
 {
   "content": "A title-like summary sentence (1-2 sentences) capturing the pattern",
   "observation": "A brief observation about what this pattern reveals",
@@ -157,7 +157,8 @@ export async function synthesizeAbstraction(
   try {
     const prompt = buildAbstractionPrompt(candidate);
     const response = await subLlm.score(prompt, { maxTokens: 512 });
-    const parsed = JSON.parse(response.trim());
+    const cleaned = response.replace(/```json?\s*/g, '').replace(/```\s*/g, '').trim();
+    const parsed = JSON.parse(cleaned);
 
     if (!parsed.content || !parsed.observation || !parsed.abstraction_type) {
       logger?.warn?.('[Abstraction] Haiku returned incomplete synthesis');

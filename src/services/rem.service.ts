@@ -252,7 +252,7 @@ export class RemService {
             title: this.extractTitle(m.content),
           }));
 
-          // Auto-approve highly similar clusters (bypass conservative Haiku)
+          // Auto-approve highly similar clusters (bypass Haiku for obvious duplicates)
           if (action.cluster.avg_similarity >= this.config.auto_approve_similarity) {
             this.logger.info?.('Cluster auto-approved (high similarity)', {
               cluster_size: action.cluster.memory_ids.length,

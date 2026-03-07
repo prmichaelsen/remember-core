@@ -25,6 +25,7 @@ import {
   FEEL_DIMENSION_PROPERTIES,
   FUNCTIONAL_DIMENSION_PROPERTIES,
 } from '../database/weaviate/v2-collections.js';
+import { computeAllComposites, type DimensionScores } from './composite-scoring.js';
 import {
   buildCombinedSearchFilters,
   buildMemoryOnlyFilters,
@@ -294,36 +295,12 @@ function validateDimensionRanges(input: CreateMemoryInput): void {
   }
 }
 
-/** Compute composite significance from individual dimension values */
-function computeComposites(input: CreateMemoryInput): {
-  feel_significance: number | null;
-  functional_significance: number | null;
-  total_significance: number | null;
-} {
+/** Compute composite significance from individual dimension values at create-time */
+function computeComposites(input: CreateMemoryInput) {
   // If explicitly provided, use as-is
   const hasExplicitComposites = input.feel_significance !== undefined
     || input.functional_significance !== undefined
     || input.total_significance !== undefined;
-
-  // Gather provided feel dimensions
-  const feelValues: number[] = [];
-  for (const dim of FEEL_DIMENSION_PROPERTIES) {
-    const v = input[dim as keyof CreateMemoryInput] as number | undefined;
-    if (v !== undefined && v !== null) {
-      feelValues.push(dim === 'feel_valence' ? Math.abs(v) : v);
-    }
-  }
-
-  // Gather provided functional dimensions
-  const funcValues: number[] = [];
-  for (const dim of FUNCTIONAL_DIMENSION_PROPERTIES) {
-    const v = input[dim as keyof CreateMemoryInput] as number | undefined;
-    if (v !== undefined && v !== null) {
-      funcValues.push(dim === 'functional_valence' ? Math.abs(v) : v);
-    }
-  }
-
-  const hasDimensions = feelValues.length > 0 || funcValues.length > 0;
 
   if (hasExplicitComposites) {
     return {
@@ -333,22 +310,14 @@ function computeComposites(input: CreateMemoryInput): {
     };
   }
 
-  if (!hasDimensions) {
-    return { feel_significance: null, functional_significance: null, total_significance: null };
+  // Build scores map from input for the reusable composite module
+  const scores: DimensionScores = {};
+  for (const dim of ALL_SCORING_DIMENSIONS) {
+    const v = input[dim as keyof CreateMemoryInput] as number | undefined;
+    if (v !== undefined) scores[dim] = v;
   }
 
-  // Auto-compute with equal weighting (simple average)
-  const feelSig = feelValues.length > 0
-    ? feelValues.reduce((sum, v) => sum + v, 0) / feelValues.length
-    : null;
-  const funcSig = funcValues.length > 0
-    ? funcValues.reduce((sum, v) => sum + v, 0) / funcValues.length
-    : null;
-  const totalSig = feelSig !== null || funcSig !== null
-    ? (feelSig ?? 0) + (funcSig ?? 0)
-    : null;
-
-  return { feel_significance: feelSig, functional_significance: funcSig, total_significance: totalSig };
+  return computeAllComposites(scores);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────

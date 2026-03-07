@@ -211,6 +211,20 @@ describe('decayPressures', () => {
     const result = decayPressures(pressures);
     expect(result).toHaveLength(0);
   });
+
+  it('handles decay_rate = 0 (no decay)', () => {
+    const pressures = [makePressure({ magnitude: 0.5, decay_rate: 0 })];
+    const result = decayPressures(pressures);
+    expect(result).toHaveLength(1);
+    expect(result[0].magnitude).toBe(0.5);
+  });
+
+  it('handles decay_rate = 1 (instant removal)', () => {
+    const pressures = [makePressure({ magnitude: 0.5, decay_rate: 1 })];
+    const result = decayPressures(pressures);
+    // 0.5 * (1 - 1) = 0, which is < 0.05
+    expect(result).toHaveLength(0);
+  });
 });
 
 // ─── hasSignificantChange ─────────────────────────────────────────────────

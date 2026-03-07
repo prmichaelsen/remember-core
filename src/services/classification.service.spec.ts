@@ -77,15 +77,42 @@ describe('ClassificationService', () => {
   });
 
   describe('getByQuality', () => {
-    it('returns memory ids for a quality signal', async () => {
+    it('returns memory ids for substantive', async () => {
+      const index = emptyIndex();
+      index.quality.substantive = ['m1'];
+      mockGetDocument.mockResolvedValue(index as any);
+      expect(await service.getByQuality('col1', 'substantive')).toEqual(['m1']);
+    });
+
+    it('returns memory ids for draft', async () => {
+      const index = emptyIndex();
+      index.quality.draft = ['m2'];
+      mockGetDocument.mockResolvedValue(index as any);
+      expect(await service.getByQuality('col1', 'draft')).toEqual(['m2']);
+    });
+
+    it('returns memory ids for low_value', async () => {
       const index = emptyIndex();
       index.quality.low_value = ['m3', 'm4'];
       mockGetDocument.mockResolvedValue(index as any);
-      const result = await service.getByQuality('col1', 'low_value');
-      expect(result).toEqual(['m3', 'm4']);
+      expect(await service.getByQuality('col1', 'low_value')).toEqual(['m3', 'm4']);
     });
 
-    it('returns empty for missing signal', async () => {
+    it('returns memory ids for duplicate', async () => {
+      const index = emptyIndex();
+      index.quality.duplicate = ['m5'];
+      mockGetDocument.mockResolvedValue(index as any);
+      expect(await service.getByQuality('col1', 'duplicate')).toEqual(['m5']);
+    });
+
+    it('returns memory ids for stale', async () => {
+      const index = emptyIndex();
+      index.quality.stale = ['m6'];
+      mockGetDocument.mockResolvedValue(index as any);
+      expect(await service.getByQuality('col1', 'stale')).toEqual(['m6']);
+    });
+
+    it('returns empty for quality with no memories', async () => {
       mockGetDocument.mockResolvedValue(emptyIndex() as any);
       const result = await service.getByQuality('col1', 'duplicate');
       expect(result).toEqual([]);
@@ -174,6 +201,42 @@ describe('ClassificationService', () => {
       await service.classify('col1', 'm1', { genre: 'poem' });
       const saved = mockSetDocument.mock.calls[0][2] as unknown as ClassificationIndex;
       expect(saved.genres.poem).toEqual(['m1']);
+    });
+
+    it('can classify with genre only', async () => {
+      mockGetDocument.mockResolvedValue(emptyIndex() as any);
+      await service.classify('col1', 'm1', { genre: 'essay' });
+      const saved = mockSetDocument.mock.calls[0][2] as unknown as ClassificationIndex;
+      expect(saved.genres.essay).toEqual(['m1']);
+      expect(Object.keys(saved.quality)).toHaveLength(0);
+    });
+
+    it('can classify with qualities only', async () => {
+      mockGetDocument.mockResolvedValue(emptyIndex() as any);
+      await service.classify('col1', 'm1', { qualities: ['substantive'] });
+      const saved = mockSetDocument.mock.calls[0][2] as unknown as ClassificationIndex;
+      expect(saved.quality.substantive).toEqual(['m1']);
+    });
+
+    it('can classify with thematic_groups only', async () => {
+      mockGetDocument.mockResolvedValue(emptyIndex() as any);
+      await service.classify('col1', 'm1', { thematic_groups: ['deep_learning'] });
+      const saved = mockSetDocument.mock.calls[0][2] as unknown as ClassificationIndex;
+      expect(saved.thematic_groups.deep_learning).toEqual(['m1']);
+    });
+
+    it('can classify with all three at once', async () => {
+      mockGetDocument.mockResolvedValue(emptyIndex() as any);
+      await service.classify('col1', 'm1', {
+        genre: 'technical_note',
+        qualities: ['substantive', 'draft'],
+        thematic_groups: ['api_design'],
+      });
+      const saved = mockSetDocument.mock.calls[0][2] as unknown as ClassificationIndex;
+      expect(saved.genres.technical_note).toEqual(['m1']);
+      expect(saved.quality.substantive).toEqual(['m1']);
+      expect(saved.quality.draft).toEqual(['m1']);
+      expect(saved.thematic_groups.api_design).toEqual(['m1']);
     });
 
     it('rejects invalid genre', async () => {

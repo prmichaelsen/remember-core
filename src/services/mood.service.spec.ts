@@ -134,6 +134,56 @@ describe('MoodService', () => {
     expect(after).not.toBe(before);
   });
 
+  it('updates directional state fields (motivation, goal, purpose)', async () => {
+    await service.initializeMood(userId, ghostId);
+    await service.updateMood(userId, ghostId, {
+      motivation: 'rebuild trust',
+      goal: 'respond to all messages promptly',
+      purpose: 'be a reliable companion',
+    });
+
+    const mood = await service.getMood(userId, ghostId);
+    expect(mood!.motivation).toBe('rebuild trust');
+    expect(mood!.goal).toBe('respond to all messages promptly');
+    expect(mood!.purpose).toBe('be a reliable companion');
+  });
+
+  it('updates derived labels (color, dominant_emotion, reasoning)', async () => {
+    await service.initializeMood(userId, ghostId);
+    await service.updateMood(userId, ghostId, {
+      color: 'cautiously optimistic',
+      dominant_emotion: 'curious wariness',
+      reasoning: 'valence is slightly positive but trust is low',
+    });
+
+    const mood = await service.getMood(userId, ghostId);
+    expect(mood!.color).toBe('cautiously optimistic');
+    expect(mood!.dominant_emotion).toBe('curious wariness');
+    expect(mood!.reasoning).toBe('valence is slightly positive but trust is low');
+  });
+
+  it('updates perception fields', async () => {
+    await service.initializeMood(userId, ghostId);
+    await service.updateMood(userId, ghostId, {
+      personality_sketch: 'thoughtful, technically sharp',
+      communication_style: 'terse and precise',
+      emotional_baseline: 'measured, dry humor',
+      interests: ['AI architecture', 'music production'],
+      patterns: ['iterates rapidly then goes quiet'],
+      needs: ['a thought partner'],
+      confidence_level: 0.6,
+    });
+
+    const mood = await service.getMood(userId, ghostId);
+    expect(mood!.personality_sketch).toBe('thoughtful, technically sharp');
+    expect(mood!.communication_style).toBe('terse and precise');
+    expect(mood!.emotional_baseline).toBe('measured, dry humor');
+    expect(mood!.interests).toEqual(['AI architecture', 'music production']);
+    expect(mood!.patterns).toEqual(['iterates rapidly then goes quiet']);
+    expect(mood!.needs).toEqual(['a thought partner']);
+    expect(mood!.confidence_level).toBe(0.6);
+  });
+
   // ── addPressure ───────────────────────────────────────────────────────
 
   it('appends a pressure to the pressures array', async () => {

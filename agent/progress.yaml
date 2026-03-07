@@ -2333,7 +2333,8 @@ tasks:
 
     - id: task-167
       name: Core Mood Unit Tests
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-32-core-mood-state/task-167-mood-unit-tests.md
       estimated_hours: 3
       dependencies: [task-164, task-165, task-166]
@@ -2391,7 +2392,8 @@ tasks:
 
     - id: task-174
       name: Classification & Perception Unit Tests
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-34-classification-and-perception/task-174-classification-perception-tests.md
       estimated_hours: 3
       dependencies: [task-171, task-172, task-173]

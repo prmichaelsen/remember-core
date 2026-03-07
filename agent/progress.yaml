@@ -532,10 +532,10 @@ milestones:
 
   - id: M34
     name: Memory Classification & User Perception
-    status: not_started
-    progress: 0
+    status: in_progress
+    progress: 25
     estimated_weeks: 1.5
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 4
     dependencies: [M32, M10]
     notes: |
@@ -2367,7 +2367,8 @@ tasks:
   milestone_34:
     - id: task-171
       name: Classification Schema + ClassificationService
-      status: not_started
+      status: completed
+      completed: 2026-03-07
       file: agent/tasks/milestone-34-classification-and-perception/task-171-classification-schema-service.md
       estimated_hours: 3
       description: "Firestore classification index, ClassificationService, 18 genres, 5 quality signals."

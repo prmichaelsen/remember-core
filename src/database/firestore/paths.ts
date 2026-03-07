@@ -215,3 +215,17 @@ export function getPreferenceCentroidsPath(): string {
 export function getMemoryIndexPath(): string {
   return `${BASE}.memory_index`;
 }
+
+// ============================================================================
+// CLASSIFICATION INDEX
+// ============================================================================
+
+/**
+ * Get path to a collection's classification index.
+ * Pattern: {BASE}.collections/{collectionId}/core
+ *
+ * Classification document stored as docId 'classifications'.
+ */
+export function getClassificationPath(collectionId: string): { collectionPath: string; docId: string } {
+  return { collectionPath: `${BASE}.collections/${collectionId}/core`, docId: 'classifications' };
+}

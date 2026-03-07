@@ -38,4 +38,5 @@ export {
   getRemCollectionStatePath,
   getCollectionRegistryPath,
   getMemoryIndexPath,
+  getClassificationPath,
 } from './paths.js';

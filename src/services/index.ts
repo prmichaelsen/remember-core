@@ -368,3 +368,54 @@ export {
   type Pressure,
   type MoodDerivation,
 } from './mood.service.js';
+
+// Mood Update (REM cycle mood drift, decay, thresholds)
+export {
+  aggregatePressures,
+  driftDimension,
+  driftMoodState,
+  decayPressures,
+  hasSignificantChange,
+  checkThresholds,
+  buildThresholdMemoryContent,
+  runMoodUpdate,
+  LEARNING_RATE,
+  INERTIA,
+  PRESSURE_REMOVAL_THRESHOLD,
+  SIGNIFICANT_CHANGE_THRESHOLD,
+  THRESHOLDS,
+  type ThresholdDef,
+  type ThresholdFlag,
+  type MoodUpdateResult,
+} from './mood-update.service.js';
+
+// Sub-LLM Narration (mood label derivation)
+export {
+  deriveMoodLabels,
+  deriveMotivation,
+  shouldUpdateGoal,
+  shouldUpdatePurpose,
+  FALLBACK_DERIVATION,
+} from './narration.service.js';
+
+// User Perception
+export {
+  PerceptionService,
+  extractPerception,
+  computeConfidence,
+  INITIAL_PERCEPTION,
+  type UserPerception,
+  type PerceptionServiceDeps,
+} from './perception.service.js';
+
+// Classification (memory genre, quality, thematic grouping)
+export {
+  ClassificationService,
+  GENRES,
+  QUALITY_SIGNALS,
+  type Genre,
+  type QualitySignal,
+  type ClassificationIndex,
+  type ClassifyInput,
+  type MergeCandidate,
+} from './classification.service.js';

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.38.0] - 2026-03-07
+
+### Added
+- **EmotionalScoringService** — per-dimension sub-LLM scoring for 31 emotional/functional dimensions with tailored rubrics. `DIMENSION_REGISTRY` with full definitions for all 21 `feel_*` and 10 `functional_*` dimensions including scoring rubrics (low/mid/high)
+- `scoreAllDimensions()` — scores a memory on all 31 dimensions via individual sub-LLM calls, handles partial failures gracefully
+- `SubLlmProvider` interface and `createAnthropicSubLlm()` factory for Haiku API calls
+- `buildScoringPrompt()` — constructs dimension-specific prompts with rubric, memory content, metadata, and optional context
+- 38 new tests covering dimension registry, prompt building, score parsing, scoring service
+
 ## [0.37.1] - 2026-03-07
 
 ### Added

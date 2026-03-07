@@ -298,6 +298,18 @@ export {
   MIN_SIMILARITY,
 } from './recommendation.service.js';
 
+// Composite scoring (REM emotional weighting)
+export {
+  computeFeelSignificance,
+  computeFunctionalSignificance,
+  computeTotalSignificance,
+  computeAllComposites,
+  DEFAULT_WEIGHTS,
+  type CompositeWeights,
+  type DimensionScores,
+  type CompositeResult,
+} from './composite-scoring.js';
+
 // Emotional scoring (REM emotional weighting)
 export {
   EmotionalScoringService,

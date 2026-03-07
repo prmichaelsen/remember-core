@@ -445,9 +445,9 @@ milestones:
   - id: M28
     name: "REM Emotional Weighting: Schema & Scoring"
     status: in_progress
-    progress: 38
+    progress: 50
     estimated_weeks: 3
-    tasks_completed: 3
+    tasks_completed: 4
     tasks_total: 8
     started: 2026-03-07
     notes: |
@@ -2156,7 +2156,8 @@ tasks:
       description: "Add feel_*/functional_*/observation as optional fields on create_memory input schema."
     - id: task-147
       name: Per-Dimension Haiku Scoring
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-147-per-dimension-haiku-scoring.md
       estimated_hours: 6
       dependencies: [task-145]

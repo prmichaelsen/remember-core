@@ -553,7 +553,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 0.5
-    tasks_completed: 0
+    tasks_completed: 2
     tasks_total: 3
     dependencies: [M11, M20, M28, M31]
     notes: |
@@ -2423,18 +2423,20 @@ tasks:
   milestone_35:
     - id: task-176
       name: Space Sort Mode Types + byTime + byRating
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-35-space-sort-modes/task-176-space-bytime-byrating.md
       estimated_hours: 3
-      description: "Input/result types for 5 modes. byTime + byRating methods. Extract validation + cross-collection helpers."
+      description: "Input/result types for all 5 modes. byTime + byRating + byProperty + byBroad + byRandom methods. Validation + cross-collection helpers. Barrel exports."
 
     - id: task-177
       name: SpaceService byProperty + byBroad + byRandom
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-35-space-sort-modes/task-177-space-byproperty-bybroad-byrandom.md
       estimated_hours: 3
       dependencies: [task-176]
-      description: "byProperty (generic sort), byBroad (truncated content), byRandom (Fisher-Yates sampling)."
+      description: "byProperty (generic sort), byBroad (truncated content), byRandom (Fisher-Yates sampling). Implemented with task-176."
 
     - id: task-178
       name: Unit Tests + Barrel Exports

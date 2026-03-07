@@ -28,6 +28,8 @@ import { tagWithSource, dedupeBySourceId, type DedupeOptions } from '../utils/de
 import { interleaveDiscovery, DISCOVERY_RATIO, DISCOVERY_THRESHOLD } from './discovery.js';
 import type { RecommendationService } from './recommendation.service.js';
 import { MIN_SIMILARITY } from './recommendation.service.js';
+import { sliceContent, type BroadSearchResult } from './memory.service.js';
+import { ALL_MEMORY_PROPERTIES } from '../database/weaviate/client.js';
 
 // ─── Shared Types ───────────────────────────────────────────────────────
 
@@ -280,6 +282,101 @@ export interface RecommendationSpaceResult {
   total: number;
   offset: number;
   limit: number;
+}
+
+// ─── Space Sort Mode Base ────────────────────────────────────────────────
+
+export interface SpaceSortBaseInput {
+  spaces?: string[];
+  groups?: string[];
+  content_type?: string;
+  tags?: string[];
+  min_weight?: number;
+  max_weight?: number;
+  date_from?: string;
+  date_to?: string;
+  moderation_filter?: ModerationFilter;
+  include_comments?: boolean;
+  limit?: number;
+  offset?: number;
+  dedupe?: DedupeOptions;
+}
+
+// ── byTime ──
+
+export interface TimeSpaceInput extends SpaceSortBaseInput {
+  direction?: 'asc' | 'desc';
+}
+
+export interface TimeSpaceResult {
+  spaces_searched: string[] | 'all_public';
+  groups_searched: string[];
+  memories: Record<string, unknown>[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+// ── byRating ──
+
+export interface RatingSpaceInput extends SpaceSortBaseInput {
+  direction?: 'asc' | 'desc';
+}
+
+export interface RatingSpaceResult {
+  spaces_searched: string[] | 'all_public';
+  groups_searched: string[];
+  memories: Record<string, unknown>[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+// ── byProperty ──
+
+export interface PropertySpaceInput extends SpaceSortBaseInput {
+  sort_field: string;
+  sort_direction: 'asc' | 'desc';
+}
+
+export interface PropertySpaceResult {
+  spaces_searched: string[] | 'all_public';
+  groups_searched: string[];
+  memories: Record<string, unknown>[];
+  total: number;
+  offset: number;
+  limit: number;
+  sort_field: string;
+  sort_direction: 'asc' | 'desc';
+}
+
+// ── byBroad ──
+
+export interface BroadSpaceInput extends SpaceSortBaseInput {
+  query?: string;
+  sort_order?: 'asc' | 'desc';
+}
+
+export interface BroadSpaceResult {
+  spaces_searched: string[] | 'all_public';
+  groups_searched: string[];
+  results: BroadSearchResult[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+// ── byRandom ──
+
+export interface RandomSpaceInput extends SpaceSortBaseInput {
+  // limit only, no offset (random has no pagination)
+}
+
+export interface RandomSpaceResult {
+  spaces_searched: string[] | 'all_public';
+  groups_searched: string[];
+  results: Record<string, unknown>[];
+  total_pool_size: number;
 }
 
 // ─── Service ────────────────────────────────────────────────────────────
@@ -1519,9 +1616,321 @@ export class SpaceService {
     };
   }
 
+  // ── By Time (chronological sort for spaces/groups) ──────────────────
+
+  async byTime(input: TimeSpaceInput, authContext?: AuthContext): Promise<TimeSpaceResult> {
+    const spaces = input.spaces || [];
+    const groups = input.groups || [];
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const direction = input.direction ?? 'desc';
+
+    this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
+
+    const fetchLimit = (limit + offset) * 2;
+    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+      input, spaces, groups,
+      async (collection, baseFilters) => {
+        const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
+        const opts: any = {
+          limit: fetchLimit,
+          sort: collection.sort.byProperty('created_at', direction === 'asc'),
+        };
+        if (combined) opts.filters = combined;
+        return (await collection.query.fetchObjects(opts)).objects;
+      },
+    );
+
+    const deduped = dedupeBySourceId(allResults, input.dedupe);
+    deduped.sort((a: any, b: any) => {
+      const aTime = new Date(a.properties?.created_at || 0).getTime();
+      const bTime = new Date(b.properties?.created_at || 0).getTime();
+      return direction === 'desc' ? bTime - aTime : aTime - bTime;
+    });
+
+    const paginated = deduped.slice(offset, offset + limit);
+    const memories = paginated
+      .filter((obj: any) => obj.properties?.doc_type === 'memory')
+      .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
+
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: memories.length, offset, limit };
+  }
+
+  // ── By Rating (Bayesian average for spaces/groups) ─────────────────
+
+  async byRating(input: RatingSpaceInput, authContext?: AuthContext): Promise<RatingSpaceResult> {
+    const spaces = input.spaces || [];
+    const groups = input.groups || [];
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const direction = input.direction ?? 'desc';
+
+    this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
+
+    const fetchLimit = (limit + offset) * 2;
+    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+      input, spaces, groups,
+      async (collection, baseFilters) => {
+        const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
+        const opts: any = {
+          limit: fetchLimit,
+          sort: collection.sort.byProperty('rating_bayesian', direction === 'asc'),
+        };
+        if (combined) opts.filters = combined;
+        return (await collection.query.fetchObjects(opts)).objects;
+      },
+    );
+
+    const deduped = dedupeBySourceId(allResults, input.dedupe);
+    deduped.sort((a: any, b: any) => {
+      const aVal = (a.properties?.rating_bayesian as number) ?? 0;
+      const bVal = (b.properties?.rating_bayesian as number) ?? 0;
+      return direction === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+
+    const paginated = deduped.slice(offset, offset + limit);
+    const memories = paginated
+      .filter((obj: any) => obj.properties?.doc_type === 'memory')
+      .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
+
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: memories.length, offset, limit };
+  }
+
+  // ── By Property (generic sort by any Weaviate property for spaces/groups) ──
+
+  async byProperty(input: PropertySpaceInput, authContext?: AuthContext): Promise<PropertySpaceResult> {
+    const spaces = input.spaces || [];
+    const groups = input.groups || [];
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const { sort_field, sort_direction } = input;
+
+    // Validate sort_field
+    const validFields = new Set<string>(ALL_MEMORY_PROPERTIES);
+    if (!validFields.has(sort_field)) {
+      throw new ValidationError(`Invalid sort_field "${sort_field}". Must be a valid memory property.`);
+    }
+
+    this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
+
+    const fetchLimit = (limit + offset) * 2;
+    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+      input, spaces, groups,
+      async (collection, baseFilters) => {
+        const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
+        const opts: any = {
+          limit: fetchLimit,
+          sort: collection.sort.byProperty(sort_field, sort_direction === 'asc'),
+        };
+        if (combined) opts.filters = combined;
+        return (await collection.query.fetchObjects(opts)).objects;
+      },
+    );
+
+    const deduped = dedupeBySourceId(allResults, input.dedupe);
+    // Re-sort merged results by the sort_field
+    deduped.sort((a: any, b: any) => {
+      const aVal = a.properties?.[sort_field] ?? 0;
+      const bVal = b.properties?.[sort_field] ?? 0;
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sort_direction === 'desc' ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+      }
+      return sort_direction === 'desc' ? (bVal as number) - (aVal as number) : (aVal as number) - (bVal as number);
+    });
+
+    const paginated = deduped.slice(offset, offset + limit);
+    const memories = paginated
+      .filter((obj: any) => obj.properties?.doc_type === 'memory')
+      .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
+
+    return {
+      spaces_searched: spacesSearched, groups_searched: groupsSearched,
+      memories, total: memories.length, offset, limit,
+      sort_field, sort_direction,
+    };
+  }
+
+  // ── By Broad (truncated content for scan-and-drill-in for spaces/groups) ──
+
+  async byBroad(input: BroadSpaceInput, authContext?: AuthContext): Promise<BroadSpaceResult> {
+    const spaces = input.spaces || [];
+    const groups = input.groups || [];
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const sortOrder = input.sort_order ?? 'desc';
+
+    this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
+
+    const fetchLimit = (limit + offset) * 2;
+    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+      input, spaces, groups,
+      async (collection, baseFilters) => {
+        const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
+        const opts: any = {
+          limit: fetchLimit,
+          sort: collection.sort.byProperty('created_at', sortOrder === 'asc'),
+        };
+        if (combined) opts.filters = combined;
+        return (await collection.query.fetchObjects(opts)).objects;
+      },
+    );
+
+    const deduped = dedupeBySourceId(allResults, input.dedupe);
+    deduped.sort((a: any, b: any) => {
+      const aTime = new Date(a.properties?.created_at || 0).getTime();
+      const bTime = new Date(b.properties?.created_at || 0).getTime();
+      return sortOrder === 'desc' ? bTime - aTime : aTime - bTime;
+    });
+
+    const paginated = deduped.slice(offset, offset + limit);
+    const broadResults: BroadSearchResult[] = [];
+    for (const obj of paginated) {
+      if (obj.properties?.doc_type !== 'memory') continue;
+
+      const content = (obj.properties.content as string) ?? '';
+      const sliced = sliceContent(content);
+
+      const result: BroadSearchResult = {
+        memory_id: obj.uuid,
+        content_type: (obj.properties.content_type as string) ?? 'note',
+        content_head: sliced.head,
+        content_mid: sliced.mid,
+        content_tail: sliced.tail,
+        created_at: (obj.properties.created_at as string) ?? '',
+        tags: (obj.properties.tags as string[]) ?? [],
+        weight: (obj.properties.weight as number) ?? 0.5,
+      };
+
+      if (obj.properties.title) result.title = obj.properties.title as string;
+      if (obj.properties.total_significance != null) result.total_significance = obj.properties.total_significance as number;
+      if (obj.properties.feel_significance != null) result.feel_significance = obj.properties.feel_significance as number;
+      if (obj.properties.functional_significance != null) result.functional_significance = obj.properties.functional_significance as number;
+
+      broadResults.push(result);
+    }
+
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, results: broadResults, total: broadResults.length, offset, limit };
+  }
+
+  // ── By Random (random sampling for spaces/groups) ─────────────────
+
+  async byRandom(input: RandomSpaceInput, authContext?: AuthContext): Promise<RandomSpaceResult> {
+    const spaces = input.spaces || [];
+    const groups = input.groups || [];
+    const limit = input.limit ?? 10;
+    const POOL_FETCH_LIMIT = 1000;
+
+    this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
+
+    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+      input, spaces, groups,
+      async (collection, baseFilters) => {
+        const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
+        const opts: any = { limit: POOL_FETCH_LIMIT };
+        if (combined) opts.filters = combined;
+        return (await collection.query.fetchObjects(opts)).objects;
+      },
+    );
+
+    const deduped = dedupeBySourceId(allResults, input.dedupe);
+    const pool = deduped.filter((obj: any) => obj.properties?.doc_type === 'memory');
+    const totalPoolSize = pool.length;
+
+    if (totalPoolSize === 0) {
+      return { spaces_searched: spacesSearched, groups_searched: groupsSearched, results: [], total_pool_size: 0 };
+    }
+
+    // Fisher-Yates partial shuffle
+    const sampleSize = Math.min(limit, totalPoolSize);
+    const indices = Array.from({ length: totalPoolSize }, (_, i) => i);
+    for (let i = totalPoolSize - 1; i > totalPoolSize - 1 - sampleSize && i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+
+    const selectedIndices = indices.slice(totalPoolSize - sampleSize);
+    const results = selectedIndices.map((idx) => {
+      const obj = pool[idx];
+      return { id: obj.uuid, ...obj.properties } as Record<string, unknown>;
+    });
+
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, results, total_pool_size: totalPoolSize };
+  }
+
+  // ── Private: Validate Space/Group Input ───────────────────────────
+
+  private validateSpaceGroupInput(
+    spaces: string[],
+    groups: string[],
+    moderationFilter: ModerationFilter,
+    authContext?: AuthContext,
+  ): void {
+    if (spaces.length > 0) {
+      const invalid = spaces.filter((s) => !isValidSpaceId(s));
+      if (invalid.length > 0) {
+        throw new ValidationError(`Invalid space IDs: ${invalid.join(', ')}`, { spaces: invalid });
+      }
+    }
+    if (groups.length > 0) {
+      const invalid = groups.filter((g) => !g || g.includes('.') || g.trim() === '');
+      if (invalid.length > 0) {
+        throw new ValidationError('Group IDs cannot be empty or contain dots');
+      }
+    }
+    if (moderationFilter !== 'approved') {
+      for (const groupId of groups) {
+        if (!canModerate(authContext, groupId)) {
+          throw new ForbiddenError(`Moderator access required to view ${moderationFilter} memories in group ${groupId}`);
+        }
+      }
+      if ((spaces.length > 0 || groups.length === 0) && !canModerateAny(authContext)) {
+        throw new ForbiddenError(`Moderator access required to view ${moderationFilter} memories in spaces`);
+      }
+    }
+  }
+
+  // ── Private: Fetch Across Collections ─────────────────────────────
+
+  private async fetchAcrossCollections(
+    input: SpaceSortBaseInput,
+    spaces: string[],
+    groups: string[],
+    fetchFn: (collection: any, baseFilters: any[]) => Promise<any[]>,
+  ): Promise<{ allResults: any[]; spacesSearched: string[] | 'all_public'; groupsSearched: string[] }> {
+    const allResults: any[] = [];
+
+    // Search spaces collection
+    if (spaces.length > 0 || groups.length === 0) {
+      await ensurePublicCollection(this.weaviateClient);
+      const name = getCollectionName(CollectionType.SPACES);
+      const collection = this.weaviateClient.collections.get(name);
+      const baseFilters = this.buildBaseFilters(collection, input);
+      if (spaces.length > 0) {
+        baseFilters.push(collection.filter.byProperty('space_ids').containsAny(spaces));
+      }
+      allResults.push(...tagWithSource(await fetchFn(collection, baseFilters), name));
+    }
+
+    // Search group collections
+    for (const groupId of groups) {
+      const name = getCollectionName(CollectionType.GROUPS, groupId);
+      const exists = await this.weaviateClient.collections.exists(name);
+      if (!exists) continue;
+      const collection = this.weaviateClient.collections.get(name);
+      const baseFilters = this.buildBaseFilters(collection, input);
+      allResults.push(...tagWithSource(await fetchFn(collection, baseFilters), name));
+    }
+
+    return {
+      allResults,
+      spacesSearched: spaces.length > 0 ? spaces : (groups.length === 0 ? 'all_public' as const : []),
+      groupsSearched: groups,
+    };
+  }
+
   // ── Private: Build Base Filters ─────────────────────────────────────
 
-  private buildBaseFilters(collection: any, input: SearchSpaceInput): any[] {
+  private buildBaseFilters(collection: any, input: SearchSpaceInput | SpaceSortBaseInput): any[] {
     const filterList: any[] = [];
 
     // Note: space/group memories use the retract model (remove groupId from

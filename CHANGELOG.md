@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.40.2] - 2026-03-07
+
+### Added
+- **REM Phase 5: Reconciliation** — identifies memories with high `feel_coherence_tension`, detects conflict pairs (valence opposition, identity conflict), generates neutral reconciliation observations via Haiku sub-LLM. Creates `content_type: 'rem'` observation memories with `trust_score: 5`, tags (`rem-reconciliation`, conflict type), and `source: 'rem'`. Updates source memory observation fields with reconciliation notes. Deduplicates conflict pairs. Phase 5 wired into RemService and RemJobWorker.
+- Cross-task pruning resistance verification: high coherence_tension memories confirmed exempt from decay via shared `COHERENCE_TENSION_THRESHOLD` constant
+- 22 new reconciliation tests covering candidate selection, conflict detection, Haiku observation generation, REM memory creation, deduplication, error handling, pruning resistance
+
 ## [0.40.1] - 2026-03-07
 
 ### Added

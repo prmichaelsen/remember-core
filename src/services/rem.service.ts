@@ -27,6 +27,8 @@ import { createCollectionStatsCache } from './scoring-context.service.js';
 import { computeAllComposites } from './composite-scoring.js';
 import { buildRemMetadataUpdate } from './rem-metadata.js';
 import { runPruningPhase, type PruningResult } from './rem.pruning.js';
+import { runReconciliationPhase, type ReconciliationResult } from './rem.reconciliation.js';
+import type { SubLlmProvider } from './emotional-scoring.service.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -40,6 +42,8 @@ export interface RemServiceDeps {
   // Phase 0: Emotional scoring (optional — Phase 0 skipped if not provided)
   emotionalScoringService?: EmotionalScoringService;
   scoringContextService?: ScoringContextService;
+  // Phase 5: Reconciliation (optional — Phase 5 skipped if not provided)
+  subLlm?: SubLlmProvider;
 }
 
 export interface Phase0Stats {
@@ -57,9 +61,11 @@ export interface RunCycleResult {
   relationships_merged: number;
   relationships_split: number;
   skipped_by_haiku: number;
+  abstractions_created: number;
   duration_ms: number;
   phase0?: Phase0Stats;
   pruning?: PruningResult;
+  reconciliation?: ReconciliationResult;
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────
@@ -83,6 +89,7 @@ export class RemService {
       relationships_merged: 0,
       relationships_split: 0,
       skipped_by_haiku: 0,
+      abstractions_created: 0,
       duration_ms: 0,
     };
 
@@ -327,7 +334,22 @@ export class RemService {
       });
     }
 
-    // 12. Advance cursor
+    // 12. Phase 5: Reconciliation (coherence tension)
+    if (this.deps.subLlm) {
+      try {
+        const reconciliationResult = await runReconciliationPhase(
+          collection,
+          { subLlm: this.deps.subLlm, logger: this.logger },
+        );
+        stats.reconciliation = reconciliationResult;
+      } catch (err) {
+        this.logger.warn?.('Phase 5 reconciliation failed, continuing', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    // 13. Advance cursor
     const newCursor = candidates[candidates.length - 1]?.created_at ?? memoryCursor;
     await this.advanceCursor(collectionId, newCursor);
 

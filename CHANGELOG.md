@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.42.0] - 2026-03-07
+
+### Added
+- **REM Classification Pipeline** — classifies unclassified memories during REM cycle via Haiku sub-LLM with `nearObject` neighbor context. Assigns genre (from 18-value closed set), quality signals (substantive/draft/low_value/duplicate/stale), and emergent thematic groups (snake_case normalized). Detects exact duplicates, stores merge candidates for near-duplicates, and creates coherence pressures (`CONTRADICTION_PRESSURE_MAGNITUDE = -0.15`) for detected contradictions. Batch capped at `CLASSIFICATION_BATCH_SIZE = 20`. Wired into RemService.runCycle() after Phase 0 scoring, before mood update. ClassificationService added as optional RemServiceDeps.
+- 25 new tests covering prompt building, response parsing, genre/quality validation, duplicate/merge/contradiction detection, batch processing, error handling, and moodService integration
+
 ## [0.41.0] - 2026-03-07
 
 ### Added

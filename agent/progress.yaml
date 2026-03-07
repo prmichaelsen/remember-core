@@ -2376,7 +2376,7 @@ tasks:
 
     - id: task-172
       name: REM Classification Pipeline
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-34-classification-and-perception/task-172-rem-classification-pipeline.md
       estimated_hours: 6
       dependencies: [task-171]

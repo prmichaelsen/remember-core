@@ -31,6 +31,8 @@ import { runReconciliationPhase, type ReconciliationResult } from './rem.reconci
 import type { SubLlmProvider } from './emotional-scoring.service.js';
 import type { MoodService } from './mood.service.js';
 import { runMoodUpdate, buildThresholdMemoryContent, type MoodUpdateResult } from './mood-update.service.js';
+import type { ClassificationService } from './classification.service.js';
+import { runClassificationPipeline, type ClassificationPipelineResult } from './rem.classification.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -49,6 +51,8 @@ export interface RemServiceDeps {
   // Mood update (optional — mood drift skipped if not provided)
   moodService?: MoodService;
   ghostCompositeId?: string;
+  // Classification (optional — classification skipped if not provided)
+  classificationService?: ClassificationService;
 }
 
 export interface Phase0Stats {
@@ -72,6 +76,7 @@ export interface RunCycleResult {
   pruning?: PruningResult;
   reconciliation?: ReconciliationResult;
   mood_update?: MoodUpdateResult;
+  classification?: ClassificationPipelineResult;
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────
@@ -149,6 +154,26 @@ export class RemService {
         stats.phase0 = phase0Stats;
       } catch (err) {
         this.logger.warn?.('Phase 0 scoring failed, continuing with relationship discovery', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    // 4.6. Classification: classify unclassified memories via Haiku
+    if (this.deps.classificationService && this.deps.subLlm) {
+      try {
+        const classResult = await runClassificationPipeline({
+          collection,
+          collectionId,
+          subLlm: this.deps.subLlm,
+          classificationService: this.deps.classificationService,
+          moodService: this.deps.moodService,
+          ghostCompositeId: this.deps.ghostCompositeId,
+          logger: this.logger,
+        });
+        stats.classification = classResult;
+      } catch (err) {
+        this.logger.warn?.('Classification failed, continuing', {
           error: err instanceof Error ? err.message : String(err),
         });
       }

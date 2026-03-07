@@ -95,6 +95,56 @@ describe('SpacesResource', () => {
       body: { userId: 'user1', spaces: ['public'], limit: 20 },
     });
   });
+
+  it('byTime calls POST /api/svc/v1/spaces/by-time', async () => {
+    const spaces = createSpacesResource(http);
+    await spaces.byTime('user1', { spaces: ['the_void'], limit: 10, direction: 'desc' });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/spaces/by-time', {
+      userId: 'user1',
+      body: { spaces: ['the_void'], limit: 10, direction: 'desc' },
+    });
+  });
+
+  it('byRating calls POST /api/svc/v1/spaces/by-rating', async () => {
+    const spaces = createSpacesResource(http);
+    await spaces.byRating('user1', { spaces: ['the_void'], limit: 10 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/spaces/by-rating', {
+      userId: 'user1',
+      body: { spaces: ['the_void'], limit: 10 },
+    });
+  });
+
+  it('byProperty calls POST /api/svc/v1/spaces/by-property', async () => {
+    const spaces = createSpacesResource(http);
+    await spaces.byProperty('user1', { spaces: ['the_void'], sort_field: 'weight', sort_direction: 'desc' });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/spaces/by-property', {
+      userId: 'user1',
+      body: { spaces: ['the_void'], sort_field: 'weight', sort_direction: 'desc' },
+    });
+  });
+
+  it('byBroad calls POST /api/svc/v1/spaces/by-broad', async () => {
+    const spaces = createSpacesResource(http);
+    await spaces.byBroad('user1', { spaces: ['the_void'], limit: 20 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/spaces/by-broad', {
+      userId: 'user1',
+      body: { spaces: ['the_void'], limit: 20 },
+    });
+  });
+
+  it('byRandom calls POST /api/svc/v1/spaces/by-random', async () => {
+    const spaces = createSpacesResource(http);
+    await spaces.byRandom('user1', { spaces: ['the_void'], limit: 5 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/spaces/by-random', {
+      userId: 'user1',
+      body: { spaces: ['the_void'], limit: 5 },
+    });
+  });
 });
 
 describe('ConfirmationsResource', () => {

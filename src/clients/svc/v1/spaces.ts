@@ -13,6 +13,11 @@ export interface SpacesResource {
   query(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byDiscovery(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   byRecommendation(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byTime(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byRating(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byProperty(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byBroad(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  byRandom(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
 }
 
 export function createSpacesResource(http: HttpClient): SpacesResource {
@@ -40,6 +45,21 @@ export function createSpacesResource(http: HttpClient): SpacesResource {
     },
     byRecommendation(userId, input) {
       return http.request('POST', '/api/svc/v1/spaces/by-recommendation', { userId, body: input });
+    },
+    byTime(userId, input) {
+      return http.request('POST', '/api/svc/v1/spaces/by-time', { userId, body: input });
+    },
+    byRating(userId, input) {
+      return http.request('POST', '/api/svc/v1/spaces/by-rating', { userId, body: input });
+    },
+    byProperty(userId, input) {
+      return http.request('POST', '/api/svc/v1/spaces/by-property', { userId, body: input });
+    },
+    byBroad(userId, input) {
+      return http.request('POST', '/api/svc/v1/spaces/by-broad', { userId, body: input });
+    },
+    byRandom(userId, input) {
+      return http.request('POST', '/api/svc/v1/spaces/by-random', { userId, body: input });
     },
   };
 }

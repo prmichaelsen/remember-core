@@ -57,7 +57,10 @@ export interface GhostSearchContext {
   accessor_trust_level: TrustLevel;
   /** Owner of the ghost memories being searched */
   owner_user_id: string;
-  /** If true, skip ghost content_type exclusion (explicit ghost search) */
+  /**
+   * @deprecated Use `filters.types: ['ghost']` instead. Will be removed in a future version.
+   * If true, skip ghost content_type exclusion (explicit ghost search).
+   */
   include_ghost_content?: boolean;
 }
 

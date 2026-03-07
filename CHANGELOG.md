@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.45.0] - 2026-03-07
+
+### Added
+- 5 sort mode methods on SVC client SpacesResource: `byTime`, `byRating`, `byProperty`, `byBroad`, `byRandom` — each maps to `POST /api/svc/v1/spaces/by-*`
+- Live e2e test suite for space sort mode endpoints (`test/live/suites/10-space-sort-modes.live.ts`)
+
+### Fixed
+- Ghost exclusion conflicts with explicit ghost type filter — `content_type != 'ghost'` was applied even when `filters.types` explicitly requested `'ghost'`, creating an impossible AND query that returned 0 results for all browse/sort modes. Now skips ghost exclusion when the types filter includes `'ghost'`
+
+### Deprecated
+- `GhostSearchContext.include_ghost_content` — use `filters.types: ['ghost']` instead
+
 ## [0.43.1] - 2026-03-07
 
 ### Changed

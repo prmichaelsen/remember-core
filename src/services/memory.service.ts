@@ -598,7 +598,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {
@@ -665,7 +665,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {
@@ -726,7 +726,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {
@@ -796,7 +796,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {
@@ -855,7 +855,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {
@@ -981,7 +981,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {
@@ -1062,7 +1062,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {
@@ -1123,7 +1123,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {
@@ -1199,7 +1199,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {
@@ -1334,7 +1334,7 @@ export class MemoryService {
     if (input.ghost_context) {
       ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
     }
-    if (!input.ghost_context?.include_ghost_content) {
+    if (!input.ghost_context?.include_ghost_content && !input.filters?.types?.includes('ghost')) {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     if (!input.filters?.types?.includes('rem')) {

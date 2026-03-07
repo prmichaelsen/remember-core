@@ -403,6 +403,15 @@ describe('MemoryService', () => {
       expect(types).toContain('ghost');
     });
 
+    it('includes ghost content when filters.types explicitly includes ghost', async () => {
+      const result = await service.search({
+        query: 'persona',
+        filters: { types: ['ghost'] },
+      });
+      const types = result.memories.map((m: any) => m.content_type);
+      expect(types).toContain('ghost');
+    });
+
     it('does not apply trust filter without ghost_context', async () => {
       const result = await service.search({ query: 'note' });
       // All memories returned (no trust filtering)
@@ -564,6 +573,26 @@ describe('MemoryService', () => {
       for (const memory of result.memories) {
         expect(memory.content_type).toBe('note');
         expect((memory.tags as string[]).includes('important')).toBe(true);
+      }
+    });
+
+    it('includes ghost content when filters.types explicitly includes ghost', async () => {
+      await collection.data.insert({
+        properties: {
+          user_id: userId, doc_type: 'memory', content: 'ghost byTime target',
+          content_type: 'ghost', deleted_at: null,
+          created_at: new Date().toISOString(),
+        },
+      });
+
+      const result = await service.byTime({
+        limit: 10,
+        filters: { types: ['ghost'] },
+      });
+
+      expect(result.memories.length).toBeGreaterThanOrEqual(1);
+      for (const memory of result.memories) {
+        expect(memory.content_type).toBe('ghost');
       }
     });
   });

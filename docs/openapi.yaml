@@ -354,6 +354,72 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/by-curated:
+    post:
+      tags: [memories]
+      summary: Sort memories by composite curation score (editorial + cluster + PageRank + rating + recency + engagement)
+      operationId: memoriesByCurated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CuratedModeRequest'
+      responses:
+        '200':
+          description: Curated-sorted memories with optional sub-score breakdown
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuratedModeResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/memories/{id}/click:
+    post:
+      tags: [memories]
+      summary: Increment click engagement counter for a memory
+      operationId: incrementMemoryClick
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+      responses:
+        '204':
+          description: Click count incremented
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/memories/{id}/share:
+    post:
+      tags: [memories]
+      summary: Increment share engagement counter for a memory
+      operationId: incrementMemoryShare
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+      responses:
+        '204':
+          description: Share count incremented
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/memories/{id}/comment-count:
+    post:
+      tags: [memories]
+      summary: Increment comment engagement counter for a memory
+      operationId: incrementMemoryCommentCount
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+      responses:
+        '204':
+          description: Comment count incremented
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /api/svc/v1/memories/search:
     post:
       tags: [memories]
@@ -902,6 +968,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RecommendationSpaceResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/spaces/by-curated:
+    post:
+      tags: [spaces]
+      summary: Sort space memories by composite curation score
+      operationId: spacesByCurated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CuratedSpaceInput'
+      responses:
+        '200':
+          description: Curated-sorted space memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CuratedSpaceResult'
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -2308,6 +2397,112 @@ components:
         total_pool_size:
           type: integer
           description: Total number of memories in the random pool before sampling
+
+    CuratedModeRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Optional search query for hybrid search re-ranking
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        direction:
+          type: string
+          enum: [asc, desc]
+          default: desc
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    CuratedModeResult:
+      type: object
+      required: [memories, total, offset, limit]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              curated_score:
+                type: number
+                description: Composite curation score (0.0-1.0)
+              is_discovery:
+                type: boolean
+                description: True if this memory was interleaved as unscored
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    CuratedSpaceInput:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Optional search query for hybrid search re-ranking
+        spaces:
+          type: array
+          items:
+            type: string
+        groups:
+          type: array
+          items:
+            type: string
+        direction:
+          type: string
+          enum: [asc, desc]
+          default: desc
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        moderation_filter:
+          $ref: '#/components/schemas/ModerationFilter'
+
+    CuratedSpaceResult:
+      type: object
+      required: [spaces_searched, groups_searched, memories, total, offset, limit]
+      properties:
+        spaces_searched:
+          oneOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+              const: all_public
+        groups_searched:
+          type: array
+          items:
+            type: string
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
 
     RecommendationSpaceInput:
       type: object

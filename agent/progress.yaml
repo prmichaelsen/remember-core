@@ -3,7 +3,7 @@ project:
   version: 0.37.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M28
+  current_milestone: M29
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -460,7 +460,7 @@ milestones:
 
   - id: M29
     name: "REM Emotional Weighting: Retroactive Reweighting"
-    status: not_started
+    status: in_progress
     progress: 0
     estimated_weeks: 1.5
     tasks_completed: 0

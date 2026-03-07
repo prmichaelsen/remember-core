@@ -19,6 +19,10 @@ export interface RemConfig {
   candidates_per_seed_strategy: number;  // Results per nearText search (keywords/topics/themes/summary)
   // Haiku validation bypass
   auto_approve_similarity: number;       // Auto-approve clusters above this similarity (0.9 = 90%+, bypasses Haiku)
+  // Phase 0: Emotional scoring
+  scoring_batch_size: number;            // Max memories to score per cycle
+  scoring_cost_cap: number;              // Max cost (USD) for Phase 0 scoring per cycle
+  scoring_cost_per_memory: number;       // Estimated cost per memory (31 Haiku calls)
 }
 
 export const DEFAULT_REM_CONFIG: RemConfig = {
@@ -33,6 +37,10 @@ export const DEFAULT_REM_CONFIG: RemConfig = {
   candidates_per_seed_strategy: 5,
   // Auto-approve highly similar clusters (bypasses conservative Haiku)
   auto_approve_similarity: 0.9,
+  // Phase 0: Emotional scoring (~$0.0015 per memory = $0.75/500)
+  scoring_batch_size: 10,
+  scoring_cost_cap: 5.0,
+  scoring_cost_per_memory: 0.0015,
 };
 
 // ─── State Tracking ──────────────────────────────────────────────────────

@@ -18,7 +18,7 @@ import { interleaveDiscovery, DISCOVERY_RATIO, type DiscoveryItem } from './disc
 import type { RecommendationService } from './recommendation.service.js';
 import { MIN_SIMILARITY } from './recommendation.service.js';
 import { isValidContentType, DEFAULT_CONTENT_TYPE } from '../constants/content-types.js';
-import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
+import { fetchMemoryWithAllProperties, ALL_MEMORY_PROPERTIES } from '../database/weaviate/client.js';
 import {
   ALL_SCORING_DIMENSIONS,
   COMPOSITE_SCORE_PROPERTIES,
@@ -232,6 +232,27 @@ export interface RecommendationModeResult {
   total: number;
   offset: number;
   limit: number;
+}
+
+// ── byProperty Sort Mode ──────────────────────────────────────────────
+
+export interface PropertyModeRequest {
+  sort_field: string;
+  sort_direction: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+  filters?: SearchFilters;
+  deleted_filter?: DeletedFilter;
+  ghost_context?: GhostSearchContext;
+}
+
+export interface PropertyModeResult {
+  memories: Record<string, unknown>[];
+  total: number;
+  offset: number;
+  limit: number;
+  sort_field: string;
+  sort_direction: 'asc' | 'desc';
 }
 
 export interface UpdateMemoryInput {
@@ -934,6 +955,70 @@ export class MemoryService {
       total: paginated.length,
       offset,
       limit,
+    };
+  }
+
+  // ── By Property (generic sort by any Weaviate property) ────────────
+
+  async byProperty(input: PropertyModeRequest): Promise<PropertyModeResult> {
+    const limit = input.limit ?? 50;
+    const offset = input.offset ?? 0;
+    const { sort_field, sort_direction } = input;
+
+    // Validate sort_field
+    const validFields = new Set<string>(ALL_MEMORY_PROPERTIES);
+    if (!validFields.has(sort_field)) {
+      throw new Error(`Invalid sort_field "${sort_field}". Must be a valid memory property.`);
+    }
+
+    const memoryFilters = buildMemoryOnlyFilters(this.collection, input.filters);
+    const ghostFilters: any[] = [];
+    if (input.ghost_context) {
+      ghostFilters.push(buildTrustFilter(this.collection, input.ghost_context.accessor_trust_level));
+    }
+    if (!input.ghost_context?.include_ghost_content) {
+      ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
+    }
+
+    const executeQuery = async (useDeletedFilter: boolean) => {
+      const deletedFilter = useDeletedFilter
+        ? buildDeletedFilter(this.collection, input.deleted_filter || 'exclude')
+        : null;
+
+      const combinedFilters = combineFiltersWithAnd(
+        [deletedFilter, memoryFilters, ...ghostFilters].filter((f) => f !== null),
+      );
+
+      const queryOptions: any = {
+        limit: limit + offset,
+        sort: this.collection.sort.byProperty(sort_field, sort_direction === 'asc'),
+      };
+
+      if (combinedFilters) {
+        queryOptions.filters = combinedFilters;
+      }
+
+      return this.collection.query.fetchObjects(queryOptions);
+    };
+
+    const results = await this.retryWithoutDeletedFilter(executeQuery);
+    const paginated = results.objects.slice(offset);
+
+    const memories: Record<string, unknown>[] = [];
+    for (const obj of paginated) {
+      const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
+      if (doc.doc_type === 'memory') {
+        memories.push(doc);
+      }
+    }
+
+    return {
+      memories,
+      total: memories.length,
+      offset,
+      limit,
+      sort_field,
+      sort_direction,
     };
   }
 

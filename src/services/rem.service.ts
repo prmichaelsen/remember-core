@@ -21,6 +21,11 @@ import {
   shouldSplit,
   splitCluster,
 } from './rem.clustering.js';
+import type { EmotionalScoringService } from './emotional-scoring.service.js';
+import type { ScoringContextService } from './scoring-context.service.js';
+import { createCollectionStatsCache } from './scoring-context.service.js';
+import { computeAllComposites } from './composite-scoring.js';
+import { buildRemMetadataUpdate } from './rem-metadata.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -31,6 +36,16 @@ export interface RemServiceDeps {
   haikuClient: HaikuClient;
   config?: Partial<RemConfig>;
   logger?: Logger;
+  // Phase 0: Emotional scoring (optional — Phase 0 skipped if not provided)
+  emotionalScoringService?: EmotionalScoringService;
+  scoringContextService?: ScoringContextService;
+}
+
+export interface Phase0Stats {
+  memories_scored: number;
+  memories_skipped: number;
+  cost_consumed: number;
+  stopped_by_cost_cap: boolean;
 }
 
 export interface RunCycleResult {
@@ -42,6 +57,7 @@ export interface RunCycleResult {
   relationships_split: number;
   skipped_by_haiku: number;
   duration_ms: number;
+  phase0?: Phase0Stats;
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────
@@ -57,8 +73,8 @@ export class RemService {
 
   async runCycle(): Promise<RunCycleResult> {
     const start = Date.now();
-    const stats = {
-      collection_id: null as string | null,
+    const stats: RunCycleResult = {
+      collection_id: null,
       memories_scanned: 0,
       clusters_found: 0,
       relationships_created: 0,
@@ -110,6 +126,18 @@ export class RemService {
       total_memories: objectCount,
       min_size: this.config.min_collection_size,
     });
+
+    // 4.5. Phase 0: Emotional scoring (before relationship discovery)
+    if (this.deps.emotionalScoringService && this.deps.scoringContextService) {
+      try {
+        const phase0Stats = await this.runPhase0Scoring(collection, collectionId);
+        stats.phase0 = phase0Stats;
+      } catch (err) {
+        this.logger.warn?.('Phase 0 scoring failed, continuing with relationship discovery', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
 
     // 5. Load collection state for memory cursor
     const collectionState = await this.deps.stateStore.getCollectionState(collectionId);
@@ -297,6 +325,158 @@ export class RemService {
       duration_seconds: Math.round(stats.duration_ms / 1000),
     });
     return stats;
+  }
+
+  /**
+   * Phase 0: Score unscored/outdated memories on all 31 emotional dimensions.
+   * Runs before relationship discovery to ensure emotional data is available.
+   */
+  private async runPhase0Scoring(
+    collection: any,
+    collectionId: string,
+  ): Promise<Phase0Stats> {
+    const stats: Phase0Stats = {
+      memories_scored: 0,
+      memories_skipped: 0,
+      cost_consumed: 0,
+      stopped_by_cost_cap: false,
+    };
+
+    const scoringService = this.deps.emotionalScoringService!;
+    const contextService = this.deps.scoringContextService!;
+
+    // Invalidate stats cache at start of each cycle
+    const statsCache = createCollectionStatsCache();
+
+    this.logger.info?.('Phase 0: Starting emotional scoring', {
+      collectionId,
+      batch_size: this.config.scoring_batch_size,
+      cost_cap: this.config.scoring_cost_cap,
+    });
+
+    // Select memories to score: unscored first (rem_touched_at is null), then outdated
+    const memories = await this.selectMemoriesForScoring(collection);
+
+    if (memories.length === 0) {
+      this.logger.info?.('Phase 0: No memories to score');
+      return stats;
+    }
+
+    // Process batch
+    for (const memory of memories) {
+      // Check cost cap before scoring
+      if (stats.cost_consumed + this.config.scoring_cost_per_memory > this.config.scoring_cost_cap) {
+        stats.stopped_by_cost_cap = true;
+        this.logger.info?.('Phase 0: Cost cap reached', {
+          cost_consumed: stats.cost_consumed,
+          cost_cap: this.config.scoring_cost_cap,
+          memories_scored: stats.memories_scored,
+        });
+        break;
+      }
+
+      try {
+        // 1. Gather scoring context
+        const context = await contextService.gatherScoringContext(
+          collection, collectionId, memory.uuid, statsCache,
+        );
+
+        // 2. Score all 31 dimensions
+        const scores = await scoringService.scoreAllDimensions(
+          {
+            content: memory.properties.content ?? '',
+            content_type: memory.properties.content_type ?? 'text',
+            created_at: memory.properties.created_at ?? new Date().toISOString(),
+          },
+          context,
+        );
+
+        // 3. Compute composite scores
+        const composites = computeAllComposites(scores);
+
+        // 4. Build REM metadata update
+        const remMeta = buildRemMetadataUpdate(
+          memory.properties.rem_visits ?? 0,
+        );
+
+        // 5. Persist all scores + composites + metadata in single update
+        const updateProps: Record<string, any> = {};
+
+        for (const [dim, score] of Object.entries(scores)) {
+          if (score !== null) {
+            updateProps[dim] = score;
+          }
+        }
+
+        if (composites.feel_significance !== null) {
+          updateProps.feel_significance = composites.feel_significance;
+        }
+        if (composites.functional_significance !== null) {
+          updateProps.functional_significance = composites.functional_significance;
+        }
+        if (composites.total_significance !== null) {
+          updateProps.total_significance = composites.total_significance;
+        }
+
+        updateProps.rem_touched_at = remMeta.rem_touched_at;
+        updateProps.rem_visits = remMeta.rem_visits;
+
+        await collection.data.update({ id: memory.uuid, properties: updateProps });
+
+        stats.memories_scored++;
+        stats.cost_consumed += this.config.scoring_cost_per_memory;
+      } catch (err) {
+        stats.memories_skipped++;
+        this.logger.warn?.('Phase 0: Failed to score memory', {
+          memoryId: memory.uuid,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    this.logger.info?.('Phase 0: Emotional scoring complete', {
+      ...stats,
+    });
+
+    return stats;
+  }
+
+  /**
+   * Select memories for Phase 0 scoring, prioritizing:
+   * 1. Unscored (rem_touched_at is null) — chronological order
+   * 2. Outdated (rem_touched_at oldest) — ascending order
+   */
+  private async selectMemoriesForScoring(collection: any): Promise<any[]> {
+    const batchSize = this.config.scoring_batch_size;
+
+    // First: unscored memories (rem_touched_at is null)
+    const unscoredFilter = collection.filter.byProperty('doc_type').equal('memory')
+      .and().byProperty('rem_touched_at').isNull(true);
+
+    const unscoredResult = await collection.query.fetchObjects({
+      filters: unscoredFilter,
+      limit: batchSize,
+      sort: collection.sort.byProperty('created_at', true),
+    });
+
+    const unscored = unscoredResult.objects;
+
+    if (unscored.length >= batchSize) {
+      return unscored.slice(0, batchSize);
+    }
+
+    // Fill remaining slots with outdated memories (oldest rem_touched_at first)
+    const remaining = batchSize - unscored.length;
+    const outdatedFilter = collection.filter.byProperty('doc_type').equal('memory')
+      .and().byProperty('rem_touched_at').isNull(false);
+
+    const outdatedResult = await collection.query.fetchObjects({
+      filters: outdatedFilter,
+      limit: remaining,
+      sort: collection.sort.byProperty('rem_touched_at', true),
+    });
+
+    return [...unscored, ...outdatedResult.objects];
   }
 
   private async validateWithHaiku(

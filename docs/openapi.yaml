@@ -291,6 +291,27 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/by-property:
+    post:
+      tags: [memories]
+      summary: Sort memories by any Weaviate property (pure sort, no vector search)
+      operationId: memoriesByProperty
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropertyModeRequest'
+      responses:
+        '200':
+          description: Property-sorted memories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertyModeResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /api/svc/v1/memories/search:
     post:
       tags: [memories]
@@ -2089,6 +2110,54 @@ components:
           type: integer
         limit:
           type: integer
+
+    PropertyModeRequest:
+      type: object
+      required: [sort_field, sort_direction]
+      properties:
+        sort_field:
+          type: string
+          description: Any valid Weaviate memory property name (e.g., total_significance, feel_trauma, created_at)
+        sort_direction:
+          type: string
+          enum: [asc, desc]
+          description: Sort direction
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        deleted_filter:
+          $ref: '#/components/schemas/DeletedFilter'
+        ghost_context:
+          $ref: '#/components/schemas/GhostSearchContext'
+
+    PropertyModeResult:
+      type: object
+      required: [memories, total, offset, limit, sort_field, sort_direction]
+      properties:
+        memories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+        sort_field:
+          type: string
+        sort_direction:
+          type: string
+          enum: [asc, desc]
 
     RecommendationSpaceInput:
       type: object

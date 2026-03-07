@@ -249,6 +249,7 @@ export {
   RemService,
   type RemServiceDeps,
   type RunCycleResult,
+  type Phase0Stats,
 } from './rem.service.js';
 
 // File extraction

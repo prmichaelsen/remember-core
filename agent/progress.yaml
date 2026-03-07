@@ -3,7 +3,7 @@ project:
   version: 0.36.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M27
+  current_milestone: M28
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.

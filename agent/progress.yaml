@@ -502,10 +502,11 @@ milestones:
 
   - id: M32
     name: Core Mood State
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
+    completed: 2026-03-07
     estimated_weeks: 1.5
-    tasks_completed: 0
+    tasks_completed: 4
     tasks_total: 4
     dependencies: [M28, M10]
     notes: |
@@ -532,10 +533,11 @@ milestones:
 
   - id: M34
     name: Memory Classification & User Perception
-    status: in_progress
-    progress: 25
+    status: completed
+    progress: 100
+    completed: 2026-03-07
     estimated_weeks: 1.5
-    tasks_completed: 1
+    tasks_completed: 4
     tasks_total: 4
     dependencies: [M32, M10]
     notes: |
@@ -2325,9 +2327,11 @@ tasks:
 
     - id: task-166
       name: Sub-LLM Narration
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-32-core-mood-state/task-166-sub-llm-narration.md
       estimated_hours: 3
+      actual_hours: 0.5
       dependencies: [task-165]
       description: "Haiku derives dominant_emotion, color, reasoning, motivation/goal/purpose."
 
@@ -2384,9 +2388,11 @@ tasks:
 
     - id: task-173
       name: User Perception Service + REM Updates
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-34-classification-and-perception/task-173-user-perception-service.md
       estimated_hours: 5
+      actual_hours: 0.5
       dependencies: [task-164]
       description: "UserPerception at users/{owner_id}/core/perceptions/{target}. REM updates. Confidence evolution."
 

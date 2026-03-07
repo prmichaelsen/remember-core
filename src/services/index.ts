@@ -419,3 +419,48 @@ export {
   type ClassifyInput,
   type MergeCandidate,
 } from './classification.service.js';
+
+// REM Classification Pipeline
+export {
+  runClassificationPipeline,
+  buildClassificationPrompt,
+  parseClassificationResponse,
+  type ClassificationPipelineResult,
+  type ClassificationPipelineDeps,
+  type ClassificationResponse,
+} from './rem.classification.js';
+
+// Mood-biased retrieval reranking
+export {
+  applyMoodBias,
+  type BiasableMemory,
+} from './mood-bias.service.js';
+
+// REM Abstraction (episodic to semantic promotion)
+export {
+  detectAbstractionCandidates,
+  synthesizeAbstraction,
+  buildAbstractionPrompt,
+  runAbstractionPhase,
+  DEFAULT_ABSTRACTION_CONFIG,
+  type AbstractionType,
+  type AbstractionCandidate,
+  type SynthesisResult,
+  type AbstractionPhaseResult,
+  type AbstractionConfig,
+  type AbstractionDeps,
+} from './rem.abstraction.js';
+
+// REM Trust-Level Flagging
+export {
+  shouldFlag,
+  generateFlagReason,
+  shouldBlockReflag,
+  dismissFlag,
+  getActiveTrustFlags,
+  evaluateAndFlag,
+  TRUST_FLAG_CONFIG,
+  type TrustLevelFlag,
+  type TrustFlagInput,
+  type FirestoreAdapter,
+} from './rem.trust-flagging.js';

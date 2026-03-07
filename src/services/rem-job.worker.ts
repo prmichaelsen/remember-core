@@ -22,6 +22,7 @@ const REM_STEPS = [
   { id: 'clustering', label: 'Forming clusters' },
   { id: 'haiku-validation', label: 'Validating clusters with Haiku' },
   { id: 'relationship-crud', label: 'Creating/updating relationships' },
+  { id: 'pruning', label: 'Pruning low-significance memories' },
 ] as const;
 
 // ─── Worker ─────────────────────────────────────────────────────────────

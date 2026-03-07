@@ -2258,9 +2258,10 @@ tasks:
       description: "Detect patterns in episodic memories, create synthesized semantic memories (content_type 'rem', search-excluded, relationship-linked)."
     - id: task-158
       name: Pruning (Decay and Soft-Delete)
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-30-rem-emotional-weighting-abstraction-pruning/task-158-pruning-decay-soft-delete.md
       estimated_hours: 4
+      actual_hours: 10m
       dependencies: [task-157]
       description: "Graduated pruning — increase decay on low-significance memories, soft-delete when threshold crossed."
     - id: task-159

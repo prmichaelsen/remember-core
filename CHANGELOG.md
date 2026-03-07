@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.40.1] - 2026-03-07
+
+### Added
+- **REM Phase 4: Pruning** — graduated decay on low-significance memories with soft-delete via `deleted_at`. `computeDecayIncrement()` scales inversely with `total_significance` (linear interpolation between floor/ceiling). Coherence tension and agency exemptions (OR logic) protect important memories from decay. `functional_urgency` decays 10% per cycle; `functional_salience` persists. Shared `rem.constants.ts` for `COHERENCE_TENSION_THRESHOLD` and `AGENCY_EXEMPTION_THRESHOLD`. Phase 4 wired into RemService and RemJobWorker.
+- 25 new pruning tests covering decay formula, exemptions, multi-cycle progression, soft-delete, urgency decay, content_type rem exclusion, error handling
+
 ## [0.40.0] - 2026-03-07
 
 ### Added

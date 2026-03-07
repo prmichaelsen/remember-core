@@ -26,6 +26,7 @@ import type { ScoringContextService } from './scoring-context.service.js';
 import { createCollectionStatsCache } from './scoring-context.service.js';
 import { computeAllComposites } from './composite-scoring.js';
 import { buildRemMetadataUpdate } from './rem-metadata.js';
+import { runPruningPhase, type PruningResult } from './rem.pruning.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export interface RunCycleResult {
   skipped_by_haiku: number;
   duration_ms: number;
   phase0?: Phase0Stats;
+  pruning?: PruningResult;
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────
@@ -315,7 +317,17 @@ export class RemService {
       }
     }
 
-    // 11. Advance cursor
+    // 11. Phase 4: Pruning (decay + soft-delete)
+    try {
+      const pruningResult = await runPruningPhase(collection, {}, this.logger);
+      stats.pruning = pruningResult;
+    } catch (err) {
+      this.logger.warn?.('Phase 4 pruning failed, continuing', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+
+    // 12. Advance cursor
     const newCursor = candidates[candidates.length - 1]?.created_at ?? memoryCursor;
     await this.advanceCursor(collectionId, newCursor);
 

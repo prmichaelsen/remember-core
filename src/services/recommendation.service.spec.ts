@@ -556,6 +556,41 @@ describe('RecommendationService', () => {
     });
   });
 
+  // ── Cache Invalidation Policy ─────────────────────────────────────
+
+  describe('cache invalidation policy', () => {
+    it('invalidateCentroid deletes cached entry for a user', async () => {
+      const service = new RecommendationService({
+        weaviateClient: createMockWeaviateClient(),
+        memoryIndexService: createMockMemoryIndexService(),
+        logger: createMockLogger(),
+      });
+
+      await service.invalidateCentroid('user1');
+      expect(mockDeleteDocument).toHaveBeenCalledTimes(1);
+      expect(mockDeleteDocument).toHaveBeenCalledWith(expect.any(String), 'user1');
+    });
+
+    it('getOrComputeCentroid does not call invalidate (caller responsibility)', async () => {
+      // Cache hit scenario — service never self-invalidates
+      mockGetDocument.mockResolvedValue({
+        centroid: [0.5, 0.5, 0],
+        profileSize: 10,
+        computedAt: '2026-01-01T00:00:00.000Z',
+        version: 1,
+      } as any);
+
+      const service = new RecommendationService({
+        weaviateClient: createMockWeaviateClient(),
+        memoryIndexService: createMockMemoryIndexService(),
+        logger: createMockLogger(),
+      });
+
+      await service.getOrComputeCentroid('user1');
+      expect(mockDeleteDocument).not.toHaveBeenCalled();
+    });
+  });
+
   // ── Constants ──────────────────────────────────────────────────────
 
   describe('constants', () => {

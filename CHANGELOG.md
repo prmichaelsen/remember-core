@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.37.1] - 2026-03-07
+
+### Added
+- **byRecommendation unit tests** — comprehensive edge case tests for MemoryService.byRecommendation: MIN_SIMILARITY threshold filtering, own-memory exclusion, SearchFilters pass-through, all-below-threshold → empty results. Cache invalidation policy tests for RecommendationService. 894 total tests passing.
+
 ## [0.37.0] - 2026-03-07
 
 ### Added

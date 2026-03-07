@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.43.0] - 2026-03-07
+
+### Added
+- **REM Phase 3: Abstraction** — detects recurring patterns in episodic memory clusters and creates synthesized semantic memories with `content_type: 'rem'`. Uses Haiku sub-LLM to generate concise abstractions (recurring_pattern, thematic_collection, identity_synthesis). Created memories have `trust_score: 5`, are excluded from default search, and linked to source memories via `relationship_type: 'abstraction'`. Wired into RemService.runCycle() after relationship CRUD, before pruning. Tracks `abstractions_created` in RunCycleResult. Abstraction step added to RemJobWorker.
+- 21 tests covering pattern detection, similarity/size thresholds, already-abstracted skip, Haiku synthesis parsing, custom config, and phase integration
+
 ## [0.42.0] - 2026-03-07
 
 ### Added

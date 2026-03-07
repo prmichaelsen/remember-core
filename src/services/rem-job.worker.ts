@@ -22,6 +22,7 @@ const REM_STEPS = [
   { id: 'clustering', label: 'Forming clusters' },
   { id: 'haiku-validation', label: 'Validating clusters with Haiku' },
   { id: 'relationship-crud', label: 'Creating/updating relationships' },
+  { id: 'abstraction', label: 'Abstracting episodic patterns to semantic memories' },
   { id: 'pruning', label: 'Pruning low-significance memories' },
   { id: 'reconciliation', label: 'Reconciling coherence tension conflicts' },
 ] as const;
@@ -100,6 +101,7 @@ export class RemJobWorker {
           relationships_merged: result.relationships_merged,
           relationships_split: result.relationships_split,
           skipped_by_haiku: result.skipped_by_haiku,
+          abstractions_created: result.abstractions_created,
           duration_ms: result.duration_ms,
         },
       });

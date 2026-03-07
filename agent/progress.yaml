@@ -3,7 +3,7 @@ project:
   version: 0.37.0
   started: 2026-02-27
   status: in_progress
-  current_milestone: M30
+  current_milestone: M33
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -519,10 +519,10 @@ milestones:
 
   - id: M33
     name: Retrieval Bias & Significance Scoring
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 3
     tasks_total: 3
     dependencies: [M32]
     notes: |
@@ -2347,7 +2347,7 @@ tasks:
   milestone_33:
     - id: task-168
       name: Mood-Biased Retrieval Reranking
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-33-retrieval-bias-and-significance/task-168-mood-biased-retrieval.md
       estimated_hours: 3
       dependencies: [task-164]
@@ -2355,7 +2355,7 @@ tasks:
 
     - id: task-169
       name: Significance Scoring + Anticipatory Emotion
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-33-retrieval-bias-and-significance/task-169-significance-and-anticipatory.md
       estimated_hours: 5
       dependencies: [task-164]
@@ -2363,7 +2363,7 @@ tasks:
 
     - id: task-170
       name: Retrieval Bias Unit Tests
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-33-retrieval-bias-and-significance/task-170-retrieval-bias-tests.md
       estimated_hours: 3
       dependencies: [task-168, task-169]

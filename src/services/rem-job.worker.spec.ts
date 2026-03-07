@@ -83,11 +83,11 @@ describe('RemJobWorker', () => {
   });
 
   describe('happy path', () => {
-    it('registers 4 steps and runs cycle', async () => {
+    it('registers 7 steps and runs cycle', async () => {
       await worker.execute('job-1', { collection_id: 'Memory_users_test' });
 
-      // 4 steps registered
-      expect(mockJobService.addStep).toHaveBeenCalledTimes(4);
+      // 7 steps registered
+      expect(mockJobService.addStep).toHaveBeenCalledTimes(7);
 
       // RemService.runCycle called
       expect(mockRemService.runCycle).toHaveBeenCalledTimes(1);
@@ -101,8 +101,8 @@ describe('RemJobWorker', () => {
     it('reports progress after each step', async () => {
       await worker.execute('job-1', { collection_id: 'Memory_users_test' });
 
-      // 4 steps → should have progress updates going to 25, 50, 75, 100
-      expect(mockJobService.updateProgress).toHaveBeenCalledTimes(5); // 1 initial + 4 step completions
+      // 7 steps → should have progress updates going to 14, 29, 43, 57, 71, 86, 100
+      expect(mockJobService.updateProgress).toHaveBeenCalledTimes(8); // 1 initial + 7 step completions
     });
 
     it('includes result stats', async () => {

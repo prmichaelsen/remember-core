@@ -473,10 +473,10 @@ milestones:
 
   - id: M30
     name: "REM Emotional Weighting: Abstraction, Pruning & Reconciliation"
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 2
-    tasks_completed: 0
+    tasks_completed: 4
     tasks_total: 4
     notes: |
       Advanced REM phases: abstraction (episodic to semantic promotion with
@@ -2251,7 +2251,7 @@ tasks:
   milestone_30:
     - id: task-157
       name: Abstraction (Episodic to Semantic)
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-30-rem-emotional-weighting-abstraction-pruning/task-157-abstraction-episodic-to-semantic.md
       estimated_hours: 5
       dependencies: [task-153]
@@ -2266,7 +2266,7 @@ tasks:
       description: "Graduated pruning — increase decay on low-significance memories, soft-delete when threshold crossed."
     - id: task-159
       name: Trust-Level Flagging
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-30-rem-emotional-weighting-abstraction-pruning/task-159-trust-level-flagging.md
       estimated_hours: 3
       dependencies: [task-149]

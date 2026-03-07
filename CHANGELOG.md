@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.45.2] - 2026-03-07
+
+### Added
+- `EditorialScoringService` — one-time per-memory Haiku quality evaluation with evaluate-once-permanent policy, batch processing with cost cap, prompt builder, response parser, 18 tests
+
 ## [0.45.1] - 2026-03-07
 
 ### Added

@@ -496,6 +496,19 @@ export {
   type RecentMemory,
 } from './anticipatory.service.js';
 
+// Editorial scoring (one-time Haiku quality evaluation)
+export {
+  EditorialScoringService,
+  buildEditorialPrompt,
+  parseEditorialResponse,
+  MAX_CONTENT_LENGTH as EDITORIAL_MAX_CONTENT_LENGTH,
+  DEFAULT_BATCH_LIMIT as EDITORIAL_DEFAULT_BATCH_LIMIT,
+  type EditorialResult,
+  type EditorialScoringServiceParams,
+  type EditorialMemory,
+  type EditorialBatchResult,
+} from './editorial-scoring.service.js';
+
 // Curation scoring (byCurated sort mode)
 export {
   recencyScore,

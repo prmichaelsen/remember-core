@@ -569,7 +569,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 3
-    tasks_completed: 1
+    tasks_completed: 2
     tasks_total: 6
     dependencies: [M10, M20, M28]
     notes: |
@@ -2475,7 +2475,8 @@ tasks:
 
     - id: task-180
       name: Haiku Editorial Evaluation Service
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-36-by-curated-sort-mode/task-180-haiku-editorial-evaluation.md
       estimated_hours: 4
       dependencies: [task-179]

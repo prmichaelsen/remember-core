@@ -122,17 +122,6 @@ describe('RatingService', () => {
       await expect(service.rate({ memoryId: 'mem-1', userId: 'rater1', rating: -1 })).rejects.toThrow('Invalid rating');
     });
 
-    it('rejects self-rating', async () => {
-      const { client } = createMockWeaviateClient();
-      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
-
-      mockFetchMemory.mockResolvedValue({
-        properties: { user_id: 'rater1', rating_sum: 0, rating_count: 0 },
-      } as any);
-
-      await expect(service.rate({ memoryId: 'mem-1', userId: 'rater1', rating: 5 })).rejects.toThrow('Cannot rate your own memory');
-    });
-
     it('throws when memory not in index', async () => {
       const { client } = createMockWeaviateClient();
       const memoryIndex = createMockMemoryIndexService(null);

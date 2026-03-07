@@ -42,8 +42,7 @@ export class RatingService {
    * Submit or update a rating (idempotent upsert).
    *
    * 1. Validate rating 1-5
-   * 2. Validate not self-rating
-   * 3. Resolve collection via MemoryIndexService
+   * 2. Resolve collection via MemoryIndexService
    * 4. Read existing Firestore rating
    * 5. Write/update Firestore rating doc
    * 6. Update Weaviate aggregates
@@ -64,19 +63,13 @@ export class RatingService {
 
     const collection = this.weaviateClient.collections.get(collectionName);
 
-    // Fetch memory to check ownership and get current aggregates
+    // Fetch memory to get current aggregates
     const memoryObj = await fetchMemoryWithAllProperties(collection, memoryId);
     if (!memoryObj) {
       throw new Error(`Memory not found: ${memoryId}`);
     }
 
     const props = memoryObj.properties as Record<string, unknown>;
-
-    // Self-rating check
-    const authorId = (props.user_id as string) || (props.author_id as string);
-    if (authorId && authorId === userId) {
-      throw new Error('Cannot rate your own memory.');
-    }
 
     // Read existing Firestore rating
     const ratingsPath = getMemoryRatingsPath(memoryId);

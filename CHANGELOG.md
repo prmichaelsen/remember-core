@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.43.1] - 2026-03-07
+
+### Changed
+- ACP framework updated to 5.13.1 — adds `@acp.design-reference` directive for automatic design document discovery and cross-referencing during task creation and implementation
+- Task template updated with Design Reference field
+- `@acp.proceed` enhanced with design context loading step (1.7)
+- `@acp.task-create` enhanced with design document cross-referencing step (5.5)
+
 ## [0.43.0] - 2026-03-07
 
 ### Added

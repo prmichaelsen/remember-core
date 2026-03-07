@@ -435,6 +435,46 @@ milestones:
       uses nearVector search. Firestore-cached centroid. Falls back to byDiscovery.
       See: agent/design/local.by-recommendation-sort-mode.md, clarification-16
 
+  - id: M28
+    name: "REM Emotional Weighting: Schema & Scoring"
+    status: not_started
+    progress: 0
+    estimated_weeks: 3
+    tasks_completed: 0
+    tasks_total: 8
+    notes: |
+      Foundation for REM emotional weighting. Adds 37 new Weaviate properties
+      (31 dimensions + 3 composites + 2 REM metadata + 1 observation),
+      per-dimension Haiku scoring with context gathering, REM Phase 0 integration,
+      composite score computation, and byProperty sort mode.
+      See: agent/design/local.rem-emotional-weighting.md, clarifications 18-19
+
+  - id: M29
+    name: "REM Emotional Weighting: Retroactive Reweighting"
+    status: not_started
+    progress: 0
+    estimated_weeks: 1.5
+    tasks_completed: 0
+    tasks_total: 4
+    notes: |
+      Three triggers for re-evaluating memory emotional scores based on new context
+      (REM cycle, relationship formation, retrieval threshold) plus selective
+      re-evaluation via sub-LLM to minimize unnecessary scoring calls.
+      See: agent/design/local.rem-emotional-weighting.md, clarifications 18-19
+
+  - id: M30
+    name: "REM Emotional Weighting: Abstraction, Pruning & Reconciliation"
+    status: not_started
+    progress: 0
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 4
+    notes: |
+      Advanced REM phases: abstraction (episodic to semantic promotion with
+      content_type 'rem'), graduated pruning (decay + soft-delete), trust-level
+      flagging (Firestore classifications), and reconciliation (coherence tension).
+      See: agent/design/local.rem-emotional-weighting.md, clarifications 18-19
+
 tasks:
   milestone_1:
     - id: task-1
@@ -2021,11 +2061,129 @@ tasks:
       dependencies: [task-138, task-140]
       description: "K-means clustering for diverse taste profiles. Deferred from MVP per clarification-16."
 
+  milestone_28:
+    - id: task-145
+      name: Weaviate Schema Migration
+      status: not_started
+      file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-145-weaviate-schema-migration.md
+      estimated_hours: 3
+      dependencies: []
+      description: "Add 37 new properties to Memory class — 21 feel_*, 8 functional_*, 3 composites, 2 REM metadata, 1 observation."
+    - id: task-146
+      name: Create Memory Input Schema
+      status: not_started
+      file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-146-create-memory-input-schema.md
+      estimated_hours: 2
+      dependencies: [task-145]
+      description: "Add feel_*/functional_*/observation as optional fields on create_memory input schema."
+    - id: task-147
+      name: Per-Dimension Haiku Scoring
+      status: not_started
+      file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-147-per-dimension-haiku-scoring.md
+      estimated_hours: 6
+      dependencies: [task-145]
+      description: "Implement per-dimension Haiku scoring with rubrics for all 31 dimensions. 31 separate calls per memory."
+    - id: task-148
+      name: Scoring Context Gathering
+      status: not_started
+      file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-148-scoring-context-gathering.md
+      estimated_hours: 4
+      dependencies: [task-147]
+      description: "Context gathering for scoring — relationship observations, nearest-neighbor scores, collection-level averages."
+    - id: task-149
+      name: REM Cycle Phase 0 Scoring
+      status: not_started
+      file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-149-rem-cycle-phase-0-scoring.md
+      estimated_hours: 4
+      dependencies: [task-147, task-148]
+      description: "Wire emotional scoring into REM cycle as Phase 0. Configurable batch size, own cost cap, REM metadata updates."
+    - id: task-150
+      name: Composite Score Computation
+      status: not_started
+      file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-150-composite-score-computation.md
+      estimated_hours: 3
+      dependencies: [task-149]
+      description: "Compute feel_significance, functional_significance, total_significance as weighted sums."
+    - id: task-151
+      name: REM Metadata Tracking
+      status: not_started
+      file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-151-rem-metadata-tracking.md
+      estimated_hours: 1
+      dependencies: [task-149]
+      description: "Track rem_touched_at (ISO timestamp) and rem_visits (counter) on scored memories."
+    - id: task-152
+      name: byProperty Sort Mode
+      status: not_started
+      file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-152-by-property-sort-mode.md
+      estimated_hours: 3
+      dependencies: [task-145]
+      description: "Generic byProperty sort mode — sort by any Weaviate property with asc/desc, limit, offset."
+
+  milestone_29:
+    - id: task-153
+      name: REM Cycle Re-evaluation Trigger
+      status: not_started
+      file: agent/tasks/milestone-29-rem-emotional-weighting-reweighting/task-153-rem-cycle-reevaluation-trigger.md
+      estimated_hours: 3
+      dependencies: [task-149, task-150]
+      description: "Periodic re-evaluation — each REM cycle re-evaluates recent memories in light of newer context."
+    - id: task-154
+      name: Relationship Formation Trigger
+      status: not_started
+      file: agent/tasks/milestone-29-rem-emotional-weighting-reweighting/task-154-relationship-formation-trigger.md
+      estimated_hours: 3
+      dependencies: [task-153]
+      description: "Event-driven trigger — when REM forms a new relationship, re-score involved memories."
+    - id: task-155
+      name: Retrieval Threshold Trigger
+      status: not_started
+      file: agent/tasks/milestone-29-rem-emotional-weighting-reweighting/task-155-retrieval-threshold-trigger.md
+      estimated_hours: 2
+      dependencies: [task-153]
+      description: "Usage-driven trigger — re-evaluate when retrieval count crosses a configurable threshold."
+    - id: task-156
+      name: Selective Re-evaluation
+      status: not_started
+      file: agent/tasks/milestone-29-rem-emotional-weighting-reweighting/task-156-selective-reevaluation.md
+      estimated_hours: 3
+      dependencies: [task-153]
+      description: "Sub-LLM determines which dimensions are impacted by new context; only those are re-scored."
+
+  milestone_30:
+    - id: task-157
+      name: Abstraction (Episodic to Semantic)
+      status: not_started
+      file: agent/tasks/milestone-30-rem-emotional-weighting-abstraction-pruning/task-157-abstraction-episodic-to-semantic.md
+      estimated_hours: 5
+      dependencies: [task-153]
+      description: "Detect patterns in episodic memories, create synthesized semantic memories (content_type 'rem', search-excluded, relationship-linked)."
+    - id: task-158
+      name: Pruning (Decay and Soft-Delete)
+      status: not_started
+      file: agent/tasks/milestone-30-rem-emotional-weighting-abstraction-pruning/task-158-pruning-decay-soft-delete.md
+      estimated_hours: 4
+      dependencies: [task-157]
+      description: "Graduated pruning — increase decay on low-significance memories, soft-delete when threshold crossed."
+    - id: task-159
+      name: Trust-Level Flagging
+      status: not_started
+      file: agent/tasks/milestone-30-rem-emotional-weighting-abstraction-pruning/task-159-trust-level-flagging.md
+      estimated_hours: 3
+      dependencies: [task-149]
+      description: "Flag memories where emotional scores suggest inappropriate trust level. Firestore classifications with dismissal tracking."
+    - id: task-160
+      name: Reconciliation (Coherence Tension)
+      status: not_started
+      file: agent/tasks/milestone-30-rem-emotional-weighting-abstraction-pruning/task-160-reconciliation-coherence-tension.md
+      estimated_hours: 4
+      dependencies: [task-158]
+      description: "Surface high coherence_tension memories for belief updating. Resist pruning until resolved."
+
 documentation:
-  design_documents: 24
-  milestone_documents: 28
+  design_documents: 25
+  milestone_documents: 31
   pattern_documents: 29
-  task_documents: 143
+  task_documents: 159
 
 progress:
   planning: 100
@@ -2033,6 +2191,16 @@ progress:
   overall: 95
 
 recent_work:
+  - date: 2026-03-07
+    description: |
+      Planned M28-M30 — REM Emotional Weighting (3 milestones, 16 tasks)
+    items:
+      - "Design doc: agent/design/local.rem-emotional-weighting.md"
+      - "Clarifications 18-19 completed — all open questions resolved"
+      - "M28: Schema & Scoring (tasks 145-152) — 37 Weaviate properties, per-dimension Haiku scoring, REM Phase 0, composites, byProperty sort"
+      - "M29: Retroactive Reweighting (tasks 153-156) — 3 triggers (REM cycle, relationship, retrieval) + selective re-evaluation"
+      - "M30: Abstraction, Pruning & Reconciliation (tasks 157-160) — episodic→semantic, decay+soft-delete, trust flagging, coherence tension"
+      - "Key decisions: 31 dims (21 feel_ + 10 functional_), per-dimension scoring ($0.75/500), own cost cap, byProperty generic sort"
   - date: 2026-03-06
     description: |
       Planned M27 — byRecommendation Sort Mode
@@ -2475,6 +2643,7 @@ recent_work:
 next_steps:
   - Publish next version to npm (M22 complete)
   - Resume M20 (Memory Ratings System) — 1/7 tasks complete
+  - Begin M28 (REM Emotional Weighting Schema & Scoring) after M27
   - Migrate agentbase.me from hand-written fetch to app client
 
 notes:

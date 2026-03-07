@@ -2317,7 +2317,7 @@ tasks:
 
     - id: task-165
       name: REM Mood Update
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-32-core-mood-state/task-165-rem-mood-update.md
       estimated_hours: 5
       dependencies: [task-164]

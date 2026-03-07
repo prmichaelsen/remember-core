@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.41.0] - 2026-03-07
+
+### Added
+- **REM Mood Update** — pure functions for mood drift, pressure decay, and threshold detection wired into RemService.runCycle(). `runMoodUpdate()` aggregates pressures by dimension, drifts mood state (effective rate = pressure * 0.03 with lr=0.1, inertia=0.7), decays stale pressures (removes below 0.05), detects significant changes (>= 0.1 shift), and checks 6 threshold conditions (existential_crisis, depression_analog, burnout_risk, isolation, trust_crisis, over_trust). Threshold flags create high-weight Weaviate memories. MoodService added as optional RemServiceDeps with ghostCompositeId.
+- 46 new tests covering drift formula, clamping, pressure aggregation/decay, significant change detection, threshold flags at correct cycle counts, full pipeline, and multi-cycle evolution simulations
+
 ## [0.40.2] - 2026-03-07
 
 ### Added

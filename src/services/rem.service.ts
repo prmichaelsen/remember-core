@@ -29,6 +29,8 @@ import { buildRemMetadataUpdate } from './rem-metadata.js';
 import { runPruningPhase, type PruningResult } from './rem.pruning.js';
 import { runReconciliationPhase, type ReconciliationResult } from './rem.reconciliation.js';
 import type { SubLlmProvider } from './emotional-scoring.service.js';
+import type { MoodService } from './mood.service.js';
+import { runMoodUpdate, buildThresholdMemoryContent, type MoodUpdateResult } from './mood-update.service.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -44,6 +46,9 @@ export interface RemServiceDeps {
   scoringContextService?: ScoringContextService;
   // Phase 5: Reconciliation (optional — Phase 5 skipped if not provided)
   subLlm?: SubLlmProvider;
+  // Mood update (optional — mood drift skipped if not provided)
+  moodService?: MoodService;
+  ghostCompositeId?: string;
 }
 
 export interface Phase0Stats {
@@ -66,6 +71,7 @@ export interface RunCycleResult {
   phase0?: Phase0Stats;
   pruning?: PruningResult;
   reconciliation?: ReconciliationResult;
+  mood_update?: MoodUpdateResult;
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────
@@ -143,6 +149,21 @@ export class RemService {
         stats.phase0 = phase0Stats;
       } catch (err) {
         this.logger.warn?.('Phase 0 scoring failed, continuing with relationship discovery', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    // 4.7. Mood update: drift dimensions, decay pressures, check thresholds
+    if (this.deps.moodService && this.deps.ghostCompositeId) {
+      try {
+        const userId = this.extractUserId(collectionId);
+        const moodResult = await this.runMoodUpdate(userId, collection);
+        if (moodResult) {
+          stats.mood_update = moodResult;
+        }
+      } catch (err) {
+        this.logger.warn?.('Mood update failed, continuing', {
           error: err instanceof Error ? err.message : String(err),
         });
       }
@@ -561,6 +582,70 @@ export class RemService {
       });
       return null;
     }
+  }
+
+  /**
+   * Run mood update: drift dimensions toward pressures, decay stale pressures,
+   * detect threshold flags and create high-weight memories for sustained extreme states.
+   */
+  private async runMoodUpdate(userId: string, collection: any): Promise<MoodUpdateResult | null> {
+    const moodService = this.deps.moodService!;
+    const ghostCompositeId = this.deps.ghostCompositeId!;
+
+    const mood = await moodService.getOrInitialize(userId, ghostCompositeId);
+
+    const result = runMoodUpdate(mood);
+
+    // Persist updated mood state + decayed pressures
+    await moodService.updateMood(userId, ghostCompositeId, {
+      state: result.newState,
+      rem_cycles_since_shift: result.remCyclesSinceShift,
+    });
+    await moodService.setPressures(userId, ghostCompositeId, result.decayedPressures);
+
+    this.logger.info?.('Mood update complete', {
+      significantChange: result.significantChange,
+      remCyclesSinceShift: result.remCyclesSinceShift,
+      thresholdFlags: result.thresholdFlags.map(f => f.name),
+      pressuresRemaining: result.decayedPressures.length,
+    });
+
+    // Create high-weight memories for threshold flags
+    for (const flag of result.thresholdFlags) {
+      try {
+        const topPressure = mood.pressures
+          .filter(p => p.dimension === flag.dimension)
+          .sort((a, b) => Math.abs(b.magnitude) - Math.abs(a.magnitude))[0];
+
+        const content = buildThresholdMemoryContent(flag, topPressure);
+
+        await collection.data.insert({
+          properties: {
+            content,
+            content_type: 'mood_threshold',
+            doc_type: 'memory',
+            weight: 0.9,
+            tags: ['mood', 'threshold', flag.name],
+            created_at: new Date().toISOString(),
+            user_id: userId,
+          },
+        });
+
+        this.logger.info?.('Threshold memory created', {
+          flag: flag.name,
+          dimension: flag.dimension,
+          value: flag.value,
+          cycles: flag.cycles,
+        });
+      } catch (err) {
+        this.logger.warn?.('Failed to create threshold memory', {
+          flag: flag.name,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    return result;
   }
 
   private async advanceCursor(collectionId: string, memoryCursor: string) {

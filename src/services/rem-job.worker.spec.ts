@@ -43,6 +43,7 @@ function createMockRemService(result?: Partial<RunCycleResult>) {
     relationships_merged: 1,
     relationships_split: 0,
     skipped_by_haiku: 1,
+    abstractions_created: 0,
     duration_ms: 5000,
     ...result,
   };

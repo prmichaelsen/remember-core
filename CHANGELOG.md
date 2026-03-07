@@ -7,7 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [0.37.1] - 2026-03-07
 
 ### Added
-- **byRecommendation unit tests** — comprehensive edge case tests for MemoryService.byRecommendation: MIN_SIMILARITY threshold filtering, own-memory exclusion, SearchFilters pass-through, all-below-threshold → empty results. Cache invalidation policy tests for RecommendationService. 894 total tests passing.
+- **Create-memory emotional weighting** — `CreateMemoryInput` accepts optional `feel_*`/`functional_*` dimensions, `observation`, and composite scores. Range validation (0-1; `feel_valence` -1 to 1), auto-computed composites when dimensions provided, `rem_visits` initialized to 0
+- 11 new tests for emotional weighting on create (validation, pass-through, composites, boundaries)
 
 ## [0.37.0] - 2026-03-07
 

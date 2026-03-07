@@ -445,9 +445,9 @@ milestones:
   - id: M28
     name: "REM Emotional Weighting: Schema & Scoring"
     status: in_progress
-    progress: 13
+    progress: 25
     estimated_weeks: 3
-    tasks_completed: 1
+    tasks_completed: 2
     tasks_total: 8
     started: 2026-03-07
     notes: |
@@ -2147,7 +2147,8 @@ tasks:
       description: "Add 37 new properties to Memory class — 21 feel_*, 8 functional_*, 3 composites, 2 REM metadata, 1 observation."
     - id: task-146
       name: Create Memory Input Schema
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-146-create-memory-input-schema.md
       estimated_hours: 2
       dependencies: [task-145]

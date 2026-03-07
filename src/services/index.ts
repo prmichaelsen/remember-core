@@ -56,6 +56,8 @@ export {
   type RecommendationModeRequest,
   type RecommendationModeResult,
   type RecommendedMemory,
+  type PropertyModeRequest,
+  type PropertyModeResult,
 } from './memory.service.js';
 
 export {
@@ -324,6 +326,16 @@ export {
   type ScoringResult,
   type SubLlmProvider,
 } from './emotional-scoring.service.js';
+
+// Scoring context gathering (REM emotional weighting)
+export {
+  ScoringContextService,
+  createCollectionStatsCache,
+  type ScoringContextServiceParams,
+  type ScoringContextResult,
+  type NeighborResult,
+  type CollectionStatsCache,
+} from './scoring-context.service.js';
 
 // REM metadata tracking
 export {

@@ -2164,7 +2164,8 @@ tasks:
       description: "Implement per-dimension Haiku scoring with rubrics for all 31 dimensions. 31 separate calls per memory."
     - id: task-148
       name: Scoring Context Gathering
-      status: not_started
+      status: completed
+      completed_date: 2026-03-07
       file: agent/tasks/milestone-28-rem-emotional-weighting-schema-scoring/task-148-scoring-context-gathering.md
       estimated_hours: 4
       dependencies: [task-147]

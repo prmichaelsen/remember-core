@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.38.1] - 2026-03-07
+
+### Added
+- **ScoringContextService** — gathers contextual information for emotional scoring from three sources: relationship observations, nearest-neighbor scores (3-5 similar already-scored memories), and collection-level averages (cached per REM cycle)
+- `CollectionStatsCache` with per-collection caching and invalidation for REM cycle boundaries
+- 19 new tests covering context gathering, caching, cache invalidation, and graceful empty handling
+
 ## [0.38.0] - 2026-03-07
 
 ### Added

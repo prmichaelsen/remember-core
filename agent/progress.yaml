@@ -426,15 +426,20 @@ milestones:
 
   - id: M27
     name: byRecommendation Sort Mode
-    status: in_progress
-    progress: 71
+    status: completed
+    progress: 100
     estimated_weeks: 1.5
-    tasks_completed: 5
+    tasks_completed: 6
     tasks_total: 7
+    started: 2026-03-07
+    completed: 2026-03-07
     notes: |
       Personalized sort mode using vector similarity to user's rating history.
       Builds preference centroid from 4-5 star ratings, subtracts 1-2 star negative signal,
       uses nearVector search. Firestore-cached centroid. Falls back to byDiscovery.
+      Tasks 138-142 found already implemented. Task 143 (tests): 37 new tests covering
+      vector arithmetic, centroid computation, caching, byRecommendation in MemoryService.
+      Task 144 (multi-centroid clustering) deferred.
       See: agent/design/local.by-recommendation-sort-mode.md, clarification-16
 
   - id: M28

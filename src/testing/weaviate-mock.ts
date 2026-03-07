@@ -59,9 +59,14 @@ export function createMockCollection() {
     query: {
       async fetchObjectById(
         id: string,
-        _opts?: { returnProperties?: string[] },
-      ): Promise<MockWeaviateObject | null> {
-        return store.get(id) ?? null;
+        _opts?: { returnProperties?: string[]; includeVector?: boolean },
+      ): Promise<(MockWeaviateObject & { vectors?: Record<string, number[]> }) | null> {
+        const obj = store.get(id);
+        if (!obj) return null;
+        if (_opts?.includeVector && obj.properties._vector) {
+          return { ...obj, vectors: { default: obj.properties._vector } };
+        }
+        return obj;
       },
 
       async fetchObjects(
@@ -142,6 +147,25 @@ export function createMockCollection() {
         objects = objects.map((obj, i) => ({
           ...obj,
           metadata: { ...obj.metadata, distance: i * 0.1 },
+        }));
+        if (opts?.limit) {
+          objects = objects.slice(0, opts.limit);
+        }
+        return { objects };
+      },
+
+      async nearVector(
+        _vector: number[],
+        opts?: { limit?: number; filters?: any; returnMetadata?: string[] },
+      ): Promise<{ objects: MockWeaviateObject[] }> {
+        let objects = Array.from(store.values());
+        if (opts?.filters) {
+          objects = applyFilter(objects, opts.filters);
+        }
+        // Add mock distance metadata (ascending by insertion order)
+        objects = objects.map((obj, i) => ({
+          ...obj,
+          metadata: { ...obj.metadata, distance: i * 0.05 },
         }));
         if (opts?.limit) {
           objects = objects.slice(0, opts.limit);

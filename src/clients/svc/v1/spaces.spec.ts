@@ -75,6 +75,26 @@ describe('SpacesResource', () => {
       body: { query: 'recent posts', limit: 10 },
     });
   });
+
+  it('byDiscovery calls POST /api/svc/v1/spaces/by-discovery', async () => {
+    const spaces = createSpacesResource(http);
+    await spaces.byDiscovery('user1', { query: 'explore', spaces: ['public'], limit: 20 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/spaces/by-discovery', {
+      userId: 'user1',
+      body: { query: 'explore', spaces: ['public'], limit: 20 },
+    });
+  });
+
+  it('byRecommendation calls POST /api/svc/v1/spaces/by-recommendation', async () => {
+    const spaces = createSpacesResource(http);
+    await spaces.byRecommendation('user1', { userId: 'user1', spaces: ['public'], limit: 20 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/spaces/by-recommendation', {
+      userId: 'user1',
+      body: { userId: 'user1', spaces: ['public'], limit: 20 },
+    });
+  });
 });
 
 describe('ConfirmationsResource', () => {

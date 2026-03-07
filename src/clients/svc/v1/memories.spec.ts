@@ -171,4 +171,24 @@ describe('MemoriesResource', () => {
       body: { direction: 'desc', limit: 10 },
     });
   });
+
+  it('byDiscovery calls POST /api/svc/v1/memories/by-discovery', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byDiscovery('user1', { query: 'explore', limit: 20 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-discovery', {
+      userId: 'user1',
+      body: { query: 'explore', limit: 20 },
+    });
+  });
+
+  it('byRecommendation calls POST /api/svc/v1/memories/by-recommendation', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byRecommendation('user1', { limit: 20 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-recommendation', {
+      userId: 'user1',
+      body: { limit: 20 },
+    });
+  });
 });

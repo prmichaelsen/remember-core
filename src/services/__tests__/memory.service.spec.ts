@@ -765,4 +765,113 @@ describe('MemoryService', () => {
       fetchSpy.mockRestore();
     });
   });
+
+  describe('byRecommendation', () => {
+    const centroidVector = [0.5, 0.5, 0];
+
+    function createMockRecommendationService(opts: {
+      insufficientData?: boolean;
+      centroid?: { vector: number[]; profileSize: number } | null;
+      ratedIds?: string[];
+    } = {}) {
+      return {
+        getOrComputeCentroid: jest.fn().mockResolvedValue({
+          insufficientData: opts.insufficientData ?? false,
+          centroid: opts.centroid ?? { vector: centroidVector, profileSize: 10 },
+        }),
+        getAllUserRatedIds: jest.fn().mockResolvedValue(opts.ratedIds ?? []),
+        invalidateCentroid: jest.fn(),
+      };
+    }
+
+    it('throws when RecommendationService is not provided', async () => {
+      await expect(
+        service.byRecommendation({ userId: 'user1', limit: 10 }),
+      ).rejects.toThrow('RecommendationService is required');
+    });
+
+    it('falls back to byDiscovery when insufficient data', async () => {
+      const recService = createMockRecommendationService({ insufficientData: true, centroid: null });
+      const recMemService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        recommendationService: recService as any,
+      });
+
+      // Seed some memories for byDiscovery fallback
+      await recMemService.create({ content: 'Memory 1' });
+
+      const result = await recMemService.byRecommendation({ userId: 'user1', limit: 10 });
+      expect(result.insufficientData).toBe(true);
+      expect(result.fallback_sort_mode).toBe('byDiscovery');
+      expect(result.profileSize).toBe(0);
+      // All memories should have similarity_pct: 0
+      for (const m of result.memories) {
+        expect(m.similarity_pct).toBe(0);
+      }
+    });
+
+    it('returns nearVector results with similarity_pct', async () => {
+      const recService = createMockRecommendationService();
+      const recMemService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        recommendationService: recService as any,
+      });
+
+      // Seed memories (other user's memories)
+      const m1 = await recMemService.create({ content: 'Memory 1' });
+      await collection.data.update({ id: m1.memory_id, properties: { user_id: 'other-user' } });
+
+      const result = await recMemService.byRecommendation({ userId: 'user1', limit: 10 });
+      expect(result.insufficientData).toBe(false);
+      expect(result.profileSize).toBe(10);
+      expect(result.memories.length).toBeGreaterThanOrEqual(1);
+      for (const m of result.memories) {
+        expect(typeof m.similarity_pct).toBe('number');
+        expect(m.similarity_pct).toBeGreaterThanOrEqual(0);
+        expect(m.similarity_pct).toBeLessThanOrEqual(100);
+      }
+    });
+
+    it('excludes already-rated memories', async () => {
+      const m1 = await service.create({ content: 'Rated memory' });
+      await collection.data.update({ id: m1.memory_id, properties: { user_id: 'other' } });
+      const m2 = await service.create({ content: 'Unrated memory' });
+      await collection.data.update({ id: m2.memory_id, properties: { user_id: 'other' } });
+
+      const recService = createMockRecommendationService({ ratedIds: [m1.memory_id] });
+      const recMemService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        recommendationService: recService as any,
+      });
+
+      const result = await recMemService.byRecommendation({ userId: 'user1', limit: 10 });
+      const resultIds = result.memories.map((m) => m.id);
+      expect(resultIds).not.toContain(m1.memory_id);
+    });
+
+    it('returns empty when all results are already rated', async () => {
+      const m1 = await service.create({ content: 'Memory 1' });
+      await collection.data.update({ id: m1.memory_id, properties: { user_id: 'other' } });
+
+      const recService = createMockRecommendationService({ ratedIds: [m1.memory_id] });
+      const recMemService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        recommendationService: recService as any,
+      });
+
+      const result = await recMemService.byRecommendation({ userId: 'user1', limit: 10 });
+      expect(result.memories).toHaveLength(0);
+    });
+
+    it('sets fallback_sort_mode only on fallback', async () => {
+      const recService = createMockRecommendationService();
+      const recMemService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        recommendationService: recService as any,
+      });
+
+      const result = await recMemService.byRecommendation({ userId: 'user1', limit: 10 });
+      expect(result.fallback_sort_mode).toBeUndefined();
+    });
+  });
 });

@@ -252,27 +252,6 @@ export class RemService {
             title: this.extractTitle(m.content),
           }));
 
-          // Auto-approve highly similar clusters (bypass Haiku for obvious duplicates)
-          if (action.cluster.avg_similarity >= this.config.auto_approve_similarity) {
-            this.logger.info?.('Cluster auto-approved (high similarity)', {
-              cluster_size: action.cluster.memory_ids.length,
-              avg_similarity: action.cluster.avg_similarity.toFixed(3),
-              threshold: this.config.auto_approve_similarity,
-            });
-
-            await relationshipService.create({
-              memory_ids: action.cluster.memory_ids,
-              relationship_type: 'topical',
-              observation: 'Auto-discovered high-similarity relationship',
-              strength: action.cluster.avg_similarity,
-              confidence: 0.9,
-              tags: ['auto-approved', 'high-similarity'],
-              source: 'rem',
-            });
-            stats.relationships_created++;
-            continue;
-          }
-
           this.logger.info?.('Evaluating cluster with Haiku', {
             cluster_size: action.cluster.memory_ids.length,
             avg_similarity: action.cluster.avg_similarity.toFixed(3),

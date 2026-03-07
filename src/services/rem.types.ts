@@ -23,8 +23,6 @@ export interface RemConfig {
   scoring_cost_per_memory: number;       // Estimated cost per memory (31 Haiku calls)
   // Classification
   classification_batch_size: number;     // Max memories to classify per cycle
-  // Auto-approve
-  auto_approve_similarity: number;       // Clusters above this avg_similarity bypass Haiku validation
 }
 
 export const DEFAULT_REM_CONFIG: RemConfig = {
@@ -43,8 +41,6 @@ export const DEFAULT_REM_CONFIG: RemConfig = {
   scoring_cost_per_memory: 0.0015,
   // Classification
   classification_batch_size: 20,
-  // Auto-approve
-  auto_approve_similarity: 0.9,
 };
 
 // ─── State Tracking ──────────────────────────────────────────────────────

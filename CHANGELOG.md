@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.3] - 2026-03-08
+
+### Changed
+- `byMyRatings` edge case handling: warning log for rating docs missing collectionName (monitoring for pre-backfill docs)
+
 ## [0.49.2] - 2026-03-08
 
 ### Added

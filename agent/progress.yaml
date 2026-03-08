@@ -2579,7 +2579,8 @@ tasks:
 
     - id: task-188
       name: Edge Cases (Unavailable, Deleted, Empty)
-      status: not_started
+      status: completed
+      completed_date: 2026-03-08
       file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-188-edge-cases.md
       estimated_hours: 2
       dependencies: [task-186]

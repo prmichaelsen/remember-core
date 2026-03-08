@@ -280,13 +280,13 @@ export class RatingService {
       const rated_at = (data.updated_at as string) ?? '';
 
       if (!cn) {
-        // Missing collectionName — attempt fallback lookup (task 188 handles fully)
+        // Missing collectionName (pre-backfill doc) — attempt fallback lookup
+        this.logger.warn?.(`[RatingService] byMyRatings: rating doc ${memoryId} missing collectionName, attempting fallback lookup`);
         const resolved = await this.memoryIndexService.lookup(memoryId);
         if (resolved) {
           if (!byCollection.has(resolved)) byCollection.set(resolved, []);
           byCollection.get(resolved)!.push({ memoryId, rating, rated_at });
         } else {
-          // Will be handled as unavailable in task 188
           if (!byCollection.has('__unavailable__')) byCollection.set('__unavailable__', []);
           byCollection.get('__unavailable__')!.push({ memoryId, rating, rated_at });
         }

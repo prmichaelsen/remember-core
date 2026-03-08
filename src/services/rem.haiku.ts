@@ -157,7 +157,8 @@ export function createHaikuClient(options: {
     });
 
     if (!response.ok) {
-      throw new Error(`api_error: ${response.status}`);
+      const body = await response.text().catch(() => '');
+      throw new Error(`api_error: ${response.status} ${body}`);
     }
 
     const data = await response.json() as any;
@@ -172,8 +173,8 @@ export function createHaikuClient(options: {
         const prompt = buildValidationPrompt(input);
         const parsed = await callApi(prompt);
         return parsed as HaikuValidationResult;
-      } catch {
-        return { valid: false, reason: 'api_error' };
+      } catch (err) {
+        return { valid: false, reason: `api_error: ${err instanceof Error ? err.message : String(err)}` };
       }
     },
 

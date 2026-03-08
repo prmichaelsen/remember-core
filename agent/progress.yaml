@@ -613,6 +613,20 @@ milestones:
       pattern established in M37. Placeholder — tasks TBD.
       See: agent/milestones/milestone-38-response-envelope-migration.md
 
+  - id: M39
+    name: Live E2E Test Expansion
+    status: not_started
+    progress: 0
+    estimated_weeks: 0.5
+    tasks_completed: 0
+    tasks_total: 2
+    dependencies: [M37, M24]
+    notes: |
+      Expand live e2e test suite to cover endpoints added since M24:
+      byMyRatings, byCurated, byDiscovery, byRecommendation.
+      Tests run against deployed e1 REST service via SVC client.
+      See: agent/milestones/milestone-39-live-e2e-test-expansion.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -2605,11 +2619,27 @@ tasks:
       dependencies: [task-186, task-187, task-188]
       description: "Comprehensive tests for browse mode, search mode, scope filter, star filter, edge cases, rate() dual-write."
 
+  milestone_39:
+    - id: task-191
+      name: byMyRatings Live E2E Tests
+      status: not_started
+      file: agent/tasks/milestone-39-live-e2e-test-expansion/task-191-by-my-ratings-live-e2e-tests.md
+      estimated_hours: 2
+      completed_date: null
+      description: "Live e2e tests for byMyRatings endpoint: browse mode, search mode, star filter, sort options, envelope validation."
+    - id: task-192
+      name: Sort Mode Expansion Live E2E Tests
+      status: not_started
+      file: agent/tasks/milestone-39-live-e2e-test-expansion/task-192-sort-mode-expansion-live-e2e-tests.md
+      estimated_hours: 2
+      completed_date: null
+      description: "Live e2e tests for byCurated, byDiscovery, byRecommendation sort mode endpoints."
+
 documentation:
   design_documents: 28
-  milestone_documents: 39
+  milestone_documents: 40
   pattern_documents: 29
-  task_documents: 190
+  task_documents: 192
 
 progress:
   planning: 100

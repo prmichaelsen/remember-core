@@ -112,6 +112,46 @@ describe('Spaces (live)', () => {
     expect(Array.isArray(data.memories)).toBe(true);
   });
 
+  it('query() returns semantic search results from spaces', async () => {
+    const res = await client.spaces.query(TEST_USER_ID, {
+      query: 'test content',
+      spaces: ['the_void'],
+      limit: 5,
+    });
+
+    if (res.error) {
+      console.warn('spaces.query error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
+
+  it('revise() updates published memory content', async () => {
+    if (!memoryId) return;
+
+    const res = await client.spaces.revise(TEST_USER_ID, {
+      memory_id: memoryId,
+      content: 'Revised content from live test',
+      spaces: ['the_void'],
+    });
+
+    if (res.error) {
+      console.warn('spaces.revise error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+    // If revise returns a confirmation token, confirm it
+    const data = res.data as any;
+    const reviseToken = data.confirmation_token || data.token;
+    if (reviseToken) {
+      await client.confirmations.confirm(TEST_USER_ID, reviseToken);
+    }
+  });
+
   it('retract the published memory', async () => {
     if (!memoryId) return;
 

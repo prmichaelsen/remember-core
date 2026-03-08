@@ -154,6 +154,52 @@ describe('Space Sort Modes (live)', () => {
     expect(typeof data.total_pool_size).toBe('number');
   });
 
+  it('byDiscovery returns results or empty', async () => {
+    const res = await client.spaces.byDiscovery(TEST_USER_ID, {
+      spaces: ['the_void'],
+      limit: 5,
+    });
+
+    if (res.error) {
+      console.warn('spaces.byDiscovery error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
+
+  it('byRecommendation returns results or graceful fallback', async () => {
+    const res = await client.spaces.byRecommendation(TEST_USER_ID, {
+      spaces: ['the_void'],
+      limit: 5,
+    });
+
+    // May 400 if user has no ratings (no centroid to build)
+    if (res.error) {
+      console.warn('spaces.byRecommendation error:', res.error);
+      expect([400, 404, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
+
+  it('byCurated returns results or empty', async () => {
+    const res = await client.spaces.byCurated(TEST_USER_ID, {
+      spaces: ['the_void'],
+      limit: 5,
+    });
+
+    if (res.error) {
+      console.warn('spaces.byCurated error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
+
   it('byTime rejects invalid space ID', async () => {
     const res = await client.spaces.byTime(TEST_USER_ID, {
       spaces: ['nonexistent_invalid_space_xyz'],

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.11] - 2026-03-08
+
+### Added
+- Live e2e tests for `spaces.query()` and `spaces.revise()` in `05-spaces.live.ts`
+- Live e2e tests for `spaces.byDiscovery()`, `byRecommendation()`, `byCurated()` in `10-space-sort-modes.live.ts`
+
 ## [0.49.10] - 2026-03-08
 
 ### Added

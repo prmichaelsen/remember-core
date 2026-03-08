@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.8] - 2026-03-08
+
+### Added
+- Live e2e tests for `memories.get()`, `similar()`, and `query()` in `test/live/suites/13-memory-retrieval.live.ts`
+- 5 test cases: get by ID, get with include option, get non-existent (404), similar vector search, query semantic search
+
 ## [0.49.7] - 2026-03-08
 
 ### Added

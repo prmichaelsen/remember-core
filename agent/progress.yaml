@@ -633,7 +633,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1.5
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 7
     dependencies: [M39]
     notes: |
@@ -2654,7 +2654,8 @@ tasks:
   milestone_40:
     - id: task-193
       name: Memory Get + Similar + Query Live Tests
-      status: not_started
+      status: completed
+      completed_date: 2026-03-08
       file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-193-memory-get-similar-query-live-tests.md
       estimated_hours: 2
       description: "Live e2e tests for memories.get(), similar(), query() endpoints."

@@ -581,6 +581,37 @@ milestones:
       See: agent/design/local.by-curated-sort-mode.md
       See: agent/milestones/milestone-36-by-curated-sort-mode.md
 
+  - id: M37
+    name: byMyRatings Sort Mode
+    status: not_started
+    progress: 0
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 6
+    dependencies: [M10, M28]
+    notes: |
+      Personal ratings browse/search mode on RatingService. Firestore-first query:
+      read user rating docs → scope/star filter → paginate → hydrate from Weaviate.
+      Search mode: hybrid search per collection intersected with rated ID set.
+      New { memory, metadata } response envelope. Edge cases: unavailable stubs,
+      deleted markers, missing collectionName fallback.
+      See: agent/design/local.by-my-ratings-sort-mode.md
+      See: agent/milestones/milestone-37-by-my-ratings-sort-mode.md
+
+  - id: M38
+    name: Response Envelope Migration
+    status: not_started
+    progress: 0
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 0
+    dependencies: [M37]
+    notes: |
+      Migrate existing by* endpoints (byRating, byDiscovery, byBroad, byRandom,
+      byCurated) from flat memories[] response to { memory, metadata } envelope
+      pattern established in M37. Placeholder — tasks TBD.
+      See: agent/milestones/milestone-38-response-envelope-migration.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -2519,11 +2550,59 @@ tasks:
       dependencies: [task-179, task-183]
       description: "click/share/comment increment methods, SVC client byCurated + engagement methods, OpenAPI updates, live e2e tests."
 
+  milestone_37:
+    - id: task-185
+      name: Rating Doc Schema + Backfill
+      status: not_started
+      file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-185-rating-doc-schema-backfill.md
+      estimated_hours: 2
+      description: "Add collectionName to rate() dual-write on user-rating doc. Backfill script for existing docs."
+
+    - id: task-186
+      name: MyRatings Types + Browse Mode
+      status: not_started
+      file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-186-my-ratings-types-browse-mode.md
+      estimated_hours: 4
+      dependencies: [task-185]
+      description: "MyRatingsRequest/Result/Metadata types. byMyRatings browse mode on RatingService with Firestore cursor pagination, scope/star filtering, Weaviate hydration."
+
+    - id: task-187
+      name: Search Mode (Hybrid Intersection)
+      status: not_started
+      file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-187-search-mode-hybrid-intersection.md
+      estimated_hours: 3
+      dependencies: [task-186]
+      description: "Hybrid search per Weaviate collection intersected with rated ID set. Merge results, attach metadata, paginate."
+
+    - id: task-188
+      name: Edge Cases (Unavailable, Deleted, Empty)
+      status: not_started
+      file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-188-edge-cases.md
+      estimated_hours: 2
+      dependencies: [task-186]
+      description: "Unavailable memory stubs, soft-deleted markers, empty ratings, missing collectionName fallback via MemoryIndexService.lookup()."
+
+    - id: task-189
+      name: OpenAPI Spec + SVC Client
+      status: not_started
+      file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-189-openapi-svc-client.md
+      estimated_hours: 2
+      dependencies: [task-186]
+      description: "POST /api/svc/v1/memories/by-my-ratings endpoint in OpenAPI spec. SVC client byMyRatings method. Type generation."
+
+    - id: task-190
+      name: Unit Tests
+      status: not_started
+      file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-190-unit-tests.md
+      estimated_hours: 3
+      dependencies: [task-186, task-187, task-188]
+      description: "Comprehensive tests for browse mode, search mode, scope filter, star filter, edge cases, rate() dual-write."
+
 documentation:
-  design_documents: 27
-  milestone_documents: 37
+  design_documents: 28
+  milestone_documents: 39
   pattern_documents: 29
-  task_documents: 184
+  task_documents: 190
 
 progress:
   planning: 100
@@ -2981,7 +3060,8 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M36: byCurated Sort Mode (6 tasks, ~3 weeks)
+  - M37: byMyRatings Sort Mode (6 tasks, ~2 weeks)
+  - M38: Response Envelope Migration (placeholder, tasks TBD)
   - Publish v0.45.0 to npm (ghost fix + SVC client space sort modes)
   - Migrate agentbase.me from hand-written fetch to app client
 

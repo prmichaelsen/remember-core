@@ -47,6 +47,37 @@ export interface RatingModeResult {
   limit: number;
 }
 
+// ─── byMyRatings Types ──────────────────────────────────────────────────
+
+export interface MyRatingsRequest {
+  userId: string;
+  spaces?: string[];
+  groups?: string[];
+  rating_filter?: { min?: number; max?: number };
+  sort_by?: 'rating' | 'rated_at';  // default: 'rated_at'
+  direction?: 'desc' | 'asc';       // default: 'desc'
+  query?: string;
+  limit?: number;                     // default: 50
+  offset?: number;                    // default: 0
+}
+
+export interface MyRatingMetadata {
+  my_rating: number;
+  rated_at: string;
+  deleted?: boolean;
+  unavailable?: boolean;
+}
+
+export interface MyRatingsResult {
+  items: Array<{
+    memory: Record<string, unknown>;
+    metadata: MyRatingMetadata;
+  }>;
+  total: number;
+  offset: number;
+  limit: number;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────
 
 /** Bayesian prior constants */

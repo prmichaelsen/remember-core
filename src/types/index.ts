@@ -151,6 +151,9 @@ export type {
   RatingResult,
   RatingModeRequest,
   RatingModeResult,
+  MyRatingsRequest,
+  MyRatingMetadata,
+  MyRatingsResult,
 } from './rating.types.js';
 
 export {

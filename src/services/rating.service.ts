@@ -9,13 +9,13 @@
  */
 
 import type { WeaviateClient } from 'weaviate-client';
-import { getDocument, setDocument, deleteDocument } from '../database/firestore/init.js';
+import { getDocument, setDocument, deleteDocument, queryDocuments } from '../database/firestore/init.js';
 import { getMemoryRatingsPath, getUserRatingsPath } from '../database/firestore/paths.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import type { MemoryIndexService } from './memory-index.service.js';
 import type { RecommendationService } from './recommendation.service.js';
 import type { Logger } from '../utils/logger.js';
-import type { MemoryRating, RateMemoryInput, RatingResult } from '../types/rating.types.js';
+import type { MemoryRating, RateMemoryInput, RatingResult, MyRatingsRequest, MyRatingsResult } from '../types/rating.types.js';
 import { computeBayesianScore, computeRatingAvg, isValidRating } from '../types/rating.types.js';
 
 export interface RatingServiceParams {
@@ -193,5 +193,162 @@ export class RatingService {
     const doc = await getDocument(ratingsPath, userId);
     if (!doc) return null;
     return doc as unknown as MemoryRating;
+  }
+
+  /**
+   * Browse and search memories the user has rated.
+   *
+   * Browse mode (no query): Firestore cursor pagination → scope/star filter → Weaviate hydration
+   * Search mode (with query): deferred to task 187
+   */
+  async byMyRatings(input: MyRatingsRequest): Promise<MyRatingsResult> {
+    const {
+      userId,
+      spaces,
+      groups,
+      rating_filter,
+      sort_by = 'rated_at',
+      direction = 'desc',
+      query,
+      limit = 50,
+      offset = 0,
+    } = input;
+
+    // Search mode deferred to task 187
+    if (query?.trim()) {
+      return { items: [], total: 0, offset, limit };
+    }
+
+    // Browse mode: read rating docs from Firestore
+    const ratingsPath = getUserRatingsPath(userId);
+    const firestoreDirection = direction === 'asc' ? 'ASCENDING' : 'DESCENDING';
+    const orderField = sort_by === 'rating' ? 'rating' : 'updated_at';
+
+    const ratingDocs = await queryDocuments(ratingsPath, {
+      orderBy: [{ field: orderField, direction: firestoreDirection }],
+    });
+
+    if (ratingDocs.length === 0) {
+      return { items: [], total: 0, offset, limit };
+    }
+
+    // Scope filter: filter by collectionName matching spaces/groups
+    const hasScope = (spaces && spaces.length > 0) || (groups && groups.length > 0);
+    let filtered = ratingDocs;
+
+    if (hasScope) {
+      const scopeSet = new Set<string>();
+      if (spaces) {
+        for (const s of spaces) scopeSet.add(s);
+      }
+      if (groups) {
+        for (const g of groups) scopeSet.add(g);
+      }
+      filtered = filtered.filter((doc) => {
+        const cn = (doc.data as Record<string, unknown>).collectionName as string | undefined;
+        return cn && scopeSet.has(cn);
+      });
+    }
+
+    // Star filter
+    if (rating_filter) {
+      const min = rating_filter.min ?? 1;
+      const max = rating_filter.max ?? 5;
+      filtered = filtered.filter((doc) => {
+        const r = (doc.data as Record<string, unknown>).rating as number;
+        return r >= min && r <= max;
+      });
+    }
+
+    const total = filtered.length;
+
+    // Paginate
+    const page = filtered.slice(offset, offset + limit);
+
+    if (page.length === 0) {
+      return { items: [], total, offset, limit };
+    }
+
+    // Hydrate: group by collectionName for batch fetches
+    const byCollection = new Map<string, Array<{ memoryId: string; rating: number; rated_at: string }>>();
+
+    for (const doc of page) {
+      const data = doc.data as Record<string, unknown>;
+      const memoryId = (data.memoryId as string) ?? doc.id;
+      const cn = (data.collectionName as string) ?? null;
+      const rating = data.rating as number;
+      const rated_at = (data.updated_at as string) ?? '';
+
+      if (!cn) {
+        // Missing collectionName — attempt fallback lookup (task 188 handles fully)
+        const resolved = await this.memoryIndexService.lookup(memoryId);
+        if (resolved) {
+          if (!byCollection.has(resolved)) byCollection.set(resolved, []);
+          byCollection.get(resolved)!.push({ memoryId, rating, rated_at });
+        } else {
+          // Will be handled as unavailable in task 188
+          if (!byCollection.has('__unavailable__')) byCollection.set('__unavailable__', []);
+          byCollection.get('__unavailable__')!.push({ memoryId, rating, rated_at });
+        }
+        continue;
+      }
+
+      if (!byCollection.has(cn)) byCollection.set(cn, []);
+      byCollection.get(cn)!.push({ memoryId, rating, rated_at });
+    }
+
+    // Fetch memories from Weaviate per collection
+    const memoryMap = new Map<string, Record<string, unknown>>();
+
+    for (const [cn, entries] of byCollection) {
+      if (cn === '__unavailable__') continue;
+
+      const collection = this.weaviateClient.collections.get(cn);
+      for (const entry of entries) {
+        try {
+          const memObj = await fetchMemoryWithAllProperties(collection, entry.memoryId);
+          if (memObj) {
+            const props = memObj.properties as Record<string, unknown>;
+            memoryMap.set(entry.memoryId, { id: memObj.uuid, ...props });
+          }
+        } catch (error) {
+          this.logger.warn?.(`[RatingService] byMyRatings: failed to fetch ${entry.memoryId} from ${cn}: ${error}`);
+        }
+      }
+    }
+
+    // Build response items in page order
+    const items: MyRatingsResult['items'] = [];
+    for (const doc of page) {
+      const data = doc.data as Record<string, unknown>;
+      const memoryId = (data.memoryId as string) ?? doc.id;
+      const rating = data.rating as number;
+      const rated_at = (data.updated_at as string) ?? '';
+
+      const memory = memoryMap.get(memoryId);
+      if (memory) {
+        const isDeleted = !!(memory.deleted_at || memory.is_deleted);
+        items.push({
+          memory,
+          metadata: {
+            my_rating: rating,
+            rated_at,
+            ...(isDeleted ? { deleted: true } : {}),
+          },
+        });
+      } else {
+        // Unavailable stub
+        items.push({
+          memory: { id: memoryId },
+          metadata: {
+            my_rating: rating,
+            rated_at,
+            unavailable: true,
+          },
+        });
+      }
+    }
+
+    return { items, total, offset, limit };
   }
 }

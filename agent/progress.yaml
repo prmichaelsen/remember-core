@@ -2561,7 +2561,8 @@ tasks:
 
     - id: task-186
       name: MyRatings Types + Browse Mode
-      status: not_started
+      status: completed
+      completed_date: 2026-03-08
       file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-186-my-ratings-types-browse-mode.md
       estimated_hours: 4
       dependencies: [task-185]

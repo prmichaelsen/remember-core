@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.1] - 2026-03-08
+
+### Added
+- `MyRatingsRequest`, `MyRatingsResult`, `MyRatingMetadata` types in `rating.types.ts`
+- `RatingService.byMyRatings()` browse mode: Firestore cursor pagination, scope/star filtering, Weaviate hydration, `{ memory, metadata }` response envelope
+
 ## [0.49.0] - 2026-03-08
 
 ### Added

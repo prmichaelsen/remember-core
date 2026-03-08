@@ -166,7 +166,11 @@ export function createHaikuClient(options: {
     const data = await response.json() as any;
     const text = data.content?.[0]?.text ?? '';
     const cleaned = text.replace(/```json?\s*/g, '').replace(/```\s*/g, '').trim();
-    return JSON.parse(cleaned);
+    // Strip any leading prose before first { and trailing text after last }
+    const jsonStart = cleaned.indexOf('{');
+    const jsonEnd = cleaned.lastIndexOf('}');
+    const jsonStr = (jsonStart !== -1 && jsonEnd !== -1) ? cleaned.slice(jsonStart, jsonEnd + 1) : cleaned;
+    return JSON.parse(jsonStr);
   }
 
   return {

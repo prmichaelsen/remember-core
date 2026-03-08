@@ -633,7 +633,7 @@ milestones:
     status: not_started
     progress: 0
     estimated_weeks: 1.5
-    tasks_completed: 5
+    tasks_completed: 6
     tasks_total: 7
     dependencies: [M39]
     notes: |
@@ -2689,7 +2689,8 @@ tasks:
       description: "Live e2e tests for app.profiles.createAndPublish(), search(), retract(), updateAndRepublish()."
     - id: task-198
       name: App Client Memory + Relationships + Ghost Live Tests
-      status: not_started
+      status: completed
+      completed_date: 2026-03-08
       file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-198-app-client-memory-relationships-ghost-live-tests.md
       estimated_hours: 2
       description: "Live e2e tests for app.memories.get(), app.relationships.getMemories(), app.ghost.searchAsGhost()."

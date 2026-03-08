@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.13] - 2026-03-08
+
+### Added
+- Live e2e tests for App compound operations: `memories.get()`, `relationships.getMemories()`, `ghost.searchAsGhost()` in `15-app-compound.live.ts`
+
 ## [0.49.12] - 2026-03-08
 
 ### Added

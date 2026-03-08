@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.16] - 2026-03-08
+
+### Changed
+- Import parent summary memory now uses the Haiku-generated summarization as content instead of a structured metadata string
+- Import metadata (source, chunk count, import ID) moved to `context_summary` field
+
 ## [0.49.15] - 2026-03-08
 
 ### Fixed

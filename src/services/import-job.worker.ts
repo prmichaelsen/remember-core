@@ -238,12 +238,6 @@ export class ImportJobWorker {
       }
 
       // Create parent summary memory
-      const parentContent =
-        `Import summary: ${summaryText}\n` +
-        `Source: ${sourceLabel}\n` +
-        `Chunks: ${data.chunkMemoryIds.length}\n` +
-        `Import ID: ${data.importId}`;
-
       // Build tags for parent summary
       const parentTags = [`import:${data.importId}`, 'import_summary'];
       if (isFileImport) {
@@ -257,9 +251,9 @@ export class ImportJobWorker {
       }
 
       const parentResult: CreateMemoryResult = await this.memoryService.create({
-        content: parentContent,
+        content: summaryText,
         tags: parentTags,
-        context_summary: `Import summary for ${sourceLabel}`,
+        context_summary: `Import of ${data.chunkMemoryIds.length} chunks from ${sourceLabel} (import ID: ${data.importId})`,
         context_conversation_id: params.context_conversation_id,
       });
 

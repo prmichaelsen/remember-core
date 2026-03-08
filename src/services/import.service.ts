@@ -276,16 +276,10 @@ export class ImportService {
     }
 
     // 3. Create parent summary memory
-    const parentContent =
-      `Import summary: ${summaryText}\n` +
-      `Source: ${sourceLabel}\n` +
-      `Chunks: ${chunks.length}\n` +
-      `Import ID: ${importId}`;
-
     const parentResult: CreateMemoryResult = await this.memoryService.create({
-      content: parentContent,
+      content: summaryText,
       tags: [`import:${importId}`, 'import_summary'],
-      context_summary: `Import summary for ${sourceLabel}`,
+      context_summary: `Import of ${chunks.length} chunks from ${sourceLabel} (import ID: ${importId})`,
       context_conversation_id: contextConversationId,
     });
 

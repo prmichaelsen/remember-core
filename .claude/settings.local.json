@@ -57,7 +57,8 @@
       "Bash(npx tsx:*)",
       "Bash(sort:*)",
       "Bash(npm view:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm i:*)"
     ]
   }
 }

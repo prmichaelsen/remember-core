@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.14] - 2026-03-08
+
+### Added
+- Live e2e test for `health.version()` in `01-health.live.ts`
+- Live e2e test for `confirmations.deny()` in `05-spaces.live.ts`
+
 ## [0.49.13] - 2026-03-08
 
 ### Added

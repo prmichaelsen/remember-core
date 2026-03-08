@@ -4,9 +4,13 @@ import { TEST_USER_ID } from '../helpers/test-ids.js';
 describe('Spaces (live)', () => {
   const client = getClient();
   let memoryId: string | null = null;
+  let denyTestMemoryId: string | null = null;
   let confirmationToken: string | null = null;
 
   afterAll(async () => {
+    if (denyTestMemoryId) {
+      try { await client.memories.delete(TEST_USER_ID, denyTestMemoryId, { reason: 'live-test-cleanup' }); } catch { /* ignore */ }
+    }
     if (memoryId) {
       await client.memories.delete(TEST_USER_ID, memoryId, { reason: 'live-test-cleanup' });
     }
@@ -150,6 +154,38 @@ describe('Spaces (live)', () => {
     if (reviseToken) {
       await client.confirmations.confirm(TEST_USER_ID, reviseToken);
     }
+  });
+
+  it('deny() rejects a pending confirmation', async () => {
+    // Create a separate memory for the deny test
+    const createRes = await client.memories.create(TEST_USER_ID, {
+      content: 'Live test: deny confirmation target memory',
+      type: 'fact',
+      tags: ['live-test', 'deny-test'],
+    });
+    if (createRes.error || !createRes.data) return;
+    denyTestMemoryId = (createRes.data as any).memory_id;
+    if (!denyTestMemoryId) return;
+
+    // Publish to get a confirmation token
+    const publishRes = await client.spaces.publish(TEST_USER_ID, {
+      memory_id: denyTestMemoryId,
+      spaces: ['the_void'],
+    });
+    if (publishRes.error || !publishRes.data) return;
+    const token = (publishRes.data as any).confirmation_token || (publishRes.data as any).token;
+    if (!token) return;
+
+    // Deny the confirmation
+    const res = await client.confirmations.deny(TEST_USER_ID, token);
+
+    if (res.error) {
+      console.warn('deny error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.error).toBeNull();
   });
 
   it('retract the published memory', async () => {

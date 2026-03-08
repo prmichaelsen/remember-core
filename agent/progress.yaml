@@ -630,10 +630,11 @@ milestones:
 
   - id: M40
     name: Live E2E Test Coverage Expansion
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
+    completed: 2026-03-08
     estimated_weeks: 1.5
-    tasks_completed: 6
+    tasks_completed: 7
     tasks_total: 7
     dependencies: [M39]
     notes: |
@@ -2696,7 +2697,8 @@ tasks:
       description: "Live e2e tests for app.memories.get(), app.relationships.getMemories(), app.ghost.searchAsGhost()."
     - id: task-199
       name: Health Version + Confirmations Deny Live Tests
-      status: not_started
+      status: completed
+      completed_date: 2026-03-08
       file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-199-health-version-confirmations-deny-live-tests.md
       estimated_hours: 1
       description: "Live e2e tests for health.version() and confirmations.deny()."

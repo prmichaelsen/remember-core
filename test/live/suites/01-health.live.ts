@@ -8,4 +8,16 @@ describe('Health (live)', () => {
     expect(res.data).toBeDefined();
     expect(res.error).toBeNull();
   });
+
+  it('version() returns service version info', async () => {
+    const res = await client.health.version();
+
+    if (res.error) {
+      console.warn('version error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
 });

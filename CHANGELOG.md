@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.50.0] - 2026-03-08
+
+### Added
+- Outbound webhook event system with EventBus pattern
+- `WebhookService` implementing fire-and-forget HTTP delivery with HMAC-SHA256 signing (Standard Webhooks spec)
+- Event types: `memory.published_to_space`, `memory.published_to_group`, `memory.retracted`, `memory.follow_up_due`
+- `createWebhookService()` factory reading `REMEMBER_WEBHOOK_URL` / `REMEMBER_WEBHOOK_SECRET` env vars
+- `./webhooks` subpath export
+- SpaceService emits webhook events on publish and retract operations
+- Re-export `EventBus` type from `./services`
+
 ## [0.49.18] - 2026-03-08
 
 ### Fixed

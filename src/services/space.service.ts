@@ -30,6 +30,7 @@ import type { RecommendationService } from './recommendation.service.js';
 import { MIN_SIMILARITY } from './recommendation.service.js';
 import { sliceContent, type BroadSearchResult } from './memory.service.js';
 import { ALL_MEMORY_PROPERTIES } from '../database/weaviate/client.js';
+import type { EventBus } from '../webhooks/events.js';
 
 // ─── Shared Types ───────────────────────────────────────────────────────
 
@@ -410,6 +411,7 @@ export class SpaceService {
   private moderationClient?: ModerationClient;
   private memoryIndex: MemoryIndexService;
   private recommendationService?: RecommendationService;
+  private eventBus?: EventBus;
 
   constructor(
     private weaviateClient: any,
@@ -418,10 +420,11 @@ export class SpaceService {
     private confirmationTokenService: ConfirmationTokenService,
     private logger: Logger,
     private memoryIndexService: MemoryIndexService,
-    options?: { moderationClient?: ModerationClient; recommendationService?: RecommendationService },
+    options?: { moderationClient?: ModerationClient; recommendationService?: RecommendationService; eventBus?: EventBus },
   ) {
     this.moderationClient = options?.moderationClient;
     this.recommendationService = options?.recommendationService;
+    this.eventBus = options?.eventBus;
     this.memoryIndex = memoryIndexService;
   }
 
@@ -1127,6 +1130,29 @@ export class SpaceService {
       failed: failedPublications,
     });
 
+    // Emit webhook events for successful publications
+    if (this.eventBus) {
+      const title = String(originalMemory.properties.title ?? '');
+      const actor = { type: 'user' as const, id: this.userId };
+
+      if (successfulPublications.some((p) => p.startsWith('spaces:'))) {
+        for (const spaceId of spaces) {
+          this.eventBus.emit(
+            { type: 'memory.published_to_space', memory_id: request.payload.memory_id, title, space_id: spaceId, owner_id: this.userId },
+            actor,
+          );
+        }
+      }
+
+      const publishedGroups = groups.filter((g) => successfulPublications.some((p) => p === `group: ${g}`));
+      for (const groupId of publishedGroups) {
+        this.eventBus.emit(
+          { type: 'memory.published_to_group', memory_id: request.payload.memory_id, title, group_id: groupId, owner_id: this.userId },
+          actor,
+        );
+      }
+    }
+
     return {
       action: 'publish_memory',
       success: true,
@@ -1238,6 +1264,26 @@ export class SpaceService {
       retracted: successfulRetractions,
       failed: failedRetractions,
     });
+
+    // Emit webhook event for successful retractions
+    if (this.eventBus && successfulRetractions.length > 0) {
+      const targets: Array<{ kind: 'space' | 'group'; id: string }> = [];
+      if (successfulRetractions.some((r) => r.startsWith('spaces:'))) {
+        for (const spaceId of spaces) {
+          targets.push({ kind: 'space', id: spaceId });
+        }
+      }
+      const retractedGroups = groups.filter((g) => successfulRetractions.some((r) => r === `group: ${g}`));
+      for (const groupId of retractedGroups) {
+        targets.push({ kind: 'group', id: groupId });
+      }
+      if (targets.length > 0) {
+        this.eventBus.emit(
+          { type: 'memory.retracted', memory_id: request.payload.memory_id, owner_id: this.userId, targets },
+          { type: 'user', id: this.userId },
+        );
+      }
+    }
 
     return {
       action: 'retract_memory',

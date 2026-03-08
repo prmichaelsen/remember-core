@@ -549,3 +549,6 @@ export {
   type CurationMemory,
   type CurationRelationship,
 } from './curation-step.service.js';
+
+// EventBus interface (from webhooks module)
+export type { EventBus } from '../webhooks/events.js';

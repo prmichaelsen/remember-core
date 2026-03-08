@@ -1,9 +1,9 @@
 project:
   name: remember-core
-  version: 0.48.5
+  version: 0.49.7
   started: 2026-02-27
   status: in_progress
-  current_milestone: M37
+  current_milestone: M38
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -627,6 +627,21 @@ milestones:
       byMyRatings, byCurated, byDiscovery, byRecommendation.
       Tests run against deployed e1 REST service via SVC client.
       See: agent/milestones/milestone-39-live-e2e-test-expansion.md
+
+  - id: M40
+    name: Live E2E Test Coverage Expansion
+    status: not_started
+    progress: 0
+    estimated_weeks: 1.5
+    tasks_completed: 0
+    tasks_total: 7
+    dependencies: [M39]
+    notes: |
+      Expand live e2e test coverage from 45% to ~95% across SVC + App clients.
+      33 untested methods across 7 tasks (193-199): memory get/similar/query,
+      relationships/preferences updates, trust operations, spaces revise/query/sort,
+      app profiles, app compound operations, health version, confirmations deny.
+      See: agent/milestones/milestone-40-live-e2e-test-coverage-expansion.md
 
 tasks:
   milestone_1:
@@ -2636,11 +2651,55 @@ tasks:
       completed_date: 2026-03-08
       description: "Live e2e tests for byCurated, byDiscovery, byRecommendation sort mode endpoints."
 
+  milestone_40:
+    - id: task-193
+      name: Memory Get + Similar + Query Live Tests
+      status: not_started
+      file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-193-memory-get-similar-query-live-tests.md
+      estimated_hours: 2
+      description: "Live e2e tests for memories.get(), similar(), query() endpoints."
+    - id: task-194
+      name: Relationship Update + Preferences Update Live Tests
+      status: not_started
+      file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-194-relationship-update-preferences-update-live-tests.md
+      estimated_hours: 1.5
+      description: "Live e2e tests for relationships.update() and preferences.update()."
+    - id: task-195
+      name: Trust Operations Expansion Live Tests
+      status: not_started
+      file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-195-trust-operations-expansion-live-tests.md
+      estimated_hours: 2
+      description: "Live e2e tests for trust.updateGhostConfig(), blockUser(), unblockUser(), checkAccess()."
+    - id: task-196
+      name: Spaces Revise + Query + Sort Modes Live Tests
+      status: not_started
+      file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-196-spaces-revise-query-sort-modes-live-tests.md
+      estimated_hours: 2
+      description: "Live e2e tests for spaces.revise(), query(), byDiscovery(), byRecommendation(), byCurated()."
+    - id: task-197
+      name: App Client Profiles Live Tests
+      status: not_started
+      file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-197-app-client-profiles-live-tests.md
+      estimated_hours: 2
+      description: "Live e2e tests for app.profiles.createAndPublish(), search(), retract(), updateAndRepublish()."
+    - id: task-198
+      name: App Client Memory + Relationships + Ghost Live Tests
+      status: not_started
+      file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-198-app-client-memory-relationships-ghost-live-tests.md
+      estimated_hours: 2
+      description: "Live e2e tests for app.memories.get(), app.relationships.getMemories(), app.ghost.searchAsGhost()."
+    - id: task-199
+      name: Health Version + Confirmations Deny Live Tests
+      status: not_started
+      file: agent/tasks/milestone-40-live-e2e-test-coverage-expansion/task-199-health-version-confirmations-deny-live-tests.md
+      estimated_hours: 1
+      description: "Live e2e tests for health.version() and confirmations.deny()."
+
 documentation:
   design_documents: 28
   milestone_documents: 40
   pattern_documents: 29
-  task_documents: 192
+  task_documents: 199
 
 progress:
   planning: 100
@@ -3098,10 +3157,9 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M37: byMyRatings Sort Mode (6 tasks, ~2 weeks)
-  - M38: Response Envelope Migration (placeholder, tasks TBD)
-  - Publish v0.45.0 to npm (ghost fix + SVC client space sort modes)
-  - Migrate agentbase.me from hand-written fetch to app client
+  - M38: Response Envelope Migration (placeholder, tasks TBD — define tasks now that M37 envelope pattern is proven)
+  - Define M38 tasks: migrate byRating, byDiscovery, byBroad, byRandom, byCurated to { memory, metadata } envelope
+  - Open bug: agent/bugs/bug-weaviate-filter-chain-and-classification-parse.md
 
 notes:
   - "Source: remember-mcp v3.8.0-v3.13.0 (prmichaelsen/remember-mcp)"

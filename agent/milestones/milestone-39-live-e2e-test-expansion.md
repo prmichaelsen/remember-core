@@ -21,7 +21,7 @@ This milestone adds live e2e coverage for these endpoints against the deployed e
 
 ## Status
 
-**Not Started**
+**Completed** (2026-03-08)
 
 ## Success Criteria
 

@@ -3,7 +3,7 @@
 **Goal**: Personal rating history browser on RatingService — browse and search memories a user has rated, with collection scoping, star filtering, and the new `{ memory, metadata }` response envelope
 **Duration**: 1-2 weeks
 **Dependencies**: M20 (Memory Ratings), M18 (Memory Index Lookup)
-**Status**: Not Started
+**Status**: Completed (2026-03-08)
 **Design Reference**: [byMyRatings Sort Mode](../design/local.by-my-ratings-sort-mode.md)
 
 ---

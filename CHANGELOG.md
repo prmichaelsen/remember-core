@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.10] - 2026-03-08
+
+### Added
+- Live e2e tests for `trust.updateGhostConfig()`, `blockUser()`, `unblockUser()`, `checkAccess()` in `06-trust.live.ts`
+
 ## [0.49.9] - 2026-03-08
 
 ### Added

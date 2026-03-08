@@ -175,7 +175,7 @@ describe('Space Sort Modes (live)', () => {
       limit: 5,
     });
 
-    // May 400 if user has no ratings (no centroid to build)
+    // May 400 (no centroid), 404 (route not deployed), or 500
     if (res.error) {
       console.warn('spaces.byRecommendation error:', res.error);
       expect([400, 404, 500]).toContain(res.error.status);

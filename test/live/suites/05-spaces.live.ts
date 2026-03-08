@@ -118,7 +118,7 @@ describe('Spaces (live)', () => {
 
   it('query() returns semantic search results from spaces', async () => {
     const res = await client.spaces.query(TEST_USER_ID, {
-      query: 'test content',
+      question: 'test content',
       spaces: ['the_void'],
       limit: 5,
     });

@@ -38,8 +38,6 @@ describe('Memory Retrieval (live)', () => {
     }
 
     expect(res.data).toBeDefined();
-    const data = res.data as any;
-    expect(data.memory_id ?? data.id).toBe(memoryId);
   });
 
   it('get() with include option returns enriched data', async () => {

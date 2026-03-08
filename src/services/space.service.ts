@@ -18,7 +18,7 @@ import { ensurePublicCollection, isValidSpaceId } from '../database/weaviate/spa
 import { SPACE_CONTENT_TYPE_RESTRICTIONS, type SpaceId } from '../types/space.types.js';
 import { ensureGroupCollection } from '../database/weaviate/v2-collections.js';
 import { CollectionType, getCollectionName } from '../collections/dot-notation.js';
-import { generateCompositeId, compositeIdToUuid } from '../collections/composite-ids.js';
+import { generateCompositeId, compositeIdToUuid, parseCompositeId } from '../collections/composite-ids.js';
 import { getSpaceConfig } from './space-config.service.js';
 import { canModerate, canModerateAny } from '../utils/auth-helpers.js';
 import { ValidationError, NotFoundError, ForbiddenError } from '../errors/app-errors.js';
@@ -438,6 +438,55 @@ export class SpaceService {
     }
   }
 
+  // ── Resolve composite UUID to original memory ──────────────────────
+
+  /**
+   * Looks up a memory in the user's collection. If not found, checks whether
+   * the ID is a composite UUID from a published copy and resolves to the
+   * original memory via composite_id or original_memory_id.
+   */
+  private async resolveToOriginalMemory(memoryId: string): Promise<{ resolvedId: string; memory: any }> {
+    let memory = await fetchMemoryWithAllProperties(this.userCollection, memoryId);
+    if (memory) {
+      if (memory.properties.user_id !== this.userId) throw new ForbiddenError('Permission denied: not memory owner');
+      return { resolvedId: memoryId, memory };
+    }
+
+    // Try resolving from published copy
+    const collectionName = await this.memoryIndex.lookup(memoryId);
+    if (collectionName && collectionName !== this.userCollection.name) {
+      const publishedCollection = this.weaviateClient.collections.get(collectionName);
+      const published = await fetchMemoryWithAllProperties(publishedCollection, memoryId);
+      if (published) {
+        let originalId: string | undefined;
+
+        // Prefer original_memory_id if set
+        if (published.properties.original_memory_id) {
+          originalId = published.properties.original_memory_id as string;
+        }
+        // Fall back to parsing composite_id (userId.memoryId)
+        else if (published.properties.composite_id) {
+          try {
+            const parsed = parseCompositeId(published.properties.composite_id as string);
+            originalId = parsed.memoryId;
+          } catch {
+            // Invalid composite_id format — skip
+          }
+        }
+
+        if (originalId) {
+          memory = await fetchMemoryWithAllProperties(this.userCollection, originalId);
+          if (memory) {
+            if (memory.properties.user_id !== this.userId) throw new ForbiddenError('Permission denied: not memory owner');
+            return { resolvedId: originalId, memory };
+          }
+        }
+      }
+    }
+
+    throw new NotFoundError('Memory', memoryId);
+  }
+
   // ── Publish (phase 1: generate confirmation token) ──────────────────
 
   async publish(input: PublishInput): Promise<PublishResult> {
@@ -464,10 +513,9 @@ export class SpaceService {
       }
     }
 
-    // Verify memory exists, belongs to user, is a memory
-    const memory = await fetchMemoryWithAllProperties(this.userCollection, input.memory_id);
-    if (!memory) throw new NotFoundError('Memory', input.memory_id);
-    if (memory.properties.user_id !== this.userId) throw new ForbiddenError('Permission denied: not memory owner');
+    // Verify memory exists, belongs to user, is a memory.
+    // If the ID is a composite UUID (published copy), resolve to the original memory.
+    const { resolvedId: resolvedMemoryId, memory } = await this.resolveToOriginalMemory(input.memory_id);
     if (memory.properties.doc_type !== 'memory') throw new ValidationError('Only memories can be published');
 
     // Validate content_type restrictions for restricted spaces
@@ -489,7 +537,7 @@ export class SpaceService {
       this.userId,
       'publish_memory',
       {
-        memory_id: input.memory_id,
+        memory_id: resolvedMemoryId,
         spaces,
         groups,
         additional_tags: input.additional_tags || [],
@@ -498,7 +546,7 @@ export class SpaceService {
 
     this.logger.info('Publish confirmation created', {
       userId: this.userId,
-      memoryId: input.memory_id,
+      memoryId: resolvedMemoryId,
       spaces,
       groups,
     });
@@ -524,10 +572,9 @@ export class SpaceService {
       }
     }
 
-    // Verify memory exists and belongs to user
-    const memory = await fetchMemoryWithAllProperties(this.userCollection, input.memory_id);
-    if (!memory) throw new NotFoundError('Memory', input.memory_id);
-    if (memory.properties.user_id !== this.userId) throw new ForbiddenError('Permission denied: not memory owner');
+    // Verify memory exists and belongs to user.
+    // If the ID is a composite UUID (published copy), resolve to the original memory.
+    const { resolvedId: resolvedMemoryId, memory } = await this.resolveToOriginalMemory(input.memory_id);
 
     // Check current publication status
     const currentSpaceIds: string[] = Array.isArray(memory.properties.space_ids)
@@ -553,7 +600,7 @@ export class SpaceService {
       this.userId,
       'retract_memory',
       {
-        memory_id: input.memory_id,
+        memory_id: resolvedMemoryId,
         spaces,
         groups,
         current_space_ids: currentSpaceIds,
@@ -563,7 +610,7 @@ export class SpaceService {
 
     this.logger.info('Retract confirmation created', {
       userId: this.userId,
-      memoryId: input.memory_id,
+      memoryId: resolvedMemoryId,
       spaces,
       groups,
     });

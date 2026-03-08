@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.18] - 2026-03-08
+
+### Fixed
+- Publish/retract now resolves composite UUIDs to original memory IDs, allowing publish-to-group from a space memory view (and vice versa)
+- Added `resolveToOriginalMemory()` helper that falls back to `composite_id` parsing for memories published before `original_memory_id` was added
+
 ## [0.49.16] - 2026-03-08
 
 ### Changed

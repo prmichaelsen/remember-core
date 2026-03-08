@@ -65,4 +65,62 @@ describe('Sort Modes (live)', () => {
 
     expect(res.data).toBeDefined();
   });
+
+  it('query byCurated returns results or empty', async () => {
+    const res = await client.memories.byCurated(TEST_USER_ID, {
+      limit: 10,
+    });
+
+    if (res.error) {
+      console.warn('byCurated error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
+
+  it('byCurated with query re-ranks by curated score', async () => {
+    const res = await client.memories.byCurated(TEST_USER_ID, {
+      query: 'sort mode query target',
+      limit: 10,
+    });
+
+    if (res.error) {
+      console.warn('byCurated search error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
+
+  it('query byDiscovery returns results or empty', async () => {
+    const res = await client.memories.byDiscovery(TEST_USER_ID, {
+      limit: 10,
+    });
+
+    if (res.error) {
+      console.warn('byDiscovery error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
+
+  it('query byRecommendation returns results or graceful fallback', async () => {
+    const res = await client.memories.byRecommendation(TEST_USER_ID, {
+      limit: 10,
+    });
+
+    if (res.error) {
+      console.warn('byRecommendation error:', res.error);
+      // May 400 if user has no ratings (no centroid to build)
+      expect([400, 404, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
 });

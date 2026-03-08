@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.7] - 2026-03-08
+
+### Added
+- Live e2e tests for byCurated (browse + search), byDiscovery, and byRecommendation sort modes in `07-sort-modes.live.ts`
+
 ## [0.49.6] - 2026-03-08
 
 ### Added

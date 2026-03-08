@@ -59,7 +59,8 @@
       "Bash(npm view:*)",
       "Bash(grep:*)",
       "Bash(npm i:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "WebFetch(domain:agentbase.me)"
     ]
   }
 }

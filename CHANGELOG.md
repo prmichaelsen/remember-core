@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.12] - 2026-03-08
+
+### Added
+- Live e2e tests for App client profiles: `createAndPublish()`, `search()`, `updateAndRepublish()`, `retract()` in `14-app-profiles.live.ts`
+
 ## [0.49.11] - 2026-03-08
 
 ### Added

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.2] - 2026-03-08
+
+### Added
+- `byMyRatings` search mode: hybrid search per Weaviate collection intersected with rated ID set, relevance-ranked results with metadata overlay
+
 ## [0.49.1] - 2026-03-08
 
 ### Added

@@ -2570,7 +2570,8 @@ tasks:
 
     - id: task-187
       name: Search Mode (Hybrid Intersection)
-      status: not_started
+      status: completed
+      completed_date: 2026-03-08
       file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-187-search-mode-hybrid-intersection.md
       estimated_hours: 3
       dependencies: [task-186]

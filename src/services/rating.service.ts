@@ -199,7 +199,7 @@ export class RatingService {
    * Browse and search memories the user has rated.
    *
    * Browse mode (no query): Firestore cursor pagination → scope/star filter → Weaviate hydration
-   * Search mode (with query): deferred to task 187
+   * Search mode (with query): hybrid search per collection intersected with rated ID set
    */
   async byMyRatings(input: MyRatingsRequest): Promise<MyRatingsResult> {
     const {
@@ -214,9 +214,9 @@ export class RatingService {
       offset = 0,
     } = input;
 
-    // Search mode deferred to task 187
+    // Search mode: hybrid search intersected with rated ID set
     if (query?.trim()) {
-      return { items: [], total: 0, offset, limit };
+      return this.byMyRatingsSearch(input);
     }
 
     // Browse mode: read rating docs from Firestore
@@ -348,6 +348,124 @@ export class RatingService {
         });
       }
     }
+
+    return { items, total, offset, limit };
+  }
+
+  /**
+   * Search mode for byMyRatings: hybrid search per Weaviate collection
+   * intersected with the user's rated memory ID set.
+   */
+  private async byMyRatingsSearch(input: MyRatingsRequest): Promise<MyRatingsResult> {
+    const {
+      userId,
+      spaces,
+      groups,
+      rating_filter,
+      query,
+      limit = 50,
+      offset = 0,
+    } = input;
+
+    // 1. Fetch all rating docs (need full ID set for intersection)
+    const ratingsPath = getUserRatingsPath(userId);
+    const ratingDocs = await queryDocuments(ratingsPath, {
+      orderBy: [{ field: 'updated_at', direction: 'DESCENDING' }],
+    });
+
+    if (ratingDocs.length === 0) {
+      return { items: [], total: 0, offset, limit };
+    }
+
+    // 2. Filter by scope and star
+    const hasScope = (spaces && spaces.length > 0) || (groups && groups.length > 0);
+    let filtered = ratingDocs;
+
+    if (hasScope) {
+      const scopeSet = new Set<string>();
+      if (spaces) for (const s of spaces) scopeSet.add(s);
+      if (groups) for (const g of groups) scopeSet.add(g);
+      filtered = filtered.filter((doc) => {
+        const cn = (doc.data as Record<string, unknown>).collectionName as string | undefined;
+        return cn && scopeSet.has(cn);
+      });
+    }
+
+    if (rating_filter) {
+      const min = rating_filter.min ?? 1;
+      const max = rating_filter.max ?? 5;
+      filtered = filtered.filter((doc) => {
+        const r = (doc.data as Record<string, unknown>).rating as number;
+        return r >= min && r <= max;
+      });
+    }
+
+    // 3. Collect rated memory IDs grouped by collectionName
+    const ratedByCollection = new Map<string, Set<string>>();
+    const ratingLookup = new Map<string, { rating: number; rated_at: string }>();
+
+    for (const doc of filtered) {
+      const data = doc.data as Record<string, unknown>;
+      const memoryId = (data.memoryId as string) ?? doc.id;
+      const cn = data.collectionName as string | undefined;
+      if (!cn) continue; // Skip docs without collectionName in search mode
+
+      if (!ratedByCollection.has(cn)) ratedByCollection.set(cn, new Set());
+      ratedByCollection.get(cn)!.add(memoryId);
+      ratingLookup.set(memoryId, {
+        rating: data.rating as number,
+        rated_at: (data.updated_at as string) ?? '',
+      });
+    }
+
+    if (ratedByCollection.size === 0) {
+      return { items: [], total: 0, offset, limit };
+    }
+
+    // 4. Run hybrid search per collection, intersect with rated IDs
+    const SEARCH_LIMIT = 200;
+    const intersectedResults: Array<{ memoryId: string; memory: Record<string, unknown> }> = [];
+
+    for (const [cn, ratedIds] of ratedByCollection) {
+      try {
+        const collection = this.weaviateClient.collections.get(cn);
+        const searchResults = await collection.query.hybrid(query!, {
+          alpha: 0.7,
+          limit: SEARCH_LIMIT,
+        });
+
+        // Intersect: only keep results that are in the rated set
+        for (const obj of searchResults.objects) {
+          if (ratedIds.has(obj.uuid)) {
+            const props = obj.properties as Record<string, unknown>;
+            intersectedResults.push({
+              memoryId: obj.uuid,
+              memory: { id: obj.uuid, ...props },
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.warn?.(`[RatingService] byMyRatings search: failed on collection ${cn}: ${error}`);
+      }
+    }
+
+    // 5. Apply offset/limit to merged results (Weaviate relevance ordering preserved)
+    const total = intersectedResults.length;
+    const page = intersectedResults.slice(offset, offset + limit);
+
+    // 6. Attach metadata from rating docs
+    const items: MyRatingsResult['items'] = page.map(({ memoryId, memory }) => {
+      const ratingData = ratingLookup.get(memoryId);
+      const isDeleted = !!(memory.deleted_at || memory.is_deleted);
+      return {
+        memory,
+        metadata: {
+          my_rating: ratingData?.rating ?? 0,
+          rated_at: ratingData?.rated_at ?? '',
+          ...(isDeleted ? { deleted: true } : {}),
+        },
+      };
+    });
 
     return { items, total, offset, limit };
   }

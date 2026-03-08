@@ -101,7 +101,9 @@ Multiple distinct groups (SPLIT into sub-clusters):
 Nothing salvageable (RARE - only if truly all unrelated):
 {"valid":false,"reason":"no related memories found"}
 
-**Directive**: AGGRESSIVELY look for sub-clusters. It's better to create 2-3 small relationships than reject everything.`;
+**Directive**: AGGRESSIVELY look for sub-clusters. It's better to create 2-3 small relationships than reject everything.
+
+Respond with ONLY valid JSON. No explanation, no preamble, no markdown fences. Just the JSON object.`;
 }
 
 function buildExtractionPrompt(content: string): string {

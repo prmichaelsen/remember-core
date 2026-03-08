@@ -58,7 +58,8 @@
       "Bash(sort:*)",
       "Bash(npm view:*)",
       "Bash(grep:*)",
-      "Bash(npm i:*)"
+      "Bash(npm i:*)",
+      "Bash(mkdir:*)"
     ]
   }
 }

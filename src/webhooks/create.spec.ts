@@ -1,5 +1,6 @@
-import { createWebhookService } from './create.js';
+import { createWebhookService, createBatchedWebhookService } from './create.js';
 import { WebhookService } from './webhook.service.js';
+import { BatchedWebhookService } from './batched-webhook.service.js';
 
 const mockLogger = {
   debug: jest.fn(),
@@ -62,5 +63,15 @@ describe('createWebhookService', () => {
       signingSecret: 'override-secret',
     });
     expect(svc).toBeInstanceOf(WebhookService);
+  });
+});
+
+describe('createBatchedWebhookService', () => {
+  it('returns a BatchedWebhookService instance', () => {
+    const svc = createBatchedWebhookService(mockLogger, {
+      resolveEndpoint: () => ({ url: 'https://example.com', signingSecret: 'secret' }),
+    });
+    expect(svc).toBeInstanceOf(BatchedWebhookService);
+    svc.dispose();
   });
 });

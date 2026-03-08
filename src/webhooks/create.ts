@@ -1,11 +1,13 @@
 /**
- * Factory for creating a WebhookService from environment variables.
- *
- * Returns undefined if not configured (graceful opt-out).
+ * Factory functions for creating webhook services.
  */
 
 import type { Logger } from '../utils/logger.js';
 import { WebhookService, type WebhookServiceConfig } from './webhook.service.js';
+import {
+  BatchedWebhookService,
+  type BatchedWebhookServiceConfig,
+} from './batched-webhook.service.js';
 
 /**
  * Creates a WebhookService if REMEMBER_WEBHOOK_URL and REMEMBER_WEBHOOK_SECRET are set.
@@ -29,4 +31,14 @@ export function createWebhookService(
     timeoutMs: overrides?.timeoutMs,
     onError: overrides?.onError,
   });
+}
+
+/**
+ * Creates a BatchedWebhookService with multi-tenant endpoint resolution.
+ */
+export function createBatchedWebhookService(
+  logger: Logger,
+  config: BatchedWebhookServiceConfig,
+): BatchedWebhookService {
+  return new BatchedWebhookService(logger, config);
 }

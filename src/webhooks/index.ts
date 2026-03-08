@@ -12,10 +12,18 @@ export type {
   WebhookActor,
   WebhookEnvelope,
   EventBus,
+  BatchedWebhookPayload,
 } from './events.js';
 
 export { signWebhookPayload } from './signing.js';
 
 export { WebhookService, type WebhookServiceConfig } from './webhook.service.js';
 
-export { createWebhookService } from './create.js';
+export {
+  BatchedWebhookService,
+  type BatchedWebhookServiceConfig,
+  type WebhookEndpoint,
+  type WebhookConfigResolver,
+} from './batched-webhook.service.js';
+
+export { createWebhookService, createBatchedWebhookService } from './create.js';

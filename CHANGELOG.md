@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.51.0] - 2026-03-08
+
+### Added
+- `BatchedWebhookService` implementing EventBus with batched HTTP delivery and multi-tenant endpoint resolution
+- Per-URL event buffering with configurable `maxBatchSize` (default 20) and `flushIntervalMs` (default 1000ms)
+- `WebhookConfigResolver` callback for routing events to different webhook URLs based on `owner_id`
+- `x-webhook-batch: true` header to distinguish batch from single-event requests
+- `createBatchedWebhookService()` factory function
+- `BatchedWebhookPayload`, `WebhookEndpoint`, `WebhookConfigResolver` types
+- `dispose()` method for graceful shutdown with buffer flush
+
 ## [0.50.0] - 2026-03-08
 
 ### Added

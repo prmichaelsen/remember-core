@@ -68,6 +68,12 @@ export interface WebhookEnvelope {
   data: WebhookEventData;
 }
 
+// ─── Batched Webhook Payload ─────────────────────────────────────────
+
+export interface BatchedWebhookPayload {
+  envelopes: WebhookEnvelope[];
+}
+
 // ─── EventBus Interface ───────────────────────────────────────────────
 
 export interface EventBus {

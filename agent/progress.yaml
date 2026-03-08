@@ -583,10 +583,11 @@ milestones:
 
   - id: M37
     name: byMyRatings Sort Mode
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
+    completed: 2026-03-08
     estimated_weeks: 2
-    tasks_completed: 0
+    tasks_completed: 6
     tasks_total: 6
     dependencies: [M10, M28]
     notes: |
@@ -2597,7 +2598,8 @@ tasks:
 
     - id: task-190
       name: Unit Tests
-      status: not_started
+      status: completed
+      completed_date: 2026-03-08
       file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-190-unit-tests.md
       estimated_hours: 3
       dependencies: [task-186, task-187, task-188]

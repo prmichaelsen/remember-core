@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.5] - 2026-03-08
+
+### Added
+- 21 unit tests for `byMyRatings`: browse mode (sort, pagination), scope filtering (spaces/groups/all), star filter (exact/range/none), search mode (intersection, multi-collection, empty), edge cases (unavailable, deleted, missing collectionName), rate() dual-write collectionName verification
+
 ## [0.49.4] - 2026-03-08
 
 ### Added

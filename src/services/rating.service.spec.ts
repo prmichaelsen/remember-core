@@ -6,6 +6,7 @@ jest.mock('../database/firestore/init.js', () => ({
   getDocument: jest.fn(),
   setDocument: jest.fn(),
   deleteDocument: jest.fn(),
+  queryDocuments: jest.fn(),
 }));
 
 // Mock fetchMemoryWithAllProperties
@@ -13,18 +14,21 @@ jest.mock('../database/weaviate/client.js', () => ({
   fetchMemoryWithAllProperties: jest.fn(),
 }));
 
-import { getDocument, setDocument, deleteDocument } from '../database/firestore/init.js';
+import { getDocument, setDocument, deleteDocument, queryDocuments } from '../database/firestore/init.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 
 const mockGetDocument = getDocument as jest.MockedFunction<typeof getDocument>;
 const mockSetDocument = setDocument as jest.MockedFunction<typeof setDocument>;
 const mockDeleteDocument = deleteDocument as jest.MockedFunction<typeof deleteDocument>;
 const mockFetchMemory = fetchMemoryWithAllProperties as jest.MockedFunction<typeof fetchMemoryWithAllProperties>;
+const mockQueryDocuments = queryDocuments as jest.MockedFunction<typeof queryDocuments>;
 
 function createMockWeaviateClient() {
   const mockUpdate = jest.fn().mockResolvedValue(undefined);
+  const mockHybrid = jest.fn().mockResolvedValue({ objects: [] });
   const mockCollection = {
     data: { update: mockUpdate },
+    query: { hybrid: mockHybrid },
   };
   return {
     client: {
@@ -34,6 +38,7 @@ function createMockWeaviateClient() {
     } as any,
     collection: mockCollection,
     update: mockUpdate,
+    hybrid: mockHybrid,
   };
 }
 
@@ -255,6 +260,480 @@ describe('RatingService', () => {
       const result = await service.getUserRating('mem-1', 'rater1');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('rate() dual-write collectionName', () => {
+    it('writes collectionName to user-rating doc', async () => {
+      const { client } = createMockWeaviateClient();
+      const memoryIndex = createMockMemoryIndexService('Memory_spaces_poetry');
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: memoryIndex, logger: createMockLogger() });
+
+      mockFetchMemory.mockResolvedValue({
+        properties: { rating_sum: 0, rating_count: 0 },
+      } as any);
+      mockGetDocument.mockResolvedValue(null);
+
+      await service.rate({ memoryId: 'mem-1', userId: 'user1', rating: 5 });
+
+      // Second setDocument call is the user-rating dual-write
+      const userRatingCall = mockSetDocument.mock.calls.find(
+        (call) => (call[0] as string).includes('user_ratings')
+      );
+      expect(userRatingCall).toBeDefined();
+      expect(userRatingCall![2]).toEqual(
+        expect.objectContaining({ memoryId: 'mem-1', collectionName: 'Memory_spaces_poetry' })
+      );
+    });
+  });
+
+  describe('byMyRatings() browse mode', () => {
+    function makeRatingDoc(memoryId: string, rating: number, collectionName: string, updated_at = '2026-03-01T00:00:00Z') {
+      return {
+        id: memoryId,
+        data: { memoryId, rating, collectionName, updated_at, created_at: '2026-01-01T00:00:00Z' },
+      };
+    }
+
+    it('returns empty result for user with no ratings', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([]);
+
+      const result = await service.byMyRatings({ userId: 'user1' });
+
+      expect(result).toEqual({ items: [], total: 0, offset: 0, limit: 50 });
+    });
+
+    it('sorts by rated_at desc (default)', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 5, 'Memory_users_u1', '2026-03-02T00:00:00Z'),
+        makeRatingDoc('mem-2', 3, 'Memory_users_u1', '2026-03-01T00:00:00Z'),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: { title: `Title ${id}` },
+      } as any));
+
+      const result = await service.byMyRatings({ userId: 'user1' });
+
+      expect(result.items).toHaveLength(2);
+      expect(result.items[0].metadata.my_rating).toBe(5);
+      expect(result.items[1].metadata.my_rating).toBe(3);
+      expect(result.total).toBe(2);
+
+      // Verify queryDocuments was called with updated_at sort
+      expect(mockQueryDocuments).toHaveBeenCalledWith(
+        expect.stringContaining('user_ratings'),
+        expect.objectContaining({
+          orderBy: [{ field: 'updated_at', direction: 'DESCENDING' }],
+        }),
+      );
+    });
+
+    it('sorts by rating desc', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 5, 'Memory_users_u1'),
+        makeRatingDoc('mem-2', 3, 'Memory_users_u1'),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: { title: `Title ${id}` },
+      } as any));
+
+      await service.byMyRatings({ userId: 'user1', sort_by: 'rating', direction: 'desc' });
+
+      expect(mockQueryDocuments).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          orderBy: [{ field: 'rating', direction: 'DESCENDING' }],
+        }),
+      );
+    });
+
+    it('sorts by rating asc', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 1, 'Memory_users_u1'),
+        makeRatingDoc('mem-2', 5, 'Memory_users_u1'),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: {},
+      } as any));
+
+      await service.byMyRatings({ userId: 'user1', sort_by: 'rating', direction: 'asc' });
+
+      expect(mockQueryDocuments).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          orderBy: [{ field: 'rating', direction: 'ASCENDING' }],
+        }),
+      );
+    });
+
+    it('applies pagination offset=2 limit=2', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 5, 'Memory_users_u1'),
+        makeRatingDoc('mem-2', 4, 'Memory_users_u1'),
+        makeRatingDoc('mem-3', 3, 'Memory_users_u1'),
+        makeRatingDoc('mem-4', 2, 'Memory_users_u1'),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: { title: `Title ${id}` },
+      } as any));
+
+      const result = await service.byMyRatings({ userId: 'user1', offset: 2, limit: 2 });
+
+      expect(result.items).toHaveLength(2);
+      expect(result.items[0].memory.id).toBe('mem-3');
+      expect(result.items[1].memory.id).toBe('mem-4');
+      expect(result.total).toBe(4);
+      expect(result.offset).toBe(2);
+      expect(result.limit).toBe(2);
+    });
+  });
+
+  describe('byMyRatings() scope filtering', () => {
+    function makeRatingDoc(memoryId: string, rating: number, collectionName: string) {
+      return {
+        id: memoryId,
+        data: { memoryId, rating, collectionName, updated_at: '2026-03-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' },
+      };
+    }
+
+    it('no spaces/groups: returns all rated memories', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 5, 'Memory_users_u1'),
+        makeRatingDoc('mem-2', 4, 'Memory_spaces_poetry'),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: {},
+      } as any));
+
+      const result = await service.byMyRatings({ userId: 'user1' });
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('single space: returns only memories in that space', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 5, 'Memory_users_u1'),
+        makeRatingDoc('mem-2', 4, 'Memory_spaces_poetry'),
+        makeRatingDoc('mem-3', 3, 'Memory_spaces_music'),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: {},
+      } as any));
+
+      const result = await service.byMyRatings({ userId: 'user1', spaces: ['Memory_spaces_poetry'] });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].memory.id).toBe('mem-2');
+    });
+
+    it('single group: returns only memories in that group', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 5, 'Memory_groups_family'),
+        makeRatingDoc('mem-2', 4, 'Memory_users_u1'),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: {},
+      } as any));
+
+      const result = await service.byMyRatings({ userId: 'user1', groups: ['Memory_groups_family'] });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].memory.id).toBe('mem-1');
+    });
+
+    it('multiple spaces + groups: returns union', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 5, 'Memory_spaces_poetry'),
+        makeRatingDoc('mem-2', 4, 'Memory_groups_family'),
+        makeRatingDoc('mem-3', 3, 'Memory_users_u1'),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: {},
+      } as any));
+
+      const result = await service.byMyRatings({
+        userId: 'user1',
+        spaces: ['Memory_spaces_poetry'],
+        groups: ['Memory_groups_family'],
+      });
+      expect(result.items).toHaveLength(2);
+    });
+  });
+
+  describe('byMyRatings() star filter', () => {
+    function makeRatingDoc(memoryId: string, rating: number) {
+      return {
+        id: memoryId,
+        data: { memoryId, rating, collectionName: 'Memory_users_u1', updated_at: '2026-03-01T00:00:00Z' },
+      };
+    }
+
+    it('min:5 max:5 returns only 5-star rated', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 5),
+        makeRatingDoc('mem-2', 4),
+        makeRatingDoc('mem-3', 5),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: {},
+      } as any));
+
+      const result = await service.byMyRatings({ userId: 'user1', rating_filter: { min: 5, max: 5 } });
+      expect(result.items).toHaveLength(2);
+      expect(result.total).toBe(2);
+    });
+
+    it('min:1 max:2 returns only 1-2 star rated', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 1),
+        makeRatingDoc('mem-2', 2),
+        makeRatingDoc('mem-3', 3),
+        makeRatingDoc('mem-4', 5),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: {},
+      } as any));
+
+      const result = await service.byMyRatings({ userId: 'user1', rating_filter: { min: 1, max: 2 } });
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('min:3 max:5 returns 3-5 star range', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 1),
+        makeRatingDoc('mem-2', 3),
+        makeRatingDoc('mem-3', 4),
+        makeRatingDoc('mem-4', 5),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: {},
+      } as any));
+
+      const result = await service.byMyRatings({ userId: 'user1', rating_filter: { min: 3, max: 5 } });
+      expect(result.items).toHaveLength(3);
+    });
+
+    it('no filter returns all ratings', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        makeRatingDoc('mem-1', 1),
+        makeRatingDoc('mem-2', 3),
+        makeRatingDoc('mem-3', 5),
+      ]);
+      mockFetchMemory.mockImplementation(async (_col, id) => ({
+        uuid: id,
+        properties: {},
+      } as any));
+
+      const result = await service.byMyRatings({ userId: 'user1' });
+      expect(result.items).toHaveLength(3);
+    });
+  });
+
+  describe('byMyRatings() search mode', () => {
+    it('returns only rated memories matching query', async () => {
+      const { client, hybrid } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        {
+          id: 'mem-1',
+          data: { memoryId: 'mem-1', rating: 5, collectionName: 'Memory_users_u1', updated_at: '2026-03-01T00:00:00Z' },
+        },
+        {
+          id: 'mem-2',
+          data: { memoryId: 'mem-2', rating: 4, collectionName: 'Memory_users_u1', updated_at: '2026-02-01T00:00:00Z' },
+        },
+      ]);
+
+      // Hybrid search returns mem-1 and an unrated mem-3
+      hybrid.mockResolvedValue({
+        objects: [
+          { uuid: 'mem-1', properties: { title: 'Poem about love' } },
+          { uuid: 'mem-3', properties: { title: 'Unrated poem' } },
+        ],
+      });
+
+      const result = await service.byMyRatings({ userId: 'user1', query: 'love poem' });
+
+      // Only mem-1 should be in results (intersection of rated + search)
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].memory.id).toBe('mem-1');
+      expect(result.items[0].metadata.my_rating).toBe(5);
+    });
+
+    it('merges results from multiple collections', async () => {
+      const mockHybrid1 = jest.fn().mockResolvedValue({
+        objects: [{ uuid: 'mem-1', properties: { title: 'Space poem' } }],
+      });
+      const mockHybrid2 = jest.fn().mockResolvedValue({
+        objects: [{ uuid: 'mem-2', properties: { title: 'Personal poem' } }],
+      });
+
+      const client = {
+        collections: {
+          get: jest.fn().mockImplementation((name: string) => ({
+            data: { update: jest.fn() },
+            query: {
+              hybrid: name === 'Memory_spaces_poetry' ? mockHybrid1 : mockHybrid2,
+            },
+          })),
+        },
+      } as any;
+
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([
+        {
+          id: 'mem-1',
+          data: { memoryId: 'mem-1', rating: 5, collectionName: 'Memory_spaces_poetry', updated_at: '2026-03-01T00:00:00Z' },
+        },
+        {
+          id: 'mem-2',
+          data: { memoryId: 'mem-2', rating: 4, collectionName: 'Memory_users_u1', updated_at: '2026-02-01T00:00:00Z' },
+        },
+      ]);
+
+      const result = await service.byMyRatings({ userId: 'user1', query: 'poem' });
+
+      expect(result.items).toHaveLength(2);
+      expect(result.total).toBe(2);
+    });
+
+    it('user with 0 ratings + search query returns empty', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([]);
+
+      const result = await service.byMyRatings({ userId: 'user1', query: 'something' });
+
+      expect(result).toEqual({ items: [], total: 0, offset: 0, limit: 50 });
+    });
+  });
+
+  describe('byMyRatings() edge cases', () => {
+    it('unavailable memory returns stub with unavailable: true', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([{
+        id: 'mem-1',
+        data: { memoryId: 'mem-1', rating: 4, collectionName: 'Memory_users_u1', updated_at: '2026-03-01T00:00:00Z' },
+      }]);
+      mockFetchMemory.mockResolvedValue(null);
+
+      const result = await service.byMyRatings({ userId: 'user1' });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].memory).toEqual({ id: 'mem-1' });
+      expect(result.items[0].metadata.unavailable).toBe(true);
+      expect(result.items[0].metadata.my_rating).toBe(4);
+    });
+
+    it('deleted memory returns with deleted: true in metadata', async () => {
+      const { client } = createMockWeaviateClient();
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: createMockMemoryIndexService(), logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([{
+        id: 'mem-1',
+        data: { memoryId: 'mem-1', rating: 3, collectionName: 'Memory_users_u1', updated_at: '2026-03-01T00:00:00Z' },
+      }]);
+      mockFetchMemory.mockResolvedValue({
+        uuid: 'mem-1',
+        properties: { title: 'Deleted memory', deleted_at: '2026-03-05T00:00:00Z' },
+      } as any);
+
+      const result = await service.byMyRatings({ userId: 'user1' });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].metadata.deleted).toBe(true);
+      expect(result.items[0].metadata.my_rating).toBe(3);
+      expect(result.items[0].memory.title).toBe('Deleted memory');
+    });
+
+    it('rating doc missing collectionName uses fallback lookup', async () => {
+      const { client } = createMockWeaviateClient();
+      const memoryIndex = createMockMemoryIndexService('Memory_users_u1');
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: memoryIndex, logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([{
+        id: 'mem-1',
+        data: { memoryId: 'mem-1', rating: 5, updated_at: '2026-03-01T00:00:00Z' },
+        // Note: no collectionName
+      }]);
+      mockFetchMemory.mockResolvedValue({
+        uuid: 'mem-1',
+        properties: { title: 'Found via fallback' },
+      } as any);
+
+      const result = await service.byMyRatings({ userId: 'user1' });
+
+      expect(memoryIndex.lookup).toHaveBeenCalledWith('mem-1');
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].memory.title).toBe('Found via fallback');
+    });
+
+    it('rating doc missing collectionName + failed lookup returns unavailable', async () => {
+      const { client } = createMockWeaviateClient();
+      const memoryIndex = createMockMemoryIndexService(null);
+      const service = new RatingService({ weaviateClient: client, memoryIndexService: memoryIndex, logger: createMockLogger() });
+
+      mockQueryDocuments.mockResolvedValue([{
+        id: 'mem-1',
+        data: { memoryId: 'mem-1', rating: 5, updated_at: '2026-03-01T00:00:00Z' },
+      }]);
+
+      const result = await service.byMyRatings({ userId: 'user1' });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].metadata.unavailable).toBe(true);
     });
   });
 

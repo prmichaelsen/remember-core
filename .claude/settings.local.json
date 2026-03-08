@@ -60,7 +60,10 @@
       "Bash(grep:*)",
       "Bash(npm i:*)",
       "Bash(mkdir:*)",
-      "WebFetch(domain:agentbase.me)"
+      "WebFetch(domain:agentbase.me)",
+      "WebFetch(domain:tanstack.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.saurabhmisra.dev)"
     ]
   }
 }

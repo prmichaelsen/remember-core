@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.9] - 2026-03-08
+
+### Added
+- Live e2e test for `relationships.update()` in `04-relationships.live.ts`
+- Live e2e test for `preferences.update()` in `03-preferences.live.ts`
+
 ## [0.49.8] - 2026-03-08
 
 ### Added

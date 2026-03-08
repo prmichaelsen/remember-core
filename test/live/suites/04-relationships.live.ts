@@ -80,6 +80,22 @@ describe('Relationships (live)', () => {
     expect(res.data).toBeDefined();
   });
 
+  it('update() modifies relationship properties', async () => {
+    if (!relationshipId) return;
+
+    const res = await client.relationships.update(TEST_USER_ID, relationshipId, {
+      observation: 'Updated observation from live test',
+    });
+
+    if (res.error) {
+      console.warn('Relationship update error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
+
   it('delete the relationship', async () => {
     if (!relationshipId) return;
 

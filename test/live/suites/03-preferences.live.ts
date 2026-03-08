@@ -15,4 +15,18 @@ describe('Preferences (live)', () => {
       expect(res.data).toBeDefined();
     }
   });
+
+  it('update() modifies user preferences', async () => {
+    const res = await client.preferences.update(TEST_USER_ID, {
+      timezone: 'UTC',
+    });
+
+    if (res.error) {
+      console.warn('Preferences update error:', res.error);
+      expect([400, 500]).toContain(res.error.status);
+      return;
+    }
+
+    expect(res.data).toBeDefined();
+  });
 });

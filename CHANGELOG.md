@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.6] - 2026-03-08
+
+### Added
+- Live e2e test suite for `byMyRatings` endpoint (`test/live/suites/11-by-my-ratings.live.ts`)
+- 6 test cases: browse mode envelope validation, sort by rating, sort by rated_at, star filter, search mode, empty results for unrated user
+
 ## [0.49.5] - 2026-03-08
 
 ### Added

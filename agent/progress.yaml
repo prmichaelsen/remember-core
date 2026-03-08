@@ -615,10 +615,10 @@ milestones:
 
   - id: M39
     name: Live E2E Test Expansion
-    status: not_started
-    progress: 0
+    status: in_progress
+    progress: 50
     estimated_weeks: 0.5
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 2
     dependencies: [M37, M24]
     notes: |
@@ -2622,10 +2622,10 @@ tasks:
   milestone_39:
     - id: task-191
       name: byMyRatings Live E2E Tests
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-39-live-e2e-test-expansion/task-191-by-my-ratings-live-e2e-tests.md
       estimated_hours: 2
-      completed_date: null
+      completed_date: 2026-03-08
       description: "Live e2e tests for byMyRatings endpoint: browse mode, search mode, star filter, sort options, envelope validation."
     - id: task-192
       name: Sort Mode Expansion Live E2E Tests

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.15] - 2026-03-08
+
+### Fixed
+- `findSimilar` now excludes comments (`content_type: 'comment'`) at the Weaviate query level, preventing them from consuming result slots
+
 ## [0.49.14] - 2026-03-08
 
 ### Added

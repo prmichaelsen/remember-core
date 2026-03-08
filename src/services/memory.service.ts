@@ -1412,6 +1412,7 @@ export class MemoryService {
       ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('ghost'));
     }
     ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('rem'));
+    ghostFilters.push(this.collection.filter.byProperty('content_type').notEqual('comment'));
 
     let memoryObj: any = null;
     if (input.memory_id) {

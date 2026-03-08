@@ -330,6 +330,18 @@ describe('MemoryService', () => {
       expect(result.similar_memories).toBeDefined();
       expect(result.total).toBeGreaterThanOrEqual(0);
     });
+
+    it('excludes comments by default', async () => {
+      await collection.data.insert({
+        properties: { user_id: userId, doc_type: 'memory', content: 'nice trail review', content_type: 'comment', deleted_at: null },
+      });
+      await collection.data.insert({
+        properties: { user_id: userId, doc_type: 'memory', content: 'trail guide notes', content_type: 'note', deleted_at: null },
+      });
+      const result = await service.findSimilar({ text: 'trail' });
+      const types = result.similar_memories.map((m: any) => m.content_type);
+      expect(types).not.toContain('comment');
+    });
   });
 
   describe('query', () => {

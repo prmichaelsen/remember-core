@@ -86,9 +86,9 @@ export class RatingService {
     };
     await setDocument(ratingsPath, userId, ratingDoc as any);
 
-    // Dual-write: user-centric index for byRecommendation queries
+    // Dual-write: user-centric index for byRecommendation/byMyRatings queries
     const userRatingsPath = getUserRatingsPath(userId);
-    await setDocument(userRatingsPath, memoryId, { ...ratingDoc, memoryId } as any);
+    await setDocument(userRatingsPath, memoryId, { ...ratingDoc, memoryId, collectionName } as any);
 
     // Compute new aggregates
     let ratingSum = (props.rating_sum as number) ?? 0;

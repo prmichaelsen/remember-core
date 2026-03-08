@@ -3,7 +3,7 @@ project:
   version: 0.48.5
   started: 2026-02-27
   status: in_progress
-  current_milestone: M36
+  current_milestone: M37
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -2553,7 +2553,8 @@ tasks:
   milestone_37:
     - id: task-185
       name: Rating Doc Schema + Backfill
-      status: not_started
+      status: completed
+      completed_date: 2026-03-08
       file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-185-rating-doc-schema-backfill.md
       estimated_hours: 2
       description: "Add collectionName to rate() dual-write on user-rating doc. Backfill script for existing docs."

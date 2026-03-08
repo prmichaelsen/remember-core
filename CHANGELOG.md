@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.0] - 2026-03-08
+
+### Added
+- `collectionName` written to user-rating docs in `RatingService.rate()` dual-write for O(1) scope filtering in byMyRatings
+- Backfill migration script `scripts/migrations/backfill-rating-collection-name.ts` for existing user-rating docs
+
 ## [0.48.0] - 2026-03-07
 
 ### Added

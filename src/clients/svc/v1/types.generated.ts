@@ -211,6 +211,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/by-my-ratings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Browse and search memories the user has rated */
+        post: operations["memoriesByMyRatings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/memories/{id}/click": {
         parameters: {
             query?: never;
@@ -1113,6 +1130,52 @@ export interface components {
             memories: {
                 [key: string]: unknown;
             }[];
+            total: number;
+            offset: number;
+            limit: number;
+        };
+        MyRatingsRequest: {
+            userId: string;
+            /** @description Filter by space collection names */
+            spaces?: string[];
+            /** @description Filter by group collection names */
+            groups?: string[];
+            rating_filter?: {
+                min?: number;
+                max?: number;
+            };
+            /**
+             * @default rated_at
+             * @enum {string}
+             */
+            sort_by: "rating" | "rated_at";
+            /**
+             * @default desc
+             * @enum {string}
+             */
+            direction: "desc" | "asc";
+            /** @description Optional search query to intersect with rated memories */
+            query?: string;
+            /** @default 50 */
+            limit: number;
+            /** @default 0 */
+            offset: number;
+        };
+        MyRatingMetadata: {
+            my_rating: number;
+            /** Format: date-time */
+            rated_at: string;
+            deleted?: boolean;
+            unavailable?: boolean;
+        };
+        MyRatingsResultItem: {
+            memory: {
+                [key: string]: unknown;
+            };
+            metadata: components["schemas"]["MyRatingMetadata"];
+        };
+        MyRatingsResult: {
+            items: components["schemas"]["MyRatingsResultItem"][];
             total: number;
             offset: number;
             limit: number;
@@ -2284,6 +2347,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CuratedModeResult"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    memoriesByMyRatings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyRatingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Paginated list of rated memories with metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyRatingsResult"];
                 };
             };
             401: components["responses"]["UnauthorizedError"];

@@ -375,6 +375,27 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/by-my-ratings:
+    post:
+      tags: [memories]
+      summary: Browse and search memories the user has rated
+      operationId: memoriesByMyRatings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyRatingsRequest'
+      responses:
+        '200':
+          description: Paginated list of rated memories with metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyRatingsResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /api/svc/v1/memories/{id}/click:
     post:
       tags: [memories]
@@ -2061,6 +2082,95 @@ components:
           items:
             type: object
             additionalProperties: true
+        total:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+
+    MyRatingsRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: string
+        spaces:
+          type: array
+          items:
+            type: string
+          description: Filter by space collection names
+        groups:
+          type: array
+          items:
+            type: string
+          description: Filter by group collection names
+        rating_filter:
+          type: object
+          properties:
+            min:
+              type: integer
+              minimum: 1
+              maximum: 5
+            max:
+              type: integer
+              minimum: 1
+              maximum: 5
+        sort_by:
+          type: string
+          enum: [rating, rated_at]
+          default: rated_at
+        direction:
+          type: string
+          enum: [desc, asc]
+          default: desc
+        query:
+          type: string
+          description: Optional search query to intersect with rated memories
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
+
+    MyRatingMetadata:
+      type: object
+      required: [my_rating, rated_at]
+      properties:
+        my_rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        rated_at:
+          type: string
+          format: date-time
+        deleted:
+          type: boolean
+        unavailable:
+          type: boolean
+
+    MyRatingsResultItem:
+      type: object
+      required: [memory, metadata]
+      properties:
+        memory:
+          type: object
+          additionalProperties: true
+        metadata:
+          $ref: '#/components/schemas/MyRatingMetadata'
+
+    MyRatingsResult:
+      type: object
+      required: [items, total, offset, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MyRatingsResultItem'
         total:
           type: integer
         offset:

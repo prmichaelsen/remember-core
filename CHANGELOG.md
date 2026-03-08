@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.49.4] - 2026-03-08
+
+### Added
+- OpenAPI spec: `POST /api/svc/v1/memories/by-my-ratings` endpoint with MyRatingsRequest/MyRatingsResult schemas
+- SVC client: `client.memories.byMyRatings(userId, input)` method
+- Regenerated SVC types from OpenAPI spec
+
 ## [0.49.3] - 2026-03-08
 
 ### Changed

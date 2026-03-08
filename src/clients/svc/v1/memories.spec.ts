@@ -222,6 +222,16 @@ describe('MemoriesResource', () => {
     });
   });
 
+  it('byMyRatings calls POST /api/svc/v1/memories/by-my-ratings', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.byMyRatings('user1', { sort_by: 'rating', direction: 'desc', limit: 20 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/by-my-ratings', {
+      userId: 'user1',
+      body: { sort_by: 'rating', direction: 'desc', limit: 20 },
+    });
+  });
+
   it('incrementClick calls POST /api/svc/v1/memories/:id/click', async () => {
     const memories = createMemoriesResource(http);
     await memories.incrementClick('user1', 'mem-abc');

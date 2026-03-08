@@ -2588,7 +2588,8 @@ tasks:
 
     - id: task-189
       name: OpenAPI Spec + SVC Client
-      status: not_started
+      status: completed
+      completed_date: 2026-03-08
       file: agent/tasks/milestone-37-by-my-ratings-sort-mode/task-189-openapi-svc-client.md
       estimated_hours: 2
       dependencies: [task-186]

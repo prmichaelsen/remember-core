@@ -1174,18 +1174,35 @@ export class SpaceService {
         const threadRootId = String(originalMemory.properties.thread_root_id ?? parentId);
         const contentPreview = String(originalMemory.properties.content ?? '').slice(0, 200);
 
-        // Resolve the parent memory's author so consumers know who to notify
+        // Resolve the parent memory's author so consumers know who to notify.
+        // parentId is the user-scoped memory ID; the published copy uses a composite UUID.
         let parentOwnerId = '';
         try {
-          // Try public (space) collection first
-          const publicCollection = await ensurePublicCollection(this.weaviateClient);
-          const filter = publicCollection.filter.byProperty('original_memory_id').equal(parentId);
-          const result = await publicCollection.query.fetchObjects({ filters: filter, limit: 1 });
-          if (result.objects.length > 0) {
-            parentOwnerId = String(result.objects[0].properties.author_id ?? '');
+          // First, read the parent from the commenter's collection to get its author/origin info
+          const parentMemory = await fetchMemoryWithAllProperties(this.userCollection, parentId);
+          if (parentMemory) {
+            // If the parent has a user_id that differs from the commenter, that's the owner
+            const parentUserId = String(parentMemory.properties.user_id ?? '');
+            if (parentUserId && parentUserId !== this.userId) {
+              parentOwnerId = parentUserId;
+            } else if (parentUserId === this.userId) {
+              // Commenter owns the parent — no notification needed, but set it for completeness
+              parentOwnerId = this.userId;
+            }
           }
 
-          // Fallback: try group collections if not found in public
+          // Fallback: look up the published copy by composite UUID
+          if (!parentOwnerId) {
+            const publicCollection = await ensurePublicCollection(this.weaviateClient);
+            // Try by original_memory_id filter
+            const filter = publicCollection.filter.byProperty('original_memory_id').equal(parentId);
+            const result = await publicCollection.query.fetchObjects({ filters: filter, limit: 1 });
+            if (result.objects.length > 0) {
+              parentOwnerId = String(result.objects[0].properties.author_id ?? '');
+            }
+          }
+
+          // Fallback: try group collections
           if (!parentOwnerId) {
             for (const groupId of groups) {
               try {

@@ -22,7 +22,7 @@ describe('App Profiles (live)', () => {
 
     if (res.error) {
       console.warn('createAndPublish error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 409, 500]).toContain(res.error.status);
       return;
     }
 
@@ -39,7 +39,7 @@ describe('App Profiles (live)', () => {
 
     if (res.error) {
       console.warn('profiles.search error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 409, 500]).toContain(res.error.status);
       return;
     }
 

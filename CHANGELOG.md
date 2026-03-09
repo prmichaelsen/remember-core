@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.55.3] - 2026-03-09
+
+### Fixed
+- `parent_owner_id` resolution now reads the parent memory from the commenter's user collection to get its `user_id`, instead of querying the published collection by `original_memory_id` (which uses the author's memory ID, not the commenter's)
+- Rename `memory_owner_id` → `parent_owner_id` on `CommentPublishedToSpaceData` and `CommentPublishedToGroupData` for clarity
+
+### Added
+- `parent_owner_id` field on comment webhook events, resolved at emit time from the parent memory's author
+- Fallback chain: commenter's collection → public collection → group collections
+
 ## [0.55.1] - 2026-03-09
 
 ### Fixed

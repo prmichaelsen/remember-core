@@ -7,6 +7,8 @@ export type {
   WebhookEventData,
   PublishedToSpaceData,
   PublishedToGroupData,
+  CommentPublishedToSpaceData,
+  CommentPublishedToGroupData,
   RetractedData,
   FollowUpDueData,
   WebhookActor,

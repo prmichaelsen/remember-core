@@ -8,7 +8,9 @@ export type WebhookEventType =
   | 'memory.published_to_space'
   | 'memory.published_to_group'
   | 'memory.retracted'
-  | 'memory.follow_up_due';
+  | 'memory.follow_up_due'
+  | 'comment.published_to_space'
+  | 'comment.published_to_group';
 
 // ─── Typed Payloads (discriminated union) ─────────────────────────────
 
@@ -46,11 +48,33 @@ export interface FollowUpDueData {
   group_ids: string[];
 }
 
+export interface CommentPublishedToSpaceData {
+  type: 'comment.published_to_space';
+  memory_id: string;
+  parent_id: string;
+  thread_root_id: string;
+  content_preview: string;
+  space_id: string;
+  owner_id: string;
+}
+
+export interface CommentPublishedToGroupData {
+  type: 'comment.published_to_group';
+  memory_id: string;
+  parent_id: string;
+  thread_root_id: string;
+  content_preview: string;
+  group_id: string;
+  owner_id: string;
+}
+
 export type WebhookEventData =
   | PublishedToSpaceData
   | PublishedToGroupData
   | RetractedData
-  | FollowUpDueData;
+  | FollowUpDueData
+  | CommentPublishedToSpaceData
+  | CommentPublishedToGroupData;
 
 // ─── Actor ────────────────────────────────────────────────────────────
 

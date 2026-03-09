@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.54.0] - 2026-03-09
+
+### Added
+- `comment.published_to_space` and `comment.published_to_group` webhook event types with `parent_id`, `thread_root_id`, `content_preview` payloads
+- `SpaceService.executePublish()` now emits comment-specific events when the published memory has `content_type: 'comment'`
+- Webhook module (`BatchedWebhookService`, `createBatchedWebhookService`, all event types) re-exported from package root
+
+### Changed
+- Removed redundant `EventBus` re-export from `services/index.ts` (now exported via `webhooks/index.ts`)
+
 ## [0.53.0] - 2026-03-09
 
 ### Added

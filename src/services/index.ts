@@ -550,5 +550,4 @@ export {
   type CurationRelationship,
 } from './curation-step.service.js';
 
-// EventBus interface (from webhooks module)
-export type { EventBus } from '../webhooks/events.js';
+// EventBus and other webhook types are re-exported from src/webhooks/index.ts via root barrel

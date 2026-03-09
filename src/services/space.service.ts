@@ -1167,22 +1167,46 @@ export class SpaceService {
     if (this.eventBus) {
       const title = String(originalMemory.properties.title ?? '');
       const actor = { type: 'user' as const, id: this.userId };
+      const isComment = originalMemory.properties.content_type === 'comment';
 
-      if (successfulPublications.some((p) => p.startsWith('spaces:'))) {
-        for (const spaceId of spaces) {
+      if (isComment) {
+        const parentId = String(originalMemory.properties.parent_id ?? '');
+        const threadRootId = String(originalMemory.properties.thread_root_id ?? parentId);
+        const contentPreview = String(originalMemory.properties.content ?? '').slice(0, 200);
+
+        if (successfulPublications.some((p) => p.startsWith('spaces:'))) {
+          for (const spaceId of spaces) {
+            this.eventBus.emit(
+              { type: 'comment.published_to_space', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, space_id: spaceId, owner_id: this.userId },
+              actor,
+            );
+          }
+        }
+
+        const publishedGroups = groups.filter((g) => successfulPublications.some((p) => p === `group: ${g}`));
+        for (const groupId of publishedGroups) {
           this.eventBus.emit(
-            { type: 'memory.published_to_space', memory_id: request.payload.memory_id, title, space_id: spaceId, owner_id: this.userId },
+            { type: 'comment.published_to_group', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, group_id: groupId, owner_id: this.userId },
             actor,
           );
         }
-      }
+      } else {
+        if (successfulPublications.some((p) => p.startsWith('spaces:'))) {
+          for (const spaceId of spaces) {
+            this.eventBus.emit(
+              { type: 'memory.published_to_space', memory_id: request.payload.memory_id, title, space_id: spaceId, owner_id: this.userId },
+              actor,
+            );
+          }
+        }
 
-      const publishedGroups = groups.filter((g) => successfulPublications.some((p) => p === `group: ${g}`));
-      for (const groupId of publishedGroups) {
-        this.eventBus.emit(
-          { type: 'memory.published_to_group', memory_id: request.payload.memory_id, title, group_id: groupId, owner_id: this.userId },
-          actor,
-        );
+        const publishedGroups = groups.filter((g) => successfulPublications.some((p) => p === `group: ${g}`));
+        for (const groupId of publishedGroups) {
+          this.eventBus.emit(
+            { type: 'memory.published_to_group', memory_id: request.payload.memory_id, title, group_id: groupId, owner_id: this.userId },
+            actor,
+          );
+        }
       }
     }
 

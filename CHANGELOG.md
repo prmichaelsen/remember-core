@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.55.1] - 2026-03-09
+
+### Fixed
+- `signWebhookPayload` now base64-decodes the signing secret before HMAC computation, per the Standard Webhooks spec — fixes signature mismatch with compliant receivers
+
 ## [0.55.0] - 2026-03-09
 
 ### Added

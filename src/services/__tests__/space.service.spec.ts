@@ -69,6 +69,12 @@ jest.mock('../../database/weaviate/client.js', () => ({
   }),
 }));
 
+// Mock ensureGroupCollection (no-op — mock client auto-creates collections)
+jest.mock('../../database/weaviate/v2-collections.js', () => ({
+  ...jest.requireActual('../../database/weaviate/v2-collections.js'),
+  ensureGroupCollection: jest.fn(async () => {}),
+}));
+
 describe('SpaceService', () => {
   let weaviateClient: ReturnType<typeof createMockWeaviateClient>;
   let userCollection: ReturnType<typeof createMockCollection>;
@@ -489,6 +495,205 @@ describe('SpaceService', () => {
       const memoryId = await insertUserMemory({ space_ids: ['the_void'] });
       const result = await service.revise({ memory_id: memoryId });
       expect(result.token).toBeDefined();
+    });
+  });
+
+  // ─── Comment publish: parentOwnerId resolution ──────────────────────
+
+  describe('comment publish — parentOwnerId resolution', () => {
+    let mockEventBus: { emit: jest.Mock };
+    let serviceWithEvents: SpaceService;
+
+    beforeEach(() => {
+      mockEventBus = { emit: jest.fn() };
+      serviceWithEvents = new SpaceService(
+        weaviateClient as any,
+        userCollection as any,
+        userId,
+        confirmationService,
+        logger,
+        mockMemoryIndex as any,
+        { eventBus: mockEventBus },
+      );
+    });
+
+    async function insertComment(parentId: string, overrides: Record<string, any> = {}) {
+      return userCollection.data.insert({
+        properties: {
+          user_id: userId,
+          doc_type: 'memory',
+          content_type: 'comment',
+          content: 'Great memory!',
+          title: '',
+          tags: [],
+          space_ids: [],
+          group_ids: [],
+          deleted_at: null,
+          parent_id: parentId,
+          thread_root_id: parentId,
+          ...overrides,
+        },
+      });
+    }
+
+    async function publishAndConfirm(memoryId: string, opts: { spaces?: string[]; groups?: string[] }) {
+      const { token } = await serviceWithEvents.publish({
+        memory_id: memoryId,
+        ...opts,
+      });
+      return serviceWithEvents.confirm({ token });
+    }
+
+    it('resolves parentOwnerId from parent memory user_id (different owner)', async () => {
+      // Parent memory owned by another user, stored in commenter's collection
+      const parentId = await userCollection.data.insert({
+        properties: {
+          user_id: 'other-user',
+          doc_type: 'memory',
+          content_type: 'note',
+          content: 'Original memory',
+          title: 'Parent',
+          tags: [],
+          space_ids: ['the_void'],
+          group_ids: [],
+          deleted_at: null,
+        },
+      });
+
+      const commentId = await insertComment(parentId);
+      await publishAndConfirm(commentId, { spaces: ['the_void'] });
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'comment.published_to_space',
+          parent_owner_id: 'other-user',
+        }),
+        expect.any(Object),
+      );
+    });
+
+    it('resolves parentOwnerId as self when commenter owns parent', async () => {
+      const parentId = await insertUserMemory({
+        space_ids: ['the_void'],
+      });
+
+      const commentId = await insertComment(parentId);
+      await publishAndConfirm(commentId, { spaces: ['the_void'] });
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'comment.published_to_space',
+          parent_owner_id: userId,
+        }),
+        expect.any(Object),
+      );
+    });
+
+    it('falls back to public collection author_id when parent not in user collection', async () => {
+      const parentId = 'nonexistent-parent';
+
+      // Put the parent in the public collection with author_id
+      const publicCollection = weaviateClient.collections.get('Memory_spaces_public');
+      await publicCollection.data.insert({
+        properties: {
+          original_memory_id: parentId,
+          author_id: 'public-author',
+          composite_id: `public-author.${parentId}`,
+          space_ids: ['the_void'],
+          group_ids: [],
+          doc_type: 'memory',
+          content_type: 'note',
+          deleted_at: null,
+          moderation_status: 'approved',
+        },
+      });
+
+      const commentId = await insertComment(parentId);
+      await publishAndConfirm(commentId, { spaces: ['the_void'] });
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'comment.published_to_space',
+          parent_owner_id: 'public-author',
+        }),
+        expect.any(Object),
+      );
+    });
+
+    it('falls back to group collection author_id when not in user or public collection', async () => {
+      const parentId = 'nonexistent-parent-2';
+      const groupId = 'cooking';
+
+      // Put the parent only in the group collection
+      const groupCollection = weaviateClient.collections.get(`Memory_groups_${groupId}`);
+      await groupCollection.data.insert({
+        properties: {
+          original_memory_id: parentId,
+          author_id: 'group-author',
+          composite_id: `group-author.${parentId}`,
+          space_ids: [],
+          group_ids: [groupId],
+          doc_type: 'memory',
+          content_type: 'note',
+          deleted_at: null,
+          moderation_status: 'approved',
+        },
+      });
+
+      const commentId = await insertComment(parentId, { group_ids: [] });
+      await publishAndConfirm(commentId, { groups: [groupId] });
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'comment.published_to_group',
+          parent_owner_id: 'group-author',
+        }),
+        expect.any(Object),
+      );
+    });
+
+    it('skips comment webhook when parent not found anywhere', async () => {
+      const parentId = 'totally-missing-parent';
+
+      const commentId = await insertComment(parentId);
+      await publishAndConfirm(commentId, { spaces: ['the_void'] });
+
+      // Should NOT emit any comment event — parentOwnerId is empty
+      const commentEvents = mockEventBus.emit.mock.calls.filter(
+        (c: any[]) => c[0].type.startsWith('comment.'),
+      );
+      expect(commentEvents).toHaveLength(0);
+
+      // Should log a warning
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Skipping comment webhook — could not resolve parent_owner_id',
+        expect.objectContaining({ parentId }),
+      );
+    });
+
+    it('emits correct content_preview from comment content', async () => {
+      const parentId = await insertUserMemory({ space_ids: ['the_void'] });
+      const commentId = await insertComment(parentId, { content: 'This is my comment text' });
+      await publishAndConfirm(commentId, { spaces: ['the_void'] });
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'comment.published_to_space',
+          content_preview: 'This is my comment text',
+          owner_id: userId,
+        }),
+        expect.any(Object),
+      );
+    });
+
+    it('does not emit comment events for non-comment memories', async () => {
+      const memoryId = await insertUserMemory();
+      await publishAndConfirm(memoryId, { spaces: ['the_void'] });
+
+      // Should emit memory.published_to_space, not comment.*
+      const emittedTypes = mockEventBus.emit.mock.calls.map((c: any[]) => c[0].type);
+      expect(emittedTypes).toContain('memory.published_to_space');
+      expect(emittedTypes).not.toContain('comment.published_to_space');
     });
   });
 });

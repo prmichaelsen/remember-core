@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.55.4] - 2026-03-09
+
+### Fixed
+- Skip comment webhook emission when `parent_owner_id` cannot be resolved (was emitting empty string, causing invalid notifications downstream)
+
+### Added
+- Unit tests for parentOwnerId resolution: user collection, public collection fallback, group collection fallback, empty parent guard, content preview extraction (7 tests)
+- E2E tests for comment webhook flow: cross-user comments, public/group fallback, orphan comments, self-comments (5 tests)
+
 ## [0.55.3] - 2026-03-09
 
 ### Fixed

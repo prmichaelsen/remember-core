@@ -1221,21 +1221,25 @@ export class SpaceService {
           this.logger.warn('Failed to resolve parent owner for comment event', { parentId, err });
         }
 
-        if (successfulPublications.some((p) => p.startsWith('spaces:'))) {
-          for (const spaceId of spaces) {
+        if (!parentOwnerId) {
+          this.logger.warn('Skipping comment webhook — could not resolve parent_owner_id', { parentId, memoryId: request.payload.memory_id });
+        } else {
+          if (successfulPublications.some((p) => p.startsWith('spaces:'))) {
+            for (const spaceId of spaces) {
+              this.eventBus.emit(
+                { type: 'comment.published_to_space', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, space_id: spaceId, owner_id: this.userId, parent_owner_id: parentOwnerId },
+                actor,
+              );
+            }
+          }
+
+          const publishedGroups = groups.filter((g) => successfulPublications.some((p) => p === `group: ${g}`));
+          for (const groupId of publishedGroups) {
             this.eventBus.emit(
-              { type: 'comment.published_to_space', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, space_id: spaceId, owner_id: this.userId, parent_owner_id: parentOwnerId },
+              { type: 'comment.published_to_group', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, group_id: groupId, owner_id: this.userId, parent_owner_id: parentOwnerId },
               actor,
             );
           }
-        }
-
-        const publishedGroups = groups.filter((g) => successfulPublications.some((p) => p === `group: ${g}`));
-        for (const groupId of publishedGroups) {
-          this.eventBus.emit(
-            { type: 'comment.published_to_group', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, group_id: groupId, owner_id: this.userId, parent_owner_id: parentOwnerId },
-            actor,
-          );
         }
       } else {
         if (successfulPublications.some((p) => p.startsWith('spaces:'))) {

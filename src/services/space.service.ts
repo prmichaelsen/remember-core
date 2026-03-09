@@ -2327,20 +2327,22 @@ export class SpaceService {
       };
     }
 
-    // Fallback: check the user's own collection (parent may not be in public collection,
-    // e.g. group-only memories). The user collection tracks space_ids/group_ids.
+    // Fallback: use the memory index to find which collection holds this UUID,
+    // then fetch from that collection to get space_ids/group_ids.
     try {
-      const userMemory = await fetchMemoryWithAllProperties(this.userCollection, memoryId);
-      if (userMemory) {
-        const p = userMemory.properties;
-        return {
-          space_ids: Array.isArray(p.space_ids) ? p.space_ids : [],
-          group_ids: Array.isArray(p.group_ids) ? p.group_ids : [],
-        };
+      const collectionName = await this.memoryIndex.lookup(memoryId);
+      if (collectionName) {
+        const collection = this.weaviateClient.collections.get(collectionName);
+        const obj = await fetchMemoryWithAllProperties(collection, memoryId);
+        if (obj) {
+          const p = obj.properties;
+          return {
+            space_ids: Array.isArray(p.space_ids) ? p.space_ids : [],
+            group_ids: Array.isArray(p.group_ids) ? p.group_ids : [],
+          };
+        }
       }
-    } catch {
-      // Not found in user collection either
-    }
+    } catch { /* index lookup or fetch failed */ }
 
     return { space_ids: [], group_ids: [] };
   }

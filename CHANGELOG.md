@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.56.3] - 2026-03-09
+
+### Fixed
+- `getPublishedLocations()` uses Firestore memory index to resolve composite UUIDs to their collection — fixes group-only memories where the composite UUID only exists in the group collection, not in public or user collections
+
 ## [0.56.2] - 2026-03-09
 
 ### Fixed

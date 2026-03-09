@@ -1191,14 +1191,23 @@ export class SpaceService {
             }
           }
 
-          // Fallback: look up the published copy by composite UUID
+          // Fallback: look up the published copy in the public collection
           if (!parentOwnerId) {
             const publicCollection = await ensurePublicCollection(this.weaviateClient);
-            // Try by original_memory_id filter
-            const filter = publicCollection.filter.byProperty('original_memory_id').equal(parentId);
-            const result = await publicCollection.query.fetchObjects({ filters: filter, limit: 1 });
-            if (result.objects.length > 0) {
-              parentOwnerId = String(result.objects[0].properties.author_id ?? '');
+
+            // Try direct fetch by UUID — parentId may be the published copy's own ID
+            const directHit = await fetchMemoryWithAllProperties(publicCollection, parentId);
+            if (directHit) {
+              parentOwnerId = String(directHit.properties.author_id ?? directHit.properties.user_id ?? '');
+            }
+
+            // Fallback: try by original_memory_id filter (parentId might be the original user-scoped ID)
+            if (!parentOwnerId) {
+              const filter = publicCollection.filter.byProperty('original_memory_id').equal(parentId);
+              const result = await publicCollection.query.fetchObjects({ filters: filter, limit: 1 });
+              if (result.objects.length > 0) {
+                parentOwnerId = String(result.objects[0].properties.author_id ?? '');
+              }
             }
           }
 
@@ -1208,6 +1217,15 @@ export class SpaceService {
               try {
                 const groupCollectionName = getCollectionName(CollectionType.GROUPS, groupId);
                 const groupCollection = this.weaviateClient.collections.get(groupCollectionName);
+
+                // Try direct fetch by UUID first
+                const gDirect = await fetchMemoryWithAllProperties(groupCollection, parentId);
+                if (gDirect) {
+                  parentOwnerId = String(gDirect.properties.author_id ?? gDirect.properties.user_id ?? '');
+                  break;
+                }
+
+                // Fallback: try by original_memory_id filter
                 const gFilter = groupCollection.filter.byProperty('original_memory_id').equal(parentId);
                 const gResult = await groupCollection.query.fetchObjects({ filters: gFilter, limit: 1 });
                 if (gResult.objects.length > 0) {

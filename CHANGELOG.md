@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.55.5] - 2026-03-09
+
+### Fixed
+- `parent_owner_id` resolution now tries direct UUID fetch from public/group collections before falling back to `original_memory_id` filter — fixes resolution failure when client passes the published copy's UUID as `parent_id` (the common case for comments on public memories)
+
+### Added
+- Unit test for direct UUID fetch resolution path (published copy ID as parent_id)
+
 ## [0.55.4] - 2026-03-09
 
 ### Fixed

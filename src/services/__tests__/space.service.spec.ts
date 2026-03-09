@@ -620,6 +620,39 @@ describe('SpaceService', () => {
       );
     });
 
+    it('resolves parentOwnerId by direct UUID fetch from public collection (published copy ID as parent_id)', async () => {
+      // Simulate the real-world case: client passes the published copy's UUID as parent_id,
+      // NOT the original_memory_id. The direct fetchObjectById should find it.
+      const publishedCopyUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
+      const publicCollection = weaviateClient.collections.get('Memory_spaces_public');
+      await publicCollection.data.insert({
+        id: publishedCopyUuid, // This IS the object's UUID
+        properties: {
+          original_memory_id: 'some-other-original-id', // Different from parentId
+          author_id: 'published-copy-author',
+          composite_id: `published-copy-author.some-other-original-id`,
+          space_ids: ['the_void'],
+          group_ids: [],
+          doc_type: 'memory',
+          content_type: 'note',
+          deleted_at: null,
+          moderation_status: 'approved',
+        },
+      });
+
+      const commentId = await insertComment(publishedCopyUuid);
+      await publishAndConfirm(commentId, { spaces: ['the_void'] });
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'comment.published_to_space',
+          parent_owner_id: 'published-copy-author',
+        }),
+        expect.any(Object),
+      );
+    });
+
     it('falls back to group collection author_id when not in user or public collection', async () => {
       const parentId = 'nonexistent-parent-2';
       const groupId = 'cooking';

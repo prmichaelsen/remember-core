@@ -2945,6 +2945,13 @@ components:
           default: 0
         deleted_filter:
           $ref: '#/components/schemas/DeletedFilter'
+        sort_by:
+          type: string
+          enum: [created_at, updated_at, member_count, relationship_type]
+        sort_direction:
+          type: string
+          enum: [asc, desc]
+          default: desc
 
     UpdateRelationshipInput:
       type: object
@@ -2965,6 +2972,11 @@ components:
           type: array
           items:
             type: string
+        add_memory_ids:
+          type: array
+          items:
+            type: string
+          description: Memory IDs to add to this relationship. Deduplicates against existing members. Each memory is validated and bidirectionally linked.
 
     # ----------------------------------------------------------
     # Relationship results

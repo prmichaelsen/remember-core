@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.55.0] - 2026-03-09
+
+### Added
+- `add_memory_ids` field on `UpdateRelationshipInput` — append memories to existing relationships with deduplication, validation, and bidirectional linking
+- `validateMemoryIds()` and `linkMemoriesToRelationship()` private helpers extracted from `create()` for reuse in `update()`
+- OpenAPI spec updated with `add_memory_ids` on `UpdateRelationshipInput` and `sort_by`/`sort_direction` on `SearchRelationshipInput`
+
+### Changed
+- `RelationshipService.create()` refactored to use shared `validateMemoryIds()` and `linkMemoriesToRelationship()` helpers
+
 ## [0.54.0] - 2026-03-09
 
 ### Added

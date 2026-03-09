@@ -44,6 +44,7 @@ export interface UpdateRelationshipInput {
   strength?: number;
   confidence?: number;
   tags?: string[];
+  add_memory_ids?: string[];
 }
 
 export interface UpdateRelationshipResult {
@@ -156,6 +157,59 @@ export class RelationshipService {
     }
   }
 
+  /**
+   * Validate that memory IDs exist, belong to user, are memories, and not deleted.
+   * Returns validated entries with their current relationship_ids.
+   */
+  private async validateMemoryIds(
+    memoryIds: string[],
+  ): Promise<Array<{ memoryId: string; relationships: string[] }>> {
+    const checks = await Promise.all(
+      memoryIds.map(async (memoryId) => {
+        const memory = await this.collection.query.fetchObjectById(memoryId, {
+          returnProperties: ['user_id', 'doc_type', 'relationship_ids', 'deleted_at'],
+        });
+        if (!memory) return { memoryId, error: 'Memory not found' };
+        if (memory.properties.user_id !== this.userId) return { memoryId, error: 'Unauthorized' };
+        if (memory.properties.doc_type !== 'memory') return { memoryId, error: 'Not a memory document' };
+        if (memory.properties.deleted_at) return { memoryId, error: 'Memory is deleted' };
+        return { memoryId, relationships: (memory.properties.relationship_ids as string[]) || [] };
+      }),
+    );
+
+    const errors = checks.filter((c): c is typeof c & { error: string } => 'error' in c && !!c.error);
+    if (errors.length > 0) {
+      throw new Error(`Memory validation failed: ${errors.map((e) => `${e.memoryId}: ${e.error}`).join('; ')}`);
+    }
+
+    return checks as Array<{ memoryId: string; relationships: string[] }>;
+  }
+
+  /**
+   * Add bidirectional relationship_ids links from memories to a relationship.
+   */
+  private async linkMemoriesToRelationship(
+    relationshipId: string,
+    validated: Array<{ memoryId: string; relationships: string[] }>,
+    now: string,
+  ): Promise<void> {
+    await Promise.all(
+      validated.map(async (c) => {
+        try {
+          await this.collection.data.update({
+            id: c.memoryId,
+            properties: {
+              relationship_ids: [...c.relationships, relationshipId],
+              updated_at: now,
+            },
+          });
+        } catch {
+          this.logger.warn(`Failed to update memory ${c.memoryId} with relationship`);
+        }
+      }),
+    );
+  }
+
   // ── Get by ID ────────────────────────────────────────────────────────
 
   async getById(relationshipId: string): Promise<GetRelationshipResult> {
@@ -184,24 +238,7 @@ export class RelationshipService {
       throw new Error('At least 2 memory IDs are required to create a relationship');
     }
 
-    // Validate all memories exist, belong to user, are memories, not deleted
-    const checks = await Promise.all(
-      input.memory_ids.map(async (memoryId) => {
-        const memory = await this.collection.query.fetchObjectById(memoryId, {
-          returnProperties: ['user_id', 'doc_type', 'relationship_ids', 'deleted_at'],
-        });
-        if (!memory) return { memoryId, error: 'Memory not found' };
-        if (memory.properties.user_id !== this.userId) return { memoryId, error: 'Unauthorized' };
-        if (memory.properties.doc_type !== 'memory') return { memoryId, error: 'Not a memory document' };
-        if (memory.properties.deleted_at) return { memoryId, error: 'Memory is deleted' };
-        return { memoryId, memory, relationships: (memory.properties.relationship_ids as string[]) || [] };
-      }),
-    );
-
-    const errors = checks.filter((c) => c.error);
-    if (errors.length > 0) {
-      throw new Error(`Memory validation failed: ${errors.map((e) => `${e.memoryId}: ${e.error}`).join('; ')}`);
-    }
+    const validated = await this.validateMemoryIds(input.memory_ids);
 
     const now = new Date().toISOString();
     const properties: Record<string, unknown> = {
@@ -228,23 +265,7 @@ export class RelationshipService {
     );
 
     // Update connected memories with bidirectional reference
-    await Promise.all(
-      checks
-        .filter((c) => !c.error && c.memory)
-        .map(async (c) => {
-          try {
-            await this.collection.data.update({
-              id: c.memoryId,
-              properties: {
-                relationship_ids: [...(c.relationships || []), relationshipId],
-                updated_at: now,
-              },
-            });
-          } catch {
-            this.logger.warn(`Failed to update memory ${c.memoryId} with relationship`);
-          }
-        }),
-    );
+    await this.linkMemoriesToRelationship(relationshipId, validated, now);
 
     this.logger.info('Relationship created', { relationshipId, memoryCount: input.memory_ids.length });
     return { relationship_id: relationshipId, memory_ids: input.memory_ids, created_at: now };
@@ -253,8 +274,12 @@ export class RelationshipService {
   // ── Update ──────────────────────────────────────────────────────────
 
   async update(input: UpdateRelationshipInput): Promise<UpdateRelationshipResult> {
+    const fetchProps = ['user_id', 'doc_type', 'version'];
+    const needMemoryIds = input.add_memory_ids && input.add_memory_ids.length > 0;
+    if (needMemoryIds) fetchProps.push('related_memory_ids');
+
     const existing = await this.collection.query.fetchObjectById(input.relationship_id, {
-      returnProperties: ['user_id', 'doc_type', 'version'],
+      returnProperties: fetchProps,
     });
     if (!existing) throw new Error(`Relationship not found: ${input.relationship_id}`);
     if (existing.properties.user_id !== this.userId) throw new Error('Unauthorized');
@@ -275,6 +300,22 @@ export class RelationshipService {
     }
     if (input.tags !== undefined) { updates.tags = input.tags; updatedFields.push('tags'); }
 
+    // Handle add_memory_ids: deduplicate, validate, link
+    let newMemoryIds: string[] = [];
+    let validated: Array<{ memoryId: string; relationships: string[] }> = [];
+    if (needMemoryIds) {
+      const existingMemoryIds = new Set((existing.properties.related_memory_ids as string[]) || []);
+      newMemoryIds = input.add_memory_ids!.filter((id) => !existingMemoryIds.has(id));
+
+      if (newMemoryIds.length > 0) {
+        validated = await this.validateMemoryIds(newMemoryIds);
+        const allMemoryIds = [...existingMemoryIds, ...newMemoryIds];
+        updates.related_memory_ids = allMemoryIds;
+        updates.member_count = allMemoryIds.length;
+        updatedFields.push('related_memory_ids', 'member_count');
+      }
+    }
+
     if (updatedFields.length === 0) throw new Error('No fields provided for update');
 
     const now = new Date().toISOString();
@@ -282,6 +323,14 @@ export class RelationshipService {
     updates.version = (existing.properties.version as number) + 1;
 
     await this.collection.data.update({ id: input.relationship_id, properties: updates });
+
+    // Link new memories bidirectionally and update their relationship_count
+    if (newMemoryIds.length > 0) {
+      await Promise.all([
+        this.linkMemoriesToRelationship(input.relationship_id, validated, now),
+        ...newMemoryIds.map((memoryId) => this.updateRelationshipCount(memoryId, +1)),
+      ]);
+    }
 
     this.logger.info('Relationship updated', { relationshipId: input.relationship_id, updatedFields });
     return {

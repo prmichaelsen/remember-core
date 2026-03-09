@@ -67,7 +67,8 @@
       "WebFetch(domain:virtuoso.dev)",
       "WebFetch(domain:www.npmjs.com)",
       "Bash(grep \"\"version\"\":*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(sed:*)"
     ]
   }
 }

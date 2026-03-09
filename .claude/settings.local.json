@@ -63,7 +63,11 @@
       "WebFetch(domain:agentbase.me)",
       "WebFetch(domain:tanstack.com)",
       "WebFetch(domain:medium.com)",
-      "WebFetch(domain:www.saurabhmisra.dev)"
+      "WebFetch(domain:www.saurabhmisra.dev)",
+      "WebFetch(domain:virtuoso.dev)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(grep \"\"version\"\":*)",
+      "Bash(head:*)"
     ]
   }
 }

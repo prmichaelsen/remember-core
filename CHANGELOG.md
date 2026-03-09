@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.56.1] - 2026-03-09
+
+### Fixed
+- `getPublishedLocations()` now falls back to user collection when parent memory isn't in public collection — fixes group-only memories returning empty locations, which caused comments to skip publish and never trigger webhooks
+
 ## [0.56.0] - 2026-03-09
 
 ### Changed

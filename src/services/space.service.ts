@@ -2320,12 +2320,28 @@ export class SpaceService {
       }
     }
 
-    if (!props) {
-      return { space_ids: [], group_ids: [] };
+    if (props) {
+      return {
+        space_ids: Array.isArray(props.space_ids) ? props.space_ids : [],
+        group_ids: Array.isArray(props.group_ids) ? props.group_ids : [],
+      };
     }
-    return {
-      space_ids: Array.isArray(props.space_ids) ? props.space_ids : [],
-      group_ids: Array.isArray(props.group_ids) ? props.group_ids : [],
-    };
+
+    // Fallback: check the user's own collection (parent may not be in public collection,
+    // e.g. group-only memories). The user collection tracks space_ids/group_ids.
+    try {
+      const userMemory = await fetchMemoryWithAllProperties(this.userCollection, memoryId);
+      if (userMemory) {
+        const p = userMemory.properties;
+        return {
+          space_ids: Array.isArray(p.space_ids) ? p.space_ids : [],
+          group_ids: Array.isArray(p.group_ids) ? p.group_ids : [],
+        };
+      }
+    } catch {
+      // Not found in user collection either
+    }
+
+    return { space_ids: [], group_ids: [] };
   }
 }

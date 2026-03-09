@@ -1174,10 +1174,40 @@ export class SpaceService {
         const threadRootId = String(originalMemory.properties.thread_root_id ?? parentId);
         const contentPreview = String(originalMemory.properties.content ?? '').slice(0, 200);
 
+        // Resolve the parent memory's author so consumers know who to notify
+        let parentOwnerId = '';
+        try {
+          // Try public (space) collection first
+          const publicCollection = await ensurePublicCollection(this.weaviateClient);
+          const filter = publicCollection.filter.byProperty('original_memory_id').equal(parentId);
+          const result = await publicCollection.query.fetchObjects({ filters: filter, limit: 1 });
+          if (result.objects.length > 0) {
+            parentOwnerId = String(result.objects[0].properties.author_id ?? '');
+          }
+
+          // Fallback: try group collections if not found in public
+          if (!parentOwnerId) {
+            for (const groupId of groups) {
+              try {
+                const groupCollectionName = getCollectionName(CollectionType.GROUPS, groupId);
+                const groupCollection = this.weaviateClient.collections.get(groupCollectionName);
+                const gFilter = groupCollection.filter.byProperty('original_memory_id').equal(parentId);
+                const gResult = await groupCollection.query.fetchObjects({ filters: gFilter, limit: 1 });
+                if (gResult.objects.length > 0) {
+                  parentOwnerId = String(gResult.objects[0].properties.author_id ?? '');
+                  break;
+                }
+              } catch { /* group collection may not exist */ }
+            }
+          }
+        } catch (err) {
+          this.logger.warn('Failed to resolve parent owner for comment event', { parentId, err });
+        }
+
         if (successfulPublications.some((p) => p.startsWith('spaces:'))) {
           for (const spaceId of spaces) {
             this.eventBus.emit(
-              { type: 'comment.published_to_space', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, space_id: spaceId, owner_id: this.userId },
+              { type: 'comment.published_to_space', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, space_id: spaceId, owner_id: this.userId, parent_owner_id: parentOwnerId },
               actor,
             );
           }
@@ -1186,7 +1216,7 @@ export class SpaceService {
         const publishedGroups = groups.filter((g) => successfulPublications.some((p) => p === `group: ${g}`));
         for (const groupId of publishedGroups) {
           this.eventBus.emit(
-            { type: 'comment.published_to_group', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, group_id: groupId, owner_id: this.userId },
+            { type: 'comment.published_to_group', memory_id: request.payload.memory_id, parent_id: parentId, thread_root_id: threadRootId, content_preview: contentPreview, group_id: groupId, owner_id: this.userId, parent_owner_id: parentOwnerId },
             actor,
           );
         }

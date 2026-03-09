@@ -56,6 +56,8 @@ export interface CommentPublishedToSpaceData {
   content_preview: string;
   space_id: string;
   owner_id: string;
+  /** User ID of the parent memory's owner (the person to notify). */
+  parent_owner_id: string;
 }
 
 export interface CommentPublishedToGroupData {
@@ -66,6 +68,8 @@ export interface CommentPublishedToGroupData {
   content_preview: string;
   group_id: string;
   owner_id: string;
+  /** User ID of the parent memory's owner (the person to notify). */
+  parent_owner_id: string;
 }
 
 export type WebhookEventData =

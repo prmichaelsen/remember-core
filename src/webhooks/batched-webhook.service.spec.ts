@@ -25,10 +25,10 @@ function makeEvent(ownerId: string, type: WebhookEventData['type'] = 'memory.pub
     return { type, memory_id: 'mem-1', title: 'Test', group_id: 'grp-1', owner_id: ownerId };
   }
   if (type === 'comment.published_to_space') {
-    return { type, memory_id: 'mem-1', parent_id: 'parent-1', thread_root_id: 'parent-1', content_preview: 'Test comment', space_id: 'sp-1', owner_id: ownerId };
+    return { type, memory_id: 'mem-1', parent_id: 'parent-1', thread_root_id: 'parent-1', content_preview: 'Test comment', space_id: 'sp-1', owner_id: ownerId, parent_owner_id: 'parent-owner-1' };
   }
   if (type === 'comment.published_to_group') {
-    return { type, memory_id: 'mem-1', parent_id: 'parent-1', thread_root_id: 'parent-1', content_preview: 'Test comment', group_id: 'grp-1', owner_id: ownerId };
+    return { type, memory_id: 'mem-1', parent_id: 'parent-1', thread_root_id: 'parent-1', content_preview: 'Test comment', group_id: 'grp-1', owner_id: ownerId, parent_owner_id: 'parent-owner-1' };
   }
   return { type: type as 'memory.published_to_space', memory_id: 'mem-1', title: 'Test', space_id: 'sp-1', owner_id: ownerId };
 }

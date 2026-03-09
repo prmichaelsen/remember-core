@@ -89,15 +89,14 @@ describe('RelationshipService', () => {
       expect(rel!.properties.confidence).toBe(0.8);
     });
 
-    it('throws if less than 2 memory IDs', async () => {
-      const mem1 = await insertMemory();
+    it('throws if no memory IDs', async () => {
       await expect(
         service.create({
-          memory_ids: [mem1],
+          memory_ids: [],
           relationship_type: 'related_to',
           observation: 'test',
         }),
-      ).rejects.toThrow('At least 2 memory IDs');
+      ).rejects.toThrow('At least 1 memory ID');
     });
 
     it('throws if memory not found', async () => {

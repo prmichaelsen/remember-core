@@ -234,8 +234,8 @@ export class RelationshipService {
   // ── Create ──────────────────────────────────────────────────────────
 
   async create(input: CreateRelationshipInput): Promise<CreateRelationshipResult> {
-    if (input.memory_ids.length < 2) {
-      throw new Error('At least 2 memory IDs are required to create a relationship');
+    if (input.memory_ids.length < 1) {
+      throw new Error('At least 1 memory ID is required to create a relationship');
     }
 
     const validated = await this.validateMemoryIds(input.memory_ids);

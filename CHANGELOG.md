@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.56.2] - 2026-03-09
+
+### Fixed
+- Allow creating relationships with a single memory ID — relaxed minimum from 2 to 1 to support user-created relationships from the organize modal
+
 ## [0.56.1] - 2026-03-09
 
 ### Fixed

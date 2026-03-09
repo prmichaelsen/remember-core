@@ -53,6 +53,7 @@ export interface CreateMemoryInput {
   context_summary?: string;
   context_conversation_id?: string;
   follow_up_at?: string;
+  is_user_organized?: boolean;
 
   // ── REM Emotional Weighting (optional create-time seeding) ────────
   // Layer 1: Discrete emotions (0-1, except feel_valence: -1 to 1)
@@ -334,6 +335,7 @@ export interface UpdateMemoryInput {
   parent_id?: string | null;
   thread_root_id?: string | null;
   moderation_flags?: string[];
+  is_user_organized?: boolean;
 }
 
 export interface UpdateMemoryResult {
@@ -558,6 +560,7 @@ export class MemoryService {
       thread_root_id: input.thread_root_id ?? null,
       moderation_flags: input.moderation_flags ?? [],
       follow_up_at: input.follow_up_at || null,
+      is_user_organized: input.is_user_organized ?? false,
       space_ids: [],
       group_ids: [],
     };
@@ -1541,6 +1544,7 @@ export class MemoryService {
     if (input.parent_id !== undefined) { updates.parent_id = input.parent_id; updatedFields.push('parent_id'); }
     if (input.thread_root_id !== undefined) { updates.thread_root_id = input.thread_root_id; updatedFields.push('thread_root_id'); }
     if (input.moderation_flags !== undefined) { updates.moderation_flags = input.moderation_flags; updatedFields.push('moderation_flags'); }
+    if (input.is_user_organized !== undefined) { updates.is_user_organized = input.is_user_organized; updatedFields.push('is_user_organized'); }
 
     if (updatedFields.length === 0) throw new Error('No fields provided for update');
 

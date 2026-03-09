@@ -150,6 +150,13 @@ function buildDocTypeFilters(
     );
   }
 
+  // User-organized filter
+  if (filters?.is_user_organized !== undefined) {
+    filterList.push(
+      collection.filter.byProperty('is_user_organized').equal(filters.is_user_organized),
+    );
+  }
+
   // Memory IDs (pre-resolved from relationship_ids by caller)
   if (filters?.memory_ids && filters.memory_ids.length > 0) {
     filterList.push(

@@ -28,6 +28,7 @@ export interface SearchFilters {
   relationship_ids?: string[];      // filter to memories in these relationships
   memory_ids?: string[];            // pre-resolved set of memory IDs to filter by (e.g. from relationship_ids)
   rating_min?: number;              // minimum rating_bayesian (e.g. 4.0 for highly-rated)
+  is_user_organized?: boolean;      // filter by user-organized status
 }
 
 /**

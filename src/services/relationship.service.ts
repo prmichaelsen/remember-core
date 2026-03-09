@@ -62,6 +62,8 @@ export interface SearchRelationshipInput {
   limit?: number;
   offset?: number;
   deleted_filter?: DeletedFilter;
+  sort_by?: 'created_at' | 'updated_at' | 'member_count' | 'relationship_type';
+  sort_direction?: 'asc' | 'desc';
 }
 
 export interface SearchRelationshipResult {
@@ -160,7 +162,7 @@ export class RelationshipService {
     const result = await this.collection.query.fetchObjectById(relationshipId, {
       returnProperties: [
         'user_id', 'related_memory_ids', 'relationship_type', 'observation',
-        'strength', 'confidence', 'source', 'tags',
+        'strength', 'confidence', 'source', 'tags', 'member_count',
         'created_at', 'updated_at', 'version',
       ],
     });
@@ -211,6 +213,7 @@ export class RelationshipService {
       strength: input.strength ?? 0.5,
       confidence: input.confidence ?? 0.8,
       source: input.source ?? 'user',
+      member_count: input.memory_ids.length,
       created_at: now,
       updated_at: now,
       version: 1,
@@ -324,6 +327,9 @@ export class RelationshipService {
     const combinedFilters = combineFiltersWithAnd(filterList);
     const opts: any = { alpha: 1.0, limit: limit + offset };
     if (combinedFilters) opts.filters = combinedFilters;
+    if (input.sort_by) {
+      opts.sort = this.collection.sort.byProperty(input.sort_by, input.sort_direction === 'asc');
+    }
 
     const results = await this.collection.query.hybrid(input.query, opts);
     const paginated = results.objects.slice(offset, offset + limit);
@@ -360,7 +366,7 @@ export class RelationshipService {
       returnProperties: [
         'user_id', 'doc_type', 'related_memory_ids', 'memory_ids',
         'relationship_type', 'observation', 'strength', 'confidence',
-        'source', 'tags', 'created_at', 'updated_at', 'version',
+        'source', 'tags', 'member_count', 'created_at', 'updated_at', 'version',
       ],
     });
 

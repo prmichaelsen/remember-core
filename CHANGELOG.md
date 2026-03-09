@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.52.0] - 2026-03-09
+
+### Added
+- `is_user_organized` boolean field on Memory schema (Weaviate + types + create/update/search filter)
+- `member_count` integer field on Relationship schema (denormalized from `memory_ids.length`)
+- `sort_by` and `sort_direction` parameters on `SearchRelationshipInput` (supports sorting by `created_at`, `updated_at`, `member_count`, `relationship_type`)
+- `member_count` auto-set on relationship creation and included in `getById`/`findByMemoryIds` return properties
+- `backfill-member-count.ts` migration script for populating `member_count` on existing relationships
+
 ## [0.51.0] - 2026-03-08
 
 ### Added

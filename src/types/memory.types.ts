@@ -153,6 +153,9 @@ export interface Memory {
   deleted_by?: string; // User ID who deleted the memory
   deletion_reason?: string; // Optional reason for deletion
 
+  // Organization
+  is_user_organized?: boolean; // Whether this memory has been manually organized by the user
+
   // Publication Tracking (Memory Collection Pattern v2)
   // Managed by remember_publish / remember_retract — do NOT modify directly
   space_ids?: string[]; // Spaces this memory has been published to
@@ -195,6 +198,9 @@ export interface Relationship {
 
   // Source
   source: RelationshipSource;
+
+  // Denormalized counts
+  member_count?: number; // Number of memory_ids in this relationship
 
   // Metadata
   created_at: string;

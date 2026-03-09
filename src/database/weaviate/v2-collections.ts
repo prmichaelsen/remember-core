@@ -104,6 +104,7 @@ const COMMON_MEMORY_PROPERTIES = [
   { name: 'relationships', dataType: configure.dataType.TEXT_ARRAY },
   { name: 'memory_ids', dataType: configure.dataType.TEXT_ARRAY },
   { name: 'relationship_count', dataType: configure.dataType.INT },
+  { name: 'member_count', dataType: configure.dataType.INT },
 
   // Rating aggregates (denormalized from Firestore individual ratings)
   { name: 'rating_sum', dataType: configure.dataType.INT },
@@ -176,6 +177,9 @@ const COMMON_MEMORY_PROPERTIES = [
   // REM metadata
   { name: 'rem_touched_at', dataType: configure.dataType.TEXT },
   { name: 'rem_visits', dataType: configure.dataType.INT },
+
+  // User organization (M64)
+  { name: 'is_user_organized', dataType: configure.dataType.BOOLEAN },
 
   // Curation scoring (M36)
   { name: 'curated_score', dataType: configure.dataType.NUMBER },

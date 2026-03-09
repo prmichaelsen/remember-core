@@ -21,7 +21,7 @@ export interface WebhookEndpoint {
   signingSecret: string;
 }
 
-export type WebhookConfigResolver = (ownerId: string) => WebhookEndpoint | undefined;
+export type WebhookConfigResolver = (ownerId: string) => WebhookEndpoint[];
 
 export interface BatchedWebhookServiceConfig {
   resolveEndpoint: WebhookConfigResolver;
@@ -64,10 +64,10 @@ export class BatchedWebhookService implements EventBus {
 
   emit(event: WebhookEventData, actor?: WebhookActor): void {
     const ownerId = event.owner_id;
-    const endpoint = this.resolveEndpoint(ownerId);
+    const endpoints = this.resolveEndpoint(ownerId);
 
-    if (!endpoint) {
-      this.logger.debug?.('[BatchedWebhookService] no endpoint for owner, dropping event', {
+    if (endpoints.length === 0) {
+      this.logger.debug?.('[BatchedWebhookService] no endpoints for owner, dropping event', {
         owner_id: ownerId,
         type: event.type,
       });
@@ -75,20 +75,23 @@ export class BatchedWebhookService implements EventBus {
     }
 
     const envelope = this.buildEnvelope(event, actor);
-    const url = endpoint.url;
 
-    let buffer = this.buffers.get(url);
-    if (!buffer) {
-      buffer = { endpoint, envelopes: [], timer: null };
-      this.buffers.set(url, buffer);
-    }
+    for (const endpoint of endpoints) {
+      const url = endpoint.url;
 
-    buffer.envelopes.push(envelope);
+      let buffer = this.buffers.get(url);
+      if (!buffer) {
+        buffer = { endpoint, envelopes: [], timer: null };
+        this.buffers.set(url, buffer);
+      }
 
-    if (buffer.envelopes.length >= this.maxBatchSize) {
-      this.flush(url);
-    } else if (!buffer.timer) {
-      buffer.timer = setTimeout(() => this.flush(url), this.flushIntervalMs);
+      buffer.envelopes.push(envelope);
+
+      if (buffer.envelopes.length >= this.maxBatchSize) {
+        this.flush(url);
+      } else if (!buffer.timer) {
+        buffer.timer = setTimeout(() => this.flush(url), this.flushIntervalMs);
+      }
     }
   }
 

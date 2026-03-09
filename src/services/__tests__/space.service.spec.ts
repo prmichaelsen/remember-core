@@ -228,6 +228,55 @@ describe('SpaceService', () => {
       expect(source!.properties.space_ids).toContain('the_void');
     });
 
+    it('rejects publish if original_memory_id already published by another user', async () => {
+      const memoryId = await insertUserMemory();
+
+      // Pre-populate the public collection with a memory having the same original_memory_id
+      // but published by a different user (different composite ID → different weaviate UUID)
+      const publicCollection = weaviateClient.collections.get('Memory_spaces_public');
+      await publicCollection.data.insert({
+        id: 'other-user-weaviate-id',
+        properties: {
+          original_memory_id: memoryId,
+          author_id: 'other-user',
+          composite_id: `other-user.${memoryId}`,
+          space_ids: ['the_void'],
+          group_ids: [],
+        },
+      });
+
+      // Phase 1: get token (should succeed — validation happens at confirm)
+      const { token } = await service.publish({
+        memory_id: memoryId,
+        spaces: ['the_void'],
+      });
+
+      // Phase 2: confirm should reject due to duplicate original_memory_id
+      await expect(service.confirm({ token })).rejects.toThrow(
+        'already published by another user',
+      );
+    });
+
+    it('allows re-publish by the same user (update flow)', async () => {
+      const memoryId = await insertUserMemory();
+
+      // First publish
+      const { token: token1 } = await service.publish({
+        memory_id: memoryId,
+        spaces: ['the_void'],
+      });
+      const result1 = await service.confirm({ token: token1 });
+      expect(result1.success).toBe(true);
+
+      // Second publish to another space by same user should succeed
+      const { token: token2 } = await service.publish({
+        memory_id: memoryId,
+        spaces: ['the_void', 'dogs'],
+      });
+      const result2 = await service.confirm({ token: token2 });
+      expect(result2.success).toBe(true);
+    });
+
     it('indexes published memory UUID in memory index', async () => {
       const memoryId = await insertUserMemory();
 

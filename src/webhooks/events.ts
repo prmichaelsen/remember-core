@@ -41,6 +41,9 @@ export interface FollowUpDueData {
   title: string;
   owner_id: string;
   follow_up_at: string;
+  content_preview: string;
+  space_ids: string[];
+  group_ids: string[];
 }
 
 export type WebhookEventData =

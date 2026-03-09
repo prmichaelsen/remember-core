@@ -952,6 +952,31 @@ export class SpaceService {
     };
   }
 
+  // ── Private: Dedupe Check ──────────────────────────────────────────
+
+  /**
+   * Check that the given original_memory_id is not already published to the
+   * target collection by a different user.  If the same user re-publishes
+   * (same weaviateId) this is fine — the caller handles update vs insert.
+   */
+  private async checkOriginalMemoryNotPublished(
+    collection: any,
+    originalMemoryId: string,
+    expectedWeaviateId: string,
+  ): Promise<void> {
+    const filter = collection.filter.byProperty('original_memory_id').equal(originalMemoryId);
+    const result = await collection.query.fetchObjects({ filters: filter, limit: 1 });
+
+    if (result.objects.length > 0) {
+      const existing = result.objects[0];
+      // Allow if same weaviateId (same user re-publishing)
+      if (existing.uuid === expectedWeaviateId) return;
+      throw new ValidationError(
+        `This memory is already published by another user`,
+      );
+    }
+  }
+
   // ── Private: Execute Publish ────────────────────────────────────────
 
   private async executePublish(
@@ -999,6 +1024,10 @@ export class SpaceService {
     if (spaces.length > 0) {
       try {
         const publicCollection = await ensurePublicCollection(this.weaviateClient);
+
+        // Dedupe: check if this original_memory_id is already published by another user
+        await this.checkOriginalMemoryNotPublished(publicCollection, request.payload.memory_id, weaviateId);
+
         let existingSpaceMemory = null;
         try {
           existingSpaceMemory = await fetchMemoryWithAllProperties(publicCollection, weaviateId);
@@ -1057,6 +1086,10 @@ export class SpaceService {
       try {
         await ensureGroupCollection(this.weaviateClient, groupId);
         const groupCollection = this.weaviateClient.collections.get(groupCollectionName);
+
+        // Dedupe: check if this original_memory_id is already published by another user
+        await this.checkOriginalMemoryNotPublished(groupCollection, request.payload.memory_id, weaviateId);
+
         let existingGroupMemory = null;
         try {
           existingGroupMemory = await fetchMemoryWithAllProperties(groupCollection, weaviateId);

@@ -19,7 +19,7 @@ function makeEvent(ownerId: string, type: WebhookEventData['type'] = 'memory.pub
     return { type, memory_id: 'mem-1', owner_id: ownerId, targets: [] };
   }
   if (type === 'memory.follow_up_due') {
-    return { type, memory_id: 'mem-1', title: 'Test', owner_id: ownerId, follow_up_at: '2026-01-01' };
+    return { type, memory_id: 'mem-1', title: 'Test', owner_id: ownerId, follow_up_at: '2026-01-01', content_preview: 'Test preview', space_ids: [], group_ids: [] };
   }
   if (type === 'memory.published_to_group') {
     return { type, memory_id: 'mem-1', title: 'Test', group_id: 'grp-1', owner_id: ownerId };
@@ -43,7 +43,7 @@ describe('BatchedWebhookService', () => {
 
   it('flushes after flushIntervalMs timeout', async () => {
     const svc = new BatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => endpoint1,
+      resolveEndpoint: () => [endpoint1],
       flushIntervalMs: 500,
     });
 
@@ -59,7 +59,7 @@ describe('BatchedWebhookService', () => {
 
   it('flushes at maxBatchSize threshold', async () => {
     const svc = new BatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => endpoint1,
+      resolveEndpoint: () => [endpoint1],
       maxBatchSize: 3,
     });
 
@@ -80,9 +80,9 @@ describe('BatchedWebhookService', () => {
 
   it('routes multi-tenant events to separate endpoints', async () => {
     const resolver = (ownerId: string) => {
-      if (ownerId === 'owner-a') return endpoint1;
-      if (ownerId === 'owner-b') return endpoint2;
-      return undefined;
+      if (ownerId === 'owner-a') return [endpoint1];
+      if (ownerId === 'owner-b') return [endpoint2];
+      return [];
     };
     const svc = new BatchedWebhookService(mockLogger, {
       resolveEndpoint: resolver,
@@ -101,9 +101,9 @@ describe('BatchedWebhookService', () => {
     svc.dispose();
   });
 
-  it('drops events when resolver returns undefined', () => {
+  it('drops events when resolver returns empty array', () => {
     const svc = new BatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => undefined,
+      resolveEndpoint: () => [],
     });
 
     svc.emit(makeEvent('unknown-owner'));
@@ -111,16 +111,38 @@ describe('BatchedWebhookService', () => {
 
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(mockLogger.debug).toHaveBeenCalledWith(
-      expect.stringContaining('no endpoint for owner'),
+      expect.stringContaining('no endpoints for owner'),
       expect.objectContaining({ owner_id: 'unknown-owner' }),
     );
 
     svc.dispose();
   });
 
+  it('fans out a single event to multiple endpoints', async () => {
+    const svc = new BatchedWebhookService(mockLogger, {
+      resolveEndpoint: () => [endpoint1, endpoint2],
+      maxBatchSize: 1,
+    });
+
+    svc.emit(makeEvent('owner-1'));
+    await Promise.resolve();
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    const urls = fetchSpy.mock.calls.map((c: unknown[]) => c[0]);
+    expect(urls).toContain(endpoint1.url);
+    expect(urls).toContain(endpoint2.url);
+
+    // Both should receive the same event data
+    const body1 = JSON.parse(fetchSpy.mock.calls[0][1].body) as WebhookEnvelope[];
+    const body2 = JSON.parse(fetchSpy.mock.calls[1][1].body) as WebhookEnvelope[];
+    expect(body1[0].data).toEqual(body2[0].data);
+
+    svc.dispose();
+  });
+
   it('sends batch body as WebhookEnvelope[] array', async () => {
     const svc = new BatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => endpoint1,
+      resolveEndpoint: () => [endpoint1],
       maxBatchSize: 2,
     });
 
@@ -142,7 +164,7 @@ describe('BatchedWebhookService', () => {
 
   it('signs the full batch body correctly', async () => {
     const svc = new BatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => endpoint1,
+      resolveEndpoint: () => [endpoint1],
       maxBatchSize: 1,
     });
 
@@ -167,7 +189,7 @@ describe('BatchedWebhookService', () => {
 
   it('includes x-webhook-batch header', async () => {
     const svc = new BatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => endpoint1,
+      resolveEndpoint: () => [endpoint1],
       maxBatchSize: 1,
     });
 
@@ -182,7 +204,7 @@ describe('BatchedWebhookService', () => {
 
   it('dispose() flushes remaining events', async () => {
     const svc = new BatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => endpoint1,
+      resolveEndpoint: () => [endpoint1],
       flushIntervalMs: 60_000,
     });
 
@@ -203,7 +225,7 @@ describe('BatchedWebhookService', () => {
     fetchSpy.mockResolvedValue(new Response(null, { status: 500 }));
 
     const svc = new BatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => endpoint1,
+      resolveEndpoint: () => [endpoint1],
       maxBatchSize: 1,
       onError,
     });
@@ -224,7 +246,7 @@ describe('BatchedWebhookService', () => {
 
   it('emit() returns void synchronously', () => {
     const svc = new BatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => endpoint1,
+      resolveEndpoint: () => [endpoint1],
     });
 
     const result = svc.emit(makeEvent('owner-1'));

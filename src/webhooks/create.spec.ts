@@ -69,7 +69,7 @@ describe('createWebhookService', () => {
 describe('createBatchedWebhookService', () => {
   it('returns a BatchedWebhookService instance', () => {
     const svc = createBatchedWebhookService(mockLogger, {
-      resolveEndpoint: () => ({ url: 'https://example.com', signingSecret: 'secret' }),
+      resolveEndpoint: () => [{ url: 'https://example.com', signingSecret: 'secret' }],
     });
     expect(svc).toBeInstanceOf(BatchedWebhookService);
     svc.dispose();

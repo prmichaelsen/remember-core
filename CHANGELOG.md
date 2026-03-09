@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.53.0] - 2026-03-09
+
+### Added
+- Multi-endpoint fan-out in `BatchedWebhookService` — `WebhookConfigResolver` now returns `WebhookEndpoint[]` for broadcasting events to multiple tenant endpoints
+- Publish dedupe check in `SpaceService` — prevent same `original_memory_id` from being published by different users to the same space/group
+- Extended `FollowUpDueData` webhook payload with `content_preview`, `space_ids`, `group_ids` fields
+
 ## [0.52.0] - 2026-03-09
 
 ### Added

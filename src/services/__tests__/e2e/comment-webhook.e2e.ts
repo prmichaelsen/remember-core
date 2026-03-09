@@ -81,7 +81,7 @@ function createMockConfirmationTokenService(): ConfirmationTokenService {
 function createMockEventBus() {
   const events: Array<{ data: WebhookEventData; actor?: WebhookActor }> = [];
   const bus: EventBus = {
-    emit(event: WebhookEventData, actor?: WebhookActor) {
+    async emit(event: WebhookEventData, actor?: WebhookActor) {
       events.push({ data: event, actor });
     },
   };

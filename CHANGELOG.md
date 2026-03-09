@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.56.0] - 2026-03-09
+
+### Changed
+- `EventBus.emit()` now returns `Promise<void>` — callers can await delivery instead of fire-and-forget
+- `BatchedWebhookService.flush()` and `dispose()` now return `Promise<void>`
+- All `eventBus.emit()` calls in SpaceService are now awaited, ensuring webhooks are sent before the request completes (fixes Cloud Run container idle killing pending timers)
+
 ## [0.55.5] - 2026-03-09
 
 ### Fixed

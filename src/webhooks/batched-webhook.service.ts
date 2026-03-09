@@ -62,7 +62,7 @@ export class BatchedWebhookService implements EventBus {
     this.onError = config.onError;
   }
 
-  emit(event: WebhookEventData, actor?: WebhookActor): void {
+  async emit(event: WebhookEventData, actor?: WebhookActor): Promise<void> {
     const ownerId = event.owner_id;
     const endpoints = this.resolveEndpoint(ownerId);
 
@@ -75,6 +75,7 @@ export class BatchedWebhookService implements EventBus {
     }
 
     const envelope = this.buildEnvelope(event, actor);
+    const flushPromises: Promise<void>[] = [];
 
     for (const endpoint of endpoints) {
       const url = endpoint.url;
@@ -88,14 +89,18 @@ export class BatchedWebhookService implements EventBus {
       buffer.envelopes.push(envelope);
 
       if (buffer.envelopes.length >= this.maxBatchSize) {
-        this.flush(url);
+        flushPromises.push(this.flush(url));
       } else if (!buffer.timer) {
         buffer.timer = setTimeout(() => this.flush(url), this.flushIntervalMs);
       }
     }
+
+    if (flushPromises.length > 0) {
+      await Promise.all(flushPromises);
+    }
   }
 
-  flush(url: string): void {
+  async flush(url: string): Promise<void> {
     const buffer = this.buffers.get(url);
     if (!buffer || buffer.envelopes.length === 0) return;
 
@@ -109,20 +114,24 @@ export class BatchedWebhookService implements EventBus {
     buffer.envelopes = [];
     buffer.timer = null;
 
-    this.sendBatch(url, endpoint, envelopes).catch((err) => {
+    try {
+      await this.sendBatch(url, endpoint, envelopes);
+    } catch (err) {
       this.logger.error?.('[BatchedWebhookService] batch delivery failed', {
         error: err,
         url,
         count: envelopes.length,
       });
       this.onError?.(err, envelopes);
-    });
+    }
   }
 
-  dispose(): void {
+  async dispose(): Promise<void> {
+    const promises: Promise<void>[] = [];
     for (const url of this.buffers.keys()) {
-      this.flush(url);
+      promises.push(this.flush(url));
     }
+    await Promise.all(promises);
   }
 
   private async sendBatch(

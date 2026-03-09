@@ -505,7 +505,7 @@ describe('SpaceService', () => {
     let serviceWithEvents: SpaceService;
 
     beforeEach(() => {
-      mockEventBus = { emit: jest.fn() };
+      mockEventBus = { emit: jest.fn().mockResolvedValue(undefined) };
       serviceWithEvents = new SpaceService(
         weaviateClient as any,
         userCollection as any,

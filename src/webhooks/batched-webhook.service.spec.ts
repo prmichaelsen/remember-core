@@ -250,14 +250,15 @@ describe('BatchedWebhookService', () => {
     svc.dispose();
   });
 
-  it('emit() returns void synchronously', () => {
+  it('emit() returns a Promise', async () => {
     const svc = new BatchedWebhookService(mockLogger, {
       resolveEndpoint: () => [endpoint1],
     });
 
     const result = svc.emit(makeEvent('owner-1'));
-    expect(result).toBeUndefined();
+    expect(result).toBeInstanceOf(Promise);
+    await result;
 
-    svc.dispose();
+    await svc.dispose();
   });
 });

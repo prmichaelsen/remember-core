@@ -108,5 +108,5 @@ export interface BatchedWebhookPayload {
 // ─── EventBus Interface ───────────────────────────────────────────────
 
 export interface EventBus {
-  emit(event: WebhookEventData, actor?: WebhookActor): void;
+  emit(event: WebhookEventData, actor?: WebhookActor): Promise<void>;
 }

@@ -42,15 +42,14 @@ export class WebhookService implements EventBus {
     this.onError = config.onError;
   }
 
-  /**
-   * Fire-and-forget: starts async delivery, does not await.
-   */
-  emit(event: WebhookEventData, actor?: WebhookActor): void {
+  async emit(event: WebhookEventData, actor?: WebhookActor): Promise<void> {
     const envelope = this.buildEnvelope(event, actor);
-    this.send(envelope).catch((err) => {
+    try {
+      await this.send(envelope);
+    } catch (err) {
       this.logger.error?.('[WebhookService] delivery failed', { error: err, type: event.type });
       this.onError?.(err, envelope);
-    });
+    }
   }
 
   /**

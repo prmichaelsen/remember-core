@@ -34,7 +34,7 @@ describe('Comments (live)', () => {
         await svc.confirmations.confirm(TEST_USER_ID, token);
       }
     }
-  });
+  }, 60000);
 
   afterAll(async () => {
     // Cleanup: delete the parent memory (cascades comments)

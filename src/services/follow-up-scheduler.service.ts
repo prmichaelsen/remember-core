@@ -72,7 +72,7 @@ export class FollowUpSchedulerService {
     const collection = this.weaviateClient.collections.get(collectionId) as any;
 
     // follow_up_at <= now
-    const dueDateFilter = collection.filter.byProperty('follow_up_at').lessOrEqual(new Date(now));
+    const dueDateFilter = collection.filter.byProperty('follow_up_at').lessOrEqual(now);
 
     // follow_up_failure_count < MAX or null (treat null as 0)
     const notExhaustedFilter = Filters.or(

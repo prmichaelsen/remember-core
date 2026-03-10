@@ -646,8 +646,8 @@ milestones:
 
   - id: M41
     name: Follow-Up Notification Scheduler
-    status: in_progress
-    progress: 75
+    status: completed
+    progress: 100
     estimated_weeks: 1
     tasks_completed: 0
     tasks_total: 4
@@ -2746,7 +2746,8 @@ tasks:
       description: "Export from services barrel, document REST integration."
     - id: task-203
       name: Unit Tests
-      status: not_started
+      status: completed
+      completed_date: 2026-03-10
       file: agent/tasks/milestone-41-follow-up-notification-scheduler/task-203-unit-tests.md
       estimated_hours: 3
       dependencies: [task-201]

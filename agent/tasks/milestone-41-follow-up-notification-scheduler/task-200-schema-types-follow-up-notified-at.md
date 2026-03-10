@@ -10,13 +10,15 @@
 
 ## Objective
 
-Add `follow_up_notified_at` field to the Weaviate memory schema and TypeScript memory types. This field tracks whether a follow-up webhook has been delivered, preventing duplicate notifications.
+Add `follow_up_notified_at` and `follow_up_targets` fields to the Weaviate memory schema and TypeScript memory types. `follow_up_notified_at` tracks whether a follow-up webhook has been delivered. `follow_up_targets` specifies who to notify (default: owner only).
 
 ---
 
 ## Context
 
-The `follow_up_at` field already exists in the schema (`src/database/weaviate/v2-collections.ts` line 128) and memory types (`src/types/memory.types.ts` line 149). The new `follow_up_notified_at` field is the delivery-tracking counterpart — set after successful webhook delivery, used by the scanner to skip already-notified memories.
+The `follow_up_at` field already exists in the schema (`src/database/weaviate/v2-collections.ts` line 128) and memory types (`src/types/memory.types.ts` line 149). Two new fields:
+- `follow_up_notified_at` — delivery tracking, set after successful webhook delivery. Scanner skips memories where `follow_up_notified_at >= follow_up_at` (supports reschedule/snooze).
+- `follow_up_targets` — who to notify. Format: `user:<id>` or `group:<group_id>`. Empty/null defaults to owner only.
 
 ---
 
@@ -28,6 +30,7 @@ In `src/database/weaviate/v2-collections.ts`, add `follow_up_notified_at` as a D
 
 ```typescript
 { name: 'follow_up_notified_at', dataType: configure.dataType.DATE },
+{ name: 'follow_up_targets', dataType: configure.dataType.TEXT_ARRAY },
 ```
 
 ### 2. Update Memory Types
@@ -36,6 +39,7 @@ In `src/types/memory.types.ts`, add to the Memory interface near the existing `f
 
 ```typescript
 follow_up_notified_at?: string; // ISO 8601 — set after successful webhook delivery
+follow_up_targets?: string[];   // e.g. ["user:abc", "group:xyz"]. Empty = owner only.
 ```
 
 ### 3. Update MemoryService Create Input
@@ -44,6 +48,7 @@ In `src/services/memory.service.ts`, ensure the new field defaults to `null` in 
 
 ```typescript
 follow_up_notified_at: null,
+follow_up_targets: [],
 ```
 
 ---
@@ -51,8 +56,9 @@ follow_up_notified_at: null,
 ## Verification
 
 - [ ] `follow_up_notified_at` property exists in `v2-collections.ts` schema definition
-- [ ] `follow_up_notified_at` field exists in Memory type interface
-- [ ] MemoryService create sets `follow_up_notified_at` to `null` by default
+- [ ] `follow_up_targets` property exists in `v2-collections.ts` schema definition
+- [ ] Both fields exist in Memory type interface
+- [ ] MemoryService create sets `follow_up_notified_at` to `null` and `follow_up_targets` to `[]` by default
 - [ ] TypeScript compiles without errors (`npm run typecheck`)
 - [ ] Existing tests still pass (`npm test`)
 

@@ -655,7 +655,8 @@ milestones:
     notes: |
       Per-minute scheduler that scans for memories with due follow_up_at,
       fires batched memory.follow_up_due webhook events, and marks as notified.
-      New field: follow_up_notified_at. Retry tracking (3-cycle max).
+      New fields: follow_up_notified_at, follow_up_targets. Reschedule/snooze
+      support (follow_up_at > follow_up_notified_at). Retry tracking (3-cycle max).
       Follows scheduleRemJobs() pattern. Wired by remember-rest-service.
       See: agent/milestones/milestone-41-follow-up-notification-scheduler.md
       Design: agentbase.me/agent/design/local.follow-up-notification-scheduling.md
@@ -2725,7 +2726,7 @@ tasks:
       status: not_started
       file: agent/tasks/milestone-41-follow-up-notification-scheduler/task-200-schema-types-follow-up-notified-at.md
       estimated_hours: 1
-      description: "Add follow_up_notified_at field to Weaviate schema and memory types."
+      description: "Add follow_up_notified_at and follow_up_targets fields to Weaviate schema and memory types."
     - id: task-201
       name: FollowUpSchedulerService
       status: not_started

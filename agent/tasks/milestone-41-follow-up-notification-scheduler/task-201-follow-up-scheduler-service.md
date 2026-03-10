@@ -44,9 +44,9 @@ The main method:
 1. **Enumerate collections** — iterate all Weaviate memory collections via `collectionEnumerator`
 2. **Query per collection** — filter for memories where:
    - `follow_up_at <= now` (DATE comparison)
-   - `follow_up_notified_at IS NULL`
+   - `follow_up_notified_at IS NULL` **OR** `follow_up_at > follow_up_notified_at` (handles rescheduled/snoozed follow-ups)
 3. **Build webhook payloads** — for each due memory, construct `FollowUpDueData`:
-   - `memory_id`, `title`, `owner_id`, `follow_up_at`, `content_preview` (truncated content, ~200 chars), `space_ids`, `group_ids`
+   - `memory_id`, `title`, `owner_id`, `follow_up_at`, `content_preview` (truncated content, ~200 chars), `follow_up_targets` (from memory field, empty = owner only), `space_ids`, `group_ids`
 4. **Emit via EventBus** — use existing `eventBus.emit()` with `actor: { type: 'system', id: 'follow-up-scheduler' }`
 5. **Mark as notified** — on successful emit, update the memory: set `follow_up_notified_at` to `new Date().toISOString()`
 6. **Return summary** — `{ scanned: number, notified: number, failed: number }`
@@ -83,7 +83,8 @@ export async function scanAndNotifyFollowUps(
 ## Verification
 
 - [ ] Scanner finds memories with `follow_up_at <= now` and `follow_up_notified_at` null
-- [ ] Scanner skips memories where `follow_up_notified_at` is already set
+- [ ] Scanner skips memories where `follow_up_notified_at >= follow_up_at` (already notified for current schedule)
+- [ ] Scanner re-notifies memories where `follow_up_at` was updated to a new date after prior notification (`follow_up_at > follow_up_notified_at`)
 - [ ] `memory.follow_up_due` events emitted with correct `FollowUpDueData` shape
 - [ ] `follow_up_notified_at` set on memory after successful emit
 - [ ] Failed deliveries increment retry counter

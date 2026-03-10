@@ -19,10 +19,11 @@ The scheduler follows the same pattern as `scheduleRemJobs()` — a pure functio
 
 ### 1. Schema Update
 - `follow_up_notified_at` DATE field added to Weaviate memory schema
-- Memory types updated with new field
+- `follow_up_targets` TEXT[] field added to Weaviate memory schema (e.g. `["user:abc", "group:xyz"]`, default empty = owner only)
+- Memory types updated with new fields
 
 ### 2. FollowUpSchedulerService
-- Weaviate query: `follow_up_at <= now AND follow_up_notified_at IS NULL`
+- Weaviate query: `follow_up_at <= now AND (follow_up_notified_at IS NULL OR follow_up_at > follow_up_notified_at)`
 - Batched webhook emission via existing EventBus
 - Sets `follow_up_notified_at` on successful delivery
 - Retry tracking: stops after 3 consecutive failed cycles per memory
@@ -38,11 +39,11 @@ The scheduler follows the same pattern as `scheduleRemJobs()` — a pure functio
 
 ## Success Criteria
 
-- [ ] `follow_up_notified_at` field exists in Weaviate schema
-- [ ] Memories with `follow_up_at <= now` and no `follow_up_notified_at` are detected
+- [ ] `follow_up_notified_at` and `follow_up_targets` fields exist in Weaviate schema
+- [ ] Memories with `follow_up_at <= now` and no `follow_up_notified_at` (or `follow_up_at > follow_up_notified_at`) are detected
 - [ ] `memory.follow_up_due` webhook events fire for due memories
 - [ ] `follow_up_notified_at` is set after successful webhook delivery
-- [ ] Duplicate notifications prevented (already-notified memories skipped)
+- [ ] Duplicate notifications prevented (already-notified memories skipped unless rescheduled)
 - [ ] Failed deliveries retry up to 3 cycles then stop
 - [ ] All tests pass
 

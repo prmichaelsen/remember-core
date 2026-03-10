@@ -41,10 +41,12 @@ Create `src/services/follow-up-scheduler.service.spec.ts`.
 - `actor` is `{ type: 'system', id: 'follow-up-scheduler' }`
 - Multiple due memories emit multiple events
 
-#### Deduplication
-- Already-notified memories (non-null `follow_up_notified_at`) are never emitted
+#### Deduplication & Rescheduling
+- Already-notified memories (`follow_up_notified_at >= follow_up_at`) are not emitted
 - `follow_up_notified_at` is set on the memory after successful emit
 - Re-running scan after notification finds no new due memories
+- Rescheduled follow-up (`follow_up_at` updated to new future date after notification) triggers re-notification when new date arrives
+- Rescheduled follow-up resets failure counter
 
 #### Retry/Failure
 - Failed emit increments failure counter on memory

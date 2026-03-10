@@ -44,6 +44,7 @@ export interface FollowUpDueData {
   owner_id: string;
   follow_up_at: string;
   content_preview: string;
+  follow_up_targets: string[]; // e.g. ["user:abc", "group:xyz"]. Empty = owner only.
   space_ids: string[];
   group_ids: string[];
 }

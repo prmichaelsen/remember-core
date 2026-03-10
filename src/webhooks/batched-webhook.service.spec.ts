@@ -19,7 +19,7 @@ function makeEvent(ownerId: string, type: WebhookEventData['type'] = 'memory.pub
     return { type, memory_id: 'mem-1', owner_id: ownerId, targets: [] };
   }
   if (type === 'memory.follow_up_due') {
-    return { type, memory_id: 'mem-1', title: 'Test', owner_id: ownerId, follow_up_at: '2026-01-01', content_preview: 'Test preview', space_ids: [], group_ids: [] };
+    return { type, memory_id: 'mem-1', title: 'Test', owner_id: ownerId, follow_up_at: '2026-01-01', content_preview: 'Test preview', follow_up_targets: [], space_ids: [], group_ids: [] };
   }
   if (type === 'memory.published_to_group') {
     return { type, memory_id: 'mem-1', title: 'Test', group_id: 'grp-1', owner_id: ownerId };

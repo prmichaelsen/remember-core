@@ -110,16 +110,16 @@ describe('RelationshipService', () => {
       ).rejects.toThrow('Memory validation failed');
     });
 
-    it('throws if memory belongs to other user', async () => {
+    it('allows cross-user memory references', async () => {
       const mem1 = await insertMemory();
       const mem2 = await insertMemory({ user_id: 'other-user' });
-      await expect(
-        service.create({
-          memory_ids: [mem1, mem2],
-          relationship_type: 'related_to',
-          observation: 'test',
-        }),
-      ).rejects.toThrow('Memory validation failed');
+      const result = await service.create({
+        memory_ids: [mem1, mem2],
+        relationship_type: 'related_to',
+        observation: 'cross-user relationship',
+      });
+      expect(result.relationship_id).toBeDefined();
+      expect(result.memory_ids).toEqual([mem1, mem2]);
     });
 
     it('throws if memory is deleted', async () => {

@@ -52,10 +52,18 @@ export class FollowUpSchedulerService {
       try {
         await this.scanCollection(collectionId, now, result);
       } catch (err) {
-        this.logger.error('Failed to scan collection for follow-ups', {
-          collection_id: collectionId,
-          error: String(err),
-        });
+        const errStr = String(err);
+        // Collections without follow_up_at in schema are expected — skip silently
+        if (errStr.includes('no such prop')) {
+          this.logger.debug('Skipping collection without follow-up schema', {
+            collection_id: collectionId,
+          });
+        } else {
+          this.logger.error('Failed to scan collection for follow-ups', {
+            collection_id: collectionId,
+            error: errStr,
+          });
+        }
       }
     }
 
@@ -102,7 +110,7 @@ export class FollowUpSchedulerService {
       filters: filter,
       limit: 100,
       returnProperties: [
-        'title', 'content', 'owner_id', 'follow_up_at',
+        'title', 'content', 'user_id', 'owner_id', 'follow_up_at',
         'follow_up_targets', 'follow_up_notified_at',
         'follow_up_failure_count', 'space_ids', 'group_ids',
       ],
@@ -124,7 +132,7 @@ export class FollowUpSchedulerService {
       filters: filter,
       limit: 100,
       returnProperties: [
-        'title', 'content', 'owner_id', 'follow_up_at',
+        'title', 'content', 'user_id', 'owner_id', 'follow_up_at',
         'follow_up_targets', 'follow_up_notified_at',
         'follow_up_failure_count', 'space_ids', 'group_ids',
       ],
@@ -151,6 +159,8 @@ export class FollowUpSchedulerService {
   ): Promise<void> {
     const props = obj.properties;
     const memoryId = obj.uuid;
+    // user collections have user_id, space/group collections have owner_id
+    const resolvedOwnerId = (props.user_id as string) || (props.owner_id as string) || '';
 
     try {
       await this.eventBus.emit(
@@ -158,7 +168,7 @@ export class FollowUpSchedulerService {
           type: 'memory.follow_up_due',
           memory_id: memoryId,
           title: (props.title as string) || '',
-          owner_id: (props.owner_id as string) || '',
+          owner_id: resolvedOwnerId,
           follow_up_at: (props.follow_up_at as string) || '',
           content_preview: truncate(props.content as string, CONTENT_PREVIEW_LENGTH),
           follow_up_targets: (props.follow_up_targets as string[]) || [],

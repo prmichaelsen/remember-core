@@ -56,7 +56,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Memory_users_test', {
         title: 'Due memory',
         content: 'Review Q1 goals',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -79,7 +79,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Memory_users_test', {
         title: 'Future memory',
         content: 'Not due yet',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: futureDate(60),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -107,7 +107,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Collection_A', {
         title: 'Due in A',
         content: 'Content A',
-        owner_id: 'user-a',
+        user_id: 'user-a',
         follow_up_at: pastDate(10),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -119,7 +119,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Collection_B', {
         title: 'Not due in B',
         content: 'Content B',
-        owner_id: 'user-b',
+        user_id: 'user-b',
         follow_up_at: futureDate(60),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -145,7 +145,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Memory_users_test', {
         title: 'Review goals',
         content: 'Check progress on Q1 OKRs',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: ['user:user-2', 'group:team-alpha'],
@@ -172,12 +172,33 @@ describe('FollowUpSchedulerService', () => {
       expect(actor).toEqual({ type: 'system', id: 'follow-up-scheduler' });
     });
 
+    it('resolves owner_id from owner_id field for space/group collections', async () => {
+      await insertMemory('Memory_spaces_public', {
+        title: 'Space follow-up',
+        content: 'Check space status',
+        owner_id: 'space-owner-1',
+        follow_up_at: pastDate(5),
+        follow_up_notified_at: null,
+        follow_up_targets: [],
+        follow_up_failure_count: 0,
+        space_ids: ['space-1'],
+        group_ids: [],
+      });
+
+      const svc = createService(['Memory_spaces_public']);
+      await svc.scanAndNotify();
+
+      expect(eventBus.calls).toHaveLength(1);
+      const event = eventBus.calls[0].event as any;
+      expect(event.owner_id).toBe('space-owner-1');
+    });
+
     it('truncates content_preview to ~200 chars', async () => {
       const longContent = 'A'.repeat(300);
       await insertMemory('Memory_users_test', {
         title: 'Long content',
         content: longContent,
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -199,7 +220,7 @@ describe('FollowUpSchedulerService', () => {
         await insertMemory('Memory_users_test', {
           title: `Memory ${i}`,
           content: `Content ${i}`,
-          owner_id: 'user-1',
+          user_id: 'user-1',
           follow_up_at: pastDate(5),
           follow_up_notified_at: null,
           follow_up_targets: [],
@@ -225,7 +246,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Memory_users_test', {
         title: 'Already notified',
         content: 'Old notification',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: followUpAt,
         follow_up_notified_at: pastDate(30), // notified after follow_up_at
         follow_up_targets: [],
@@ -246,7 +267,7 @@ describe('FollowUpSchedulerService', () => {
       const memId = await insertMemory('Memory_users_test', {
         title: 'Due memory',
         content: 'Content',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -268,7 +289,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Memory_users_test', {
         title: 'Due memory',
         content: 'Content',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -292,7 +313,7 @@ describe('FollowUpSchedulerService', () => {
       const memId = await insertMemory('Memory_users_test', {
         title: 'Rescheduled',
         content: 'Content',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(60),
         follow_up_notified_at: pastDate(30), // was notified
         follow_up_targets: [],
@@ -328,7 +349,7 @@ describe('FollowUpSchedulerService', () => {
       const memId = await insertMemory('Memory_users_test', {
         title: 'Will fail',
         content: 'Content',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -358,7 +379,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Memory_users_test', {
         title: 'Exhausted retries',
         content: 'Content',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -379,7 +400,7 @@ describe('FollowUpSchedulerService', () => {
       const memId = await insertMemory('Memory_users_test', {
         title: 'Recovering',
         content: 'Content',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -402,7 +423,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Memory_users_test', {
         title: 'Will succeed',
         content: 'Content',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -415,7 +436,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Memory_users_test', {
         title: 'Will also succeed',
         content: 'Content 2',
-        owner_id: 'user-2',
+        user_id: 'user-2',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],
@@ -454,7 +475,7 @@ describe('FollowUpSchedulerService', () => {
       await insertMemory('Memory_users_test', {
         title: 'Due',
         content: 'Content',
-        owner_id: 'user-1',
+        user_id: 'user-1',
         follow_up_at: pastDate(5),
         follow_up_notified_at: null,
         follow_up_targets: [],

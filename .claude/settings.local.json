@@ -68,7 +68,11 @@
       "WebFetch(domain:www.npmjs.com)",
       "Bash(grep \"\"version\"\":*)",
       "Bash(head:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(openssl rand:*)",
+      "Bash(gcloud scheduler:*)",
+      "Bash(gh run:*)",
+      "Bash(ENVIRONMENT=e1 npx tsx:*)"
     ]
   }
 }

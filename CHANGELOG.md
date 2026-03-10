@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.57.0] - 2026-03-10
+
+### Added
+- `follow_up_notified_at` DATE field in Weaviate schema for delivery tracking
+- `follow_up_targets` TEXT_ARRAY field in Weaviate schema for multi-target notifications
+- `follow_up_failure_count` INT field in Weaviate schema for retry tracking
+- All three fields added to Memory type interface and MemoryService create defaults
+
 ## [0.56.3] - 2026-03-09
 
 ### Fixed

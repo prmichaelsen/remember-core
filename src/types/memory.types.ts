@@ -147,6 +147,9 @@ export interface Memory {
 
   // Agent Follow-Up Tracking
   follow_up_at?: string; // ISO 8601 datetime — agent follow-up reminder date
+  follow_up_notified_at?: string; // ISO 8601 — set after successful webhook delivery
+  follow_up_targets?: string[]; // e.g. ["user:abc", "group:xyz"]. Empty = owner only.
+  follow_up_failure_count?: number; // Retry counter, skip when >= 3
 
   // Soft Delete Fields
   deleted_at?: Date | null; // Timestamp when memory was soft-deleted (null = not deleted)

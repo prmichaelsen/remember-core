@@ -53,6 +53,7 @@ export interface CreateMemoryInput {
   context_summary?: string;
   context_conversation_id?: string;
   follow_up_at?: string;
+  follow_up_targets?: string[];
   is_user_organized?: boolean;
 
   // ── REM Emotional Weighting (optional create-time seeding) ────────
@@ -560,6 +561,9 @@ export class MemoryService {
       thread_root_id: input.thread_root_id ?? null,
       moderation_flags: input.moderation_flags ?? [],
       follow_up_at: input.follow_up_at || null,
+      follow_up_notified_at: null,
+      follow_up_targets: input.follow_up_targets ?? [],
+      follow_up_failure_count: 0,
       is_user_organized: input.is_user_organized ?? false,
       space_ids: [],
       group_ids: [],

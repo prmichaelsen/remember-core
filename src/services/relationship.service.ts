@@ -374,13 +374,16 @@ export class RelationshipService {
     }
 
     const combinedFilters = combineFiltersWithAnd(filterList);
-    const opts: any = { alpha: 1.0, limit: limit + offset };
+    const opts: any = { limit: limit + offset };
     if (combinedFilters) opts.filters = combinedFilters;
     if (input.sort_by) {
       opts.sort = this.collection.sort.byProperty(input.sort_by, input.sort_direction === 'asc');
     }
 
-    const results = await this.collection.query.hybrid(input.query, opts);
+    const isWildcard = !input.query || input.query === '*';
+    const results = isWildcard
+      ? await this.collection.query.fetchObjects(opts)
+      : await this.collection.query.hybrid(input.query, { ...opts, alpha: 1.0 });
     const paginated = results.objects.slice(offset, offset + limit);
 
     const relationships = paginated.map((obj: any) => ({

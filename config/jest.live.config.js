@@ -19,6 +19,6 @@ export default {
   testMatch: ['**/*.live.ts'],
   testPathIgnorePatterns: ['/node_modules/'],
   globalSetup: '<rootDir>/setup/global-setup.ts',
-  testTimeout: 60000,
+  testTimeout: 30000,
   maxWorkers: 1,
 }

@@ -647,7 +647,7 @@ milestones:
   - id: M41
     name: Follow-Up Notification Scheduler
     status: in_progress
-    progress: 50
+    progress: 75
     estimated_weeks: 1
     tasks_completed: 0
     tasks_total: 4
@@ -2738,7 +2738,8 @@ tasks:
       description: "Scanner, webhook emission, dedup, retry/failure tracking."
     - id: task-202
       name: Barrel Exports & Integration
-      status: not_started
+      status: completed
+      completed_date: 2026-03-10
       file: agent/tasks/milestone-41-follow-up-notification-scheduler/task-202-barrel-exports-integration.md
       estimated_hours: 1
       dependencies: [task-201]

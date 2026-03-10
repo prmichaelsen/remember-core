@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - `follow_up_failure_count` INT field in Weaviate schema for retry tracking
 - All three fields added to Memory type interface and MemoryService create defaults
 - `FollowUpSchedulerService` — scans Weaviate for due follow-ups, emits `memory.follow_up_due` webhook events, marks as notified with retry/failure tracking
+- Barrel exports for `FollowUpSchedulerService`, `scanAndNotifyFollowUps`, `FollowUpSchedulerDeps`, `ScanResult`
 
 ## [0.56.3] - 2026-03-09
 

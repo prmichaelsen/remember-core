@@ -550,4 +550,12 @@ export {
   type CurationRelationship,
 } from './curation-step.service.js';
 
+// Follow-up notification scheduler
+export {
+  FollowUpSchedulerService,
+  scanAndNotifyFollowUps,
+  type FollowUpSchedulerDeps,
+  type ScanResult,
+} from './follow-up-scheduler.service.js';
+
 // EventBus and other webhook types are re-exported from src/webhooks/index.ts via root barrel

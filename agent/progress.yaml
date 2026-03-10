@@ -644,6 +644,22 @@ milestones:
       app profiles, app compound operations, health version, confirmations deny.
       See: agent/milestones/milestone-40-live-e2e-test-coverage-expansion.md
 
+  - id: M41
+    name: Follow-Up Notification Scheduler
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 4
+    dependencies: []
+    notes: |
+      Per-minute scheduler that scans for memories with due follow_up_at,
+      fires batched memory.follow_up_due webhook events, and marks as notified.
+      New field: follow_up_notified_at. Retry tracking (3-cycle max).
+      Follows scheduleRemJobs() pattern. Wired by remember-rest-service.
+      See: agent/milestones/milestone-41-follow-up-notification-scheduler.md
+      Design: agentbase.me/agent/design/local.follow-up-notification-scheduling.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -2703,11 +2719,40 @@ tasks:
       estimated_hours: 1
       description: "Live e2e tests for health.version() and confirmations.deny()."
 
+  milestone_41:
+    - id: task-200
+      name: "Schema & Types — follow_up_notified_at"
+      status: not_started
+      file: agent/tasks/milestone-41-follow-up-notification-scheduler/task-200-schema-types-follow-up-notified-at.md
+      estimated_hours: 1
+      description: "Add follow_up_notified_at field to Weaviate schema and memory types."
+    - id: task-201
+      name: FollowUpSchedulerService
+      status: not_started
+      file: agent/tasks/milestone-41-follow-up-notification-scheduler/task-201-follow-up-scheduler-service.md
+      estimated_hours: 4
+      dependencies: [task-200]
+      description: "Scanner, webhook emission, dedup, retry/failure tracking."
+    - id: task-202
+      name: Barrel Exports & Integration
+      status: not_started
+      file: agent/tasks/milestone-41-follow-up-notification-scheduler/task-202-barrel-exports-integration.md
+      estimated_hours: 1
+      dependencies: [task-201]
+      description: "Export from services barrel, document REST integration."
+    - id: task-203
+      name: Unit Tests
+      status: not_started
+      file: agent/tasks/milestone-41-follow-up-notification-scheduler/task-203-unit-tests.md
+      estimated_hours: 3
+      dependencies: [task-201]
+      description: "Comprehensive tests for scanning, emission, dedup, retry."
+
 documentation:
   design_documents: 28
-  milestone_documents: 40
+  milestone_documents: 41
   pattern_documents: 29
-  task_documents: 199
+  task_documents: 203
 
 progress:
   planning: 100

@@ -87,6 +87,7 @@ export {
   searchProfiles,
   retractProfile,
   updateAndRepublishProfile,
+  republishProfile,
 } from './profiles.js';
 
 // ─── Use Cases: Preferences ──────────────────────────────────────────

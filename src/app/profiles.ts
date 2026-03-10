@@ -9,6 +9,7 @@ export interface ProfilesResource {
   search(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   retract(userId: string, memoryId: string): Promise<SdkResponse<unknown>>;
   updateAndRepublish(userId: string, memoryId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  republish(userId: string, memoryId: string): Promise<SdkResponse<unknown>>;
 }
 
 export function createProfilesResource(http: HttpClient): ProfilesResource {
@@ -24,6 +25,9 @@ export function createProfilesResource(http: HttpClient): ProfilesResource {
     },
     updateAndRepublish(userId, memoryId, input) {
       return http.request('PATCH', `/api/app/v1/profiles/${memoryId}`, { userId, body: input });
+    },
+    republish(userId, memoryId) {
+      return http.request('POST', `/api/app/v1/profiles/${memoryId}/republish`, { userId });
     },
   };
 }

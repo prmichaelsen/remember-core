@@ -180,6 +180,31 @@ export async function updateAndRepublishProfile(
   }
 }
 
+// ─── Republish Profile (pure visibility, no content change) ──────────
+
+/**
+ * Republish an existing profile memory to the 'profiles' space.
+ * Does NOT update memory content — pure visibility operation.
+ */
+export async function republishProfile(
+  ctx: WebSDKContext,
+  input: { memory_id: string },
+): Promise<Result<{ memory_id: string; composite_id?: string }>> {
+  try {
+    const publishResult = await publishToSpace(ctx, {
+      memory_id: input.memory_id,
+      spaces: [PROFILES_SPACE],
+    });
+    if (!publishResult.ok) return err(publishResult.error);
+    return ok({
+      memory_id: input.memory_id,
+      composite_id: publishResult.data.composite_id,
+    });
+  } catch (e) {
+    return err(wrapError(e));
+  }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────
 
 function buildProfileContent(displayName: string, bio?: string, tags?: string[]): string {

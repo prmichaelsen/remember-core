@@ -1,5 +1,5 @@
 import { createMockWebSDKContext } from './testing-helpers';
-import { createAndPublishProfile, searchProfiles, retractProfile, updateAndRepublishProfile } from './profiles';
+import { createAndPublishProfile, searchProfiles, retractProfile, updateAndRepublishProfile, republishProfile } from './profiles';
 import { createMemory } from './memories';
 
 describe('Profile compound use cases', () => {
@@ -55,6 +55,18 @@ describe('Profile compound use cases', () => {
         display_name: 'New Name',
         bio: 'New bio',
       });
+      expect(result).toBeDefined();
+      expect(typeof result.ok).toBe('boolean');
+    });
+  });
+
+  describe('republishProfile', () => {
+    it('returns Result on republish (pure visibility, no content change)', async () => {
+      // Create a memory to republish
+      const created = await createMemory(ctx, { content: 'Name: Test\nBio: test bio' });
+      if (!created.ok) fail('setup');
+
+      const result = await republishProfile(ctx, { memory_id: created.data.memory_id });
       expect(result).toBeDefined();
       expect(typeof result.ok).toBe('boolean');
     });

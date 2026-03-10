@@ -53,4 +53,13 @@ describe('ProfilesResource', () => {
       body: { display_name: 'Jane' },
     });
   });
+
+  it('republish calls POST /api/app/v1/profiles/:memoryId/republish', async () => {
+    const profiles = createProfilesResource(http);
+    await profiles.republish('user1', 'mem-123');
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/app/v1/profiles/mem-123/republish', {
+      userId: 'user1',
+    });
+  });
 });

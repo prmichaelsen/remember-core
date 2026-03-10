@@ -73,6 +73,6 @@ describe('createAppClient', () => {
       Object.keys(client.memories).length +
       Object.keys(client.relationships).length;
 
-    expect(methodCount).toBe(7);
+    expect(methodCount).toBe(8);
   });
 });

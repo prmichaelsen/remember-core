@@ -16,6 +16,7 @@ import {
   combineFiltersWithAnd,
   type DeletedFilter,
 } from '../utils/filters.js';
+import type { RelationshipSource } from '../types/memory.types.js';
 
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
@@ -63,6 +64,7 @@ export interface SearchRelationshipInput {
   limit?: number;
   offset?: number;
   deleted_filter?: DeletedFilter;
+  source?: RelationshipSource[];
   sort_by?: 'created_at' | 'updated_at' | 'member_count' | 'relationship_type';
   sort_direction?: 'asc' | 'desc';
 }
@@ -371,6 +373,15 @@ export class RelationshipService {
     }
     if (input.tags?.length) {
       filterList.push(this.collection.filter.byProperty('tags').containsAny(input.tags));
+    }
+    if (input.source?.length) {
+      if (input.source.length === 1) {
+        filterList.push(this.collection.filter.byProperty('source').equal(input.source[0]));
+      } else {
+        filterList.push(Filters.or(
+          ...input.source.map((s) => this.collection.filter.byProperty('source').equal(s)),
+        ));
+      }
     }
 
     const combinedFilters = combineFiltersWithAnd(filterList);

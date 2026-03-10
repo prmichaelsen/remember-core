@@ -160,22 +160,25 @@ export class RelationshipService {
   }
 
   /**
-   * Validate that memory IDs exist, belong to user, are memories, and not deleted.
-   * Returns validated entries with their current relationship_ids.
+   * Validate that memory IDs exist, are memories, and not deleted.
+   * Returns validated entries with their current relationship_ids and owner user_id.
    */
   private async validateMemoryIds(
     memoryIds: string[],
-  ): Promise<Array<{ memoryId: string; relationships: string[] }>> {
+  ): Promise<Array<{ memoryId: string; relationships: string[]; ownerId: string }>> {
     const checks = await Promise.all(
       memoryIds.map(async (memoryId) => {
         const memory = await this.collection.query.fetchObjectById(memoryId, {
           returnProperties: ['user_id', 'doc_type', 'relationship_ids', 'deleted_at'],
         });
         if (!memory) return { memoryId, error: 'Memory not found' };
-        if (memory.properties.user_id !== this.userId) return { memoryId, error: 'Unauthorized' };
         if (memory.properties.doc_type !== 'memory') return { memoryId, error: 'Not a memory document' };
         if (memory.properties.deleted_at) return { memoryId, error: 'Memory is deleted' };
-        return { memoryId, relationships: (memory.properties.relationship_ids as string[]) || [] };
+        return {
+          memoryId,
+          relationships: (memory.properties.relationship_ids as string[]) || [],
+          ownerId: memory.properties.user_id as string,
+        };
       }),
     );
 
@@ -184,19 +187,21 @@ export class RelationshipService {
       throw new Error(`Memory validation failed: ${errors.map((e) => `${e.memoryId}: ${e.error}`).join('; ')}`);
     }
 
-    return checks as Array<{ memoryId: string; relationships: string[] }>;
+    return checks as Array<{ memoryId: string; relationships: string[]; ownerId: string }>;
   }
 
   /**
    * Add bidirectional relationship_ids links from memories to a relationship.
+   * Only updates memories owned by the current user.
    */
   private async linkMemoriesToRelationship(
     relationshipId: string,
-    validated: Array<{ memoryId: string; relationships: string[] }>,
+    validated: Array<{ memoryId: string; relationships: string[]; ownerId: string }>,
     now: string,
   ): Promise<void> {
+    const owned = validated.filter((c) => c.ownerId === this.userId);
     await Promise.all(
-      validated.map(async (c) => {
+      owned.map(async (c) => {
         try {
           await this.collection.data.update({
             id: c.memoryId,
@@ -261,9 +266,10 @@ export class RelationshipService {
 
     const relationshipId = await this.collection.data.insert({ properties });
 
-    // Update relationship_count for all memories
+    // Update relationship_count for owned memories only
+    const ownedMemoryIds = validated.filter((c) => c.ownerId === this.userId).map((c) => c.memoryId);
     await Promise.all(
-      input.memory_ids.map((memoryId) => this.updateRelationshipCount(memoryId, +1)),
+      ownedMemoryIds.map((memoryId) => this.updateRelationshipCount(memoryId, +1)),
     );
 
     // Update connected memories with bidirectional reference
@@ -304,7 +310,7 @@ export class RelationshipService {
 
     // Handle add_memory_ids: deduplicate, validate, link
     let newMemoryIds: string[] = [];
-    let validated: Array<{ memoryId: string; relationships: string[] }> = [];
+    let validated: Array<{ memoryId: string; relationships: string[]; ownerId: string }> = [];
     if (needMemoryIds) {
       const existingMemoryIds = new Set((existing.properties.related_memory_ids as string[]) || []);
       newMemoryIds = input.add_memory_ids!.filter((id) => !existingMemoryIds.has(id));
@@ -326,11 +332,12 @@ export class RelationshipService {
 
     await this.collection.data.update({ id: input.relationship_id, properties: updates });
 
-    // Link new memories bidirectionally and update their relationship_count
+    // Link new memories bidirectionally and update their relationship_count (owned only)
     if (newMemoryIds.length > 0) {
+      const ownedNewMemoryIds = validated.filter((c) => c.ownerId === this.userId).map((c) => c.memoryId);
       await Promise.all([
         this.linkMemoriesToRelationship(input.relationship_id, validated, now),
-        ...newMemoryIds.map((memoryId) => this.updateRelationshipCount(memoryId, +1)),
+        ...ownedNewMemoryIds.map((memoryId) => this.updateRelationshipCount(memoryId, +1)),
       ]);
     }
 
@@ -454,19 +461,15 @@ export class RelationshipService {
     const memoryIds = (existing.properties.related_memory_ids as string[]) || [];
     let memoriesUpdated = 0;
 
-    // Update relationship_count for all memories
-    await Promise.all(
-      memoryIds.map((memoryId) => this.updateRelationshipCount(memoryId, -1)),
-    );
-
-    // Remove relationship reference from connected memories
+    // Remove relationship reference and update count only for owned memories
     await Promise.all(
       memoryIds.map(async (memoryId) => {
         try {
           const memory = await this.collection.query.fetchObjectById(memoryId, {
-            returnProperties: ['relationship_ids', 'doc_type'],
+            returnProperties: ['relationship_ids', 'doc_type', 'user_id'],
           });
           if (!memory || memory.properties.doc_type !== 'memory') return;
+          if (memory.properties.user_id !== this.userId) return; // skip foreign memories
           const current = (memory.properties.relationship_ids as string[]) || [];
           const updated = current.filter((id) => id !== input.relationship_id);
           if (updated.length !== current.length) {
@@ -476,6 +479,7 @@ export class RelationshipService {
             });
             memoriesUpdated++;
           }
+          await this.updateRelationshipCount(memoryId, -1);
         } catch {
           this.logger.warn(`Failed to clean up memory ${memoryId}`);
         }

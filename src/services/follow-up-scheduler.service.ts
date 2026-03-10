@@ -53,9 +53,9 @@ export class FollowUpSchedulerService {
         await this.scanCollection(collectionId, now, result);
       } catch (err) {
         const errStr = String(err);
-        // Collections without follow_up_at in schema are expected — skip silently
-        if (errStr.includes('no such prop')) {
-          this.logger.debug('Skipping collection without follow-up schema', {
+        // Collections missing from Weaviate or without follow_up_at in schema — skip silently
+        if (errStr.includes('no such prop') || errStr.includes('could not find class')) {
+          this.logger.debug('Skipping collection (missing or no follow-up schema)', {
             collection_id: collectionId,
           });
         } else {

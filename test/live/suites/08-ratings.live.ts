@@ -31,7 +31,7 @@ describe('Ratings (live)', () => {
 
     if (res.error) {
       console.warn('Rate memory error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 

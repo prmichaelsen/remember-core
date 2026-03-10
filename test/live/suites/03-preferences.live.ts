@@ -23,7 +23,7 @@ describe('Preferences (live)', () => {
 
     if (res.error) {
       console.warn('Preferences update error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 

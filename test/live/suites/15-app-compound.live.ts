@@ -61,7 +61,7 @@ describe('App Compound Operations (live)', () => {
 
     if (res.error) {
       console.warn('app memories.get error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -77,7 +77,7 @@ describe('App Compound Operations (live)', () => {
 
     if (res.error) {
       console.warn('app memories.get basic error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 

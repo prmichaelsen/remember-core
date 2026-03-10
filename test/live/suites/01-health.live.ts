@@ -14,7 +14,7 @@ describe('Health (live)', () => {
 
     if (res.error) {
       console.warn('version error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 

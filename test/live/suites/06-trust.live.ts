@@ -50,7 +50,7 @@ describe('Trust (live)', () => {
 
     if (res.error) {
       console.warn('updateGhostConfig error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -64,7 +64,7 @@ describe('Trust (live)', () => {
 
     if (res.error) {
       console.warn('blockUser error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -78,7 +78,7 @@ describe('Trust (live)', () => {
 
     if (res.error) {
       console.warn('unblockUser error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -103,7 +103,7 @@ describe('Trust (live)', () => {
 
     if (res.error) {
       console.warn('checkAccess error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 

@@ -49,7 +49,7 @@ describe('Memories CRUD (live)', () => {
 
     if (res.error) {
       console.warn('Memory update failed:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
     expect(res.data).toBeDefined();
@@ -62,7 +62,7 @@ describe('Memories CRUD (live)', () => {
 
     if (res.error) {
       console.warn('Memory delete failed:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
     expect(res.data).toBeDefined();

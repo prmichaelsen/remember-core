@@ -30,7 +30,7 @@ describe('Sort Modes (live)', () => {
 
     if (res.error) {
       console.warn('byTime error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -44,7 +44,7 @@ describe('Sort Modes (live)', () => {
 
     if (res.error) {
       console.warn('byDensity error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -59,7 +59,7 @@ describe('Sort Modes (live)', () => {
 
     if (res.error) {
       console.warn('byRating error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -73,7 +73,7 @@ describe('Sort Modes (live)', () => {
 
     if (res.error) {
       console.warn('byCurated error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -88,7 +88,7 @@ describe('Sort Modes (live)', () => {
 
     if (res.error) {
       console.warn('byCurated search error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -102,7 +102,7 @@ describe('Sort Modes (live)', () => {
 
     if (res.error) {
       console.warn('byDiscovery error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 

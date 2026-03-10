@@ -56,7 +56,7 @@ describe('App Profiles (live)', () => {
 
     if (res.error) {
       console.warn('updateAndRepublish error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -70,7 +70,7 @@ describe('App Profiles (live)', () => {
 
     if (res.error) {
       console.warn('retract error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 

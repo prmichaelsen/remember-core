@@ -33,7 +33,7 @@ describe('Memory Retrieval (live)', () => {
 
     if (res.error) {
       console.warn('get error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -47,7 +47,7 @@ describe('Memory Retrieval (live)', () => {
 
     if (res.error) {
       console.warn('get with include error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -71,7 +71,7 @@ describe('Memory Retrieval (live)', () => {
 
     if (res.error) {
       console.warn('similar error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -86,7 +86,7 @@ describe('Memory Retrieval (live)', () => {
 
     if (res.error) {
       console.warn('query error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 

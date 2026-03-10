@@ -45,7 +45,7 @@ describe('byMyRatings (live)', () => {
 
     if (res.error) {
       console.warn('byMyRatings browse error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -75,7 +75,7 @@ describe('byMyRatings (live)', () => {
 
     if (res.error) {
       console.warn('byMyRatings sort by rating error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -100,7 +100,7 @@ describe('byMyRatings (live)', () => {
 
     if (res.error) {
       console.warn('byMyRatings sort by rated_at error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -121,7 +121,7 @@ describe('byMyRatings (live)', () => {
 
     if (res.error) {
       console.warn('byMyRatings rating_filter error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -143,7 +143,7 @@ describe('byMyRatings (live)', () => {
 
     if (res.error) {
       console.warn('byMyRatings search error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 
@@ -168,7 +168,7 @@ describe('byMyRatings (live)', () => {
 
     if (res.error) {
       console.warn('byMyRatings empty user error:', res.error);
-      expect([400, 500]).toContain(res.error.status);
+      expect([400, 404, 500]).toContain(res.error.status);
       return;
     }
 

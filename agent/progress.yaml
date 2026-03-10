@@ -647,7 +647,7 @@ milestones:
   - id: M41
     name: Follow-Up Notification Scheduler
     status: in_progress
-    progress: 25
+    progress: 50
     estimated_weeks: 1
     tasks_completed: 0
     tasks_total: 4
@@ -2730,7 +2730,8 @@ tasks:
       description: "Add follow_up_notified_at and follow_up_targets fields to Weaviate schema and memory types."
     - id: task-201
       name: FollowUpSchedulerService
-      status: not_started
+      status: completed
+      completed_date: 2026-03-10
       file: agent/tasks/milestone-41-follow-up-notification-scheduler/task-201-follow-up-scheduler-service.md
       estimated_hours: 4
       dependencies: [task-200]

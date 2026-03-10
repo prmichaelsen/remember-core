@@ -152,9 +152,19 @@ function buildDocTypeFilters(
 
   // User-organized filter
   if (filters?.is_user_organized !== undefined) {
-    filterList.push(
-      collection.filter.byProperty('is_user_organized').equal(filters.is_user_organized),
-    );
+    if (filters.is_user_organized === false) {
+      // Unorganized: match explicit false OR null (pre-feature memories)
+      filterList.push(
+        Filters.or(
+          collection.filter.byProperty('is_user_organized').equal(false),
+          collection.filter.byProperty('is_user_organized').isNull(true),
+        ),
+      );
+    } else {
+      filterList.push(
+        collection.filter.byProperty('is_user_organized').equal(true),
+      );
+    }
   }
 
   // Memory IDs (pre-resolved from relationship_ids by caller)

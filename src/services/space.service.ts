@@ -184,6 +184,7 @@ export interface SearchSpaceInput {
   query: string;
   spaces?: string[];
   groups?: string[];
+  friends?: string[];
   search_type?: 'hybrid' | 'bm25' | 'semantic';
   content_type?: string;
   tags?: string[];
@@ -202,6 +203,7 @@ export interface SearchSpaceInput {
 export interface SearchSpaceResult {
   spaces_searched: string[] | 'all_public';
   groups_searched: string[];
+  friends_searched: string[];
   memories: Record<string, unknown>[];
   total: number;
   offset: number;
@@ -780,6 +782,7 @@ export class SpaceService {
   async search(input: SearchSpaceInput, authContext?: AuthContext): Promise<SearchSpaceResult> {
     const spaces = input.spaces || [];
     const groups = input.groups || [];
+    const friends = input.friends || [];
     const searchType = input.search_type || 'hybrid';
     const limit = input.limit ?? 10;
     const offset = input.offset ?? 0;
@@ -800,6 +803,14 @@ export class SpaceService {
       }
     }
 
+    // Validate friends (user IDs)
+    if (friends.length > 0) {
+      const invalidFriends = friends.filter((f) => !f || f.includes('.') || f.trim() === '');
+      if (invalidFriends.length > 0) {
+        throw new ValidationError('Friend user IDs cannot be empty or contain dots');
+      }
+    }
+
     // Permission check for non-approved moderation filters
     const moderationFilter = input.moderation_filter || 'approved';
     if (moderationFilter !== 'approved') {
@@ -813,11 +824,14 @@ export class SpaceService {
       }
     }
 
-    const fetchLimit = (limit + offset) * Math.max(1, groups.length + (spaces.length > 0 || groups.length === 0 ? 1 : 0));
+    const fetchLimit = (limit + offset) * Math.max(
+      1,
+      groups.length + friends.length + (spaces.length > 0 || (groups.length === 0 && friends.length === 0) ? 1 : 0)
+    );
     const allObjects: any[] = [];
 
-    // Search spaces collection (when spaces specified or neither spaces nor groups)
-    if (spaces.length > 0 || groups.length === 0) {
+    // Search spaces collection (when spaces specified or no targets at all)
+    if (spaces.length > 0 || (groups.length === 0 && friends.length === 0)) {
       await ensurePublicCollection(this.weaviateClient);
       const spacesCollectionName = getCollectionName(CollectionType.SPACES);
       const spacesCollection = this.weaviateClient.collections.get(spacesCollectionName);
@@ -843,6 +857,19 @@ export class SpaceService {
       const combinedFilters = filterList.length > 0 ? Filters.and(...filterList) : undefined;
       const groupObjects = await this.executeSearch(groupCollection, input.query, searchType, combinedFilters, fetchLimit);
       allObjects.push(...tagWithSource(groupObjects, groupCollectionName));
+    }
+
+    // Search friends collections
+    for (const friendUserId of friends) {
+      const friendsCollectionName = getCollectionName(CollectionType.FRIENDS, friendUserId);
+      const exists = await this.weaviateClient.collections.exists(friendsCollectionName);
+      if (!exists) continue;
+
+      const friendsCollection = this.weaviateClient.collections.get(friendsCollectionName);
+      const filterList = this.buildBaseFilters(friendsCollection, input);
+      const combinedFilters = filterList.length > 0 ? Filters.and(...filterList) : undefined;
+      const friendsObjects = await this.executeSearch(friendsCollection, input.query, searchType, combinedFilters, fetchLimit);
+      allObjects.push(...tagWithSource(friendsObjects, friendsCollectionName));
     }
 
     // Deduplicate by UUID first
@@ -871,11 +898,12 @@ export class SpaceService {
       ...(obj._also_in?.length ? { also_in: obj._also_in } : {}),
     }));
 
-    const isAllPublic = spaces.length === 0 && groups.length === 0;
+    const isAllPublic = spaces.length === 0 && groups.length === 0 && friends.length === 0;
 
     return {
       spaces_searched: isAllPublic ? 'all_public' : spaces,
       groups_searched: groups,
+      friends_searched: friends,
       memories,
       total: memories.length,
       offset,

@@ -108,7 +108,7 @@ export interface PublishInput {
   memory_id: string;
   spaces?: string[];
   groups?: string[];
-  friends?: string[];
+  friends?: boolean;
   additional_tags?: string[];
 }
 
@@ -120,7 +120,7 @@ export interface RetractInput {
   memory_id: string;
   spaces?: string[];
   groups?: string[];
-  friends?: string[];
+  friends?: boolean;
 }
 
 export interface RetractResult {
@@ -129,7 +129,7 @@ export interface RetractResult {
 
 export interface ReviseInput {
   memory_id: string;
-  friends?: string[];
+  friends?: boolean;
 }
 
 export interface ReviseResult {
@@ -149,6 +149,7 @@ export interface ConfirmResult {
   revised_at?: string;
   space_ids?: string[];
   group_ids?: string[];
+  published_to_friends?: boolean;
   failed?: string[];
   results?: RevisionResult[];
   memory_id?: string;
@@ -498,9 +499,10 @@ export class SpaceService {
   async publish(input: PublishInput): Promise<PublishResult> {
     const spaces = input.spaces || [];
     const groups = input.groups || [];
+    const friends = input.friends || false;
 
-    if (spaces.length === 0 && groups.length === 0) {
-      throw new ValidationError('Must specify at least one space or group to publish to');
+    if (spaces.length === 0 && groups.length === 0 && !friends) {
+      throw new ValidationError('Must specify at least one space, group, or friends target to publish to');
     }
 
     // Validate space IDs
@@ -546,6 +548,7 @@ export class SpaceService {
         memory_id: resolvedMemoryId,
         spaces,
         groups,
+        friends,
         additional_tags: input.additional_tags || [],
       },
     );
@@ -555,6 +558,7 @@ export class SpaceService {
       memoryId: resolvedMemoryId,
       spaces,
       groups,
+      friends,
     });
 
     return { token };
@@ -565,9 +569,10 @@ export class SpaceService {
   async retract(input: RetractInput): Promise<RetractResult> {
     const spaces = input.spaces || [];
     const groups = input.groups || [];
+    const friends = input.friends || false;
 
-    if (spaces.length === 0 && groups.length === 0) {
-      throw new ValidationError('Must specify at least one space or group to retract from');
+    if (spaces.length === 0 && groups.length === 0 && !friends) {
+      throw new ValidationError('Must specify at least one space, group, or friends target to retract from');
     }
 
     // Validate group IDs
@@ -589,15 +594,14 @@ export class SpaceService {
     const currentGroupIds: string[] = Array.isArray(memory.properties.group_ids)
       ? memory.properties.group_ids
       : [];
+    const currentPublishedToFriends = memory.properties.published_to_friends as boolean || false;
 
     const notPublishedSpaces = spaces.filter((s) => !currentSpaceIds.includes(s));
     const notPublishedGroups = groups.filter((g) => !currentGroupIds.includes(g));
 
-    if (notPublishedSpaces.length > 0 || notPublishedGroups.length > 0) {
+    if (notPublishedSpaces.length > 0 || notPublishedGroups.length > 0 || (friends && !currentPublishedToFriends)) {
       throw new ValidationError(
-        `Memory is not published to some destinations. ` +
-          `Not in spaces: [${notPublishedSpaces.join(', ')}], ` +
-          `Not in groups: [${notPublishedGroups.join(', ')}]`,
+        `Memory is not published to some destinations you want to retract from`,
       );
     }
 
@@ -609,8 +613,10 @@ export class SpaceService {
         memory_id: resolvedMemoryId,
         spaces,
         groups,
+        friends,
         current_space_ids: currentSpaceIds,
         current_group_ids: currentGroupIds,
+        current_published_to_friends: currentPublishedToFriends,
       },
     );
 
@@ -619,6 +625,7 @@ export class SpaceService {
       memoryId: resolvedMemoryId,
       spaces,
       groups,
+      friends,
     });
 
     return { token };
@@ -637,8 +644,9 @@ export class SpaceService {
     const groupIds: string[] = Array.isArray(memory.properties.group_ids)
       ? memory.properties.group_ids
       : [];
+    const publishedToFriends = memory.properties.published_to_friends as boolean || false;
 
-    if (spaceIds.length === 0 && groupIds.length === 0) {
+    if (spaceIds.length === 0 && groupIds.length === 0 && !publishedToFriends) {
       throw new ValidationError('Memory has no published copies to revise. Publish first with publish().');
     }
 
@@ -652,6 +660,7 @@ export class SpaceService {
         memory_id: input.memory_id,
         space_ids: spaceIds,
         group_ids: groupIds,
+        published_to_friends: publishedToFriends,
       },
     );
 
@@ -987,8 +996,9 @@ export class SpaceService {
   ): Promise<ConfirmResult> {
     const spaces: string[] = request.payload.spaces || [];
     const groups: string[] = request.payload.groups || [];
+    const friends: boolean = request.payload.friends || false;
 
-    if (spaces.length === 0 && groups.length === 0) {
+    if (spaces.length === 0 && groups.length === 0 && !friends) {
       throw new ValidationError('No destinations in publish request');
     }
 
@@ -1010,6 +1020,7 @@ export class SpaceService {
     const existingGroupIds: string[] = Array.isArray(originalMemory.properties.group_ids)
       ? originalMemory.properties.group_ids
       : [];
+    const existingPublishedToFriends: boolean = originalMemory.properties.published_to_friends as boolean || false;
 
     // Merge tags
     const originalTags = Array.isArray(originalMemory.properties.tags)
@@ -1136,6 +1147,55 @@ export class SpaceService {
       }
     }
 
+    // Publish to friends (Memory_friends_<user_id>)
+    if (friends) {
+      const friendsCollectionName = getCollectionName(CollectionType.FRIENDS, this.userId);
+      try {
+        await ensureFriendsCollection(this.weaviateClient, this.userId);
+        const friendsCollection = this.weaviateClient.collections.get(friendsCollectionName);
+
+        // Dedupe: check if this original_memory_id is already published by another user
+        await this.checkOriginalMemoryNotPublished(friendsCollection, request.payload.memory_id, weaviateId);
+
+        let existingFriendsMemory = null;
+        try {
+          existingFriendsMemory = await fetchMemoryWithAllProperties(friendsCollection, weaviateId);
+        } catch { /* doesn't exist */ }
+
+        const friendsMemory: Record<string, any> = {
+          ...originalMemory.properties,
+          composite_id: compositeId,
+          space_ids: existingSpaceIds,
+          group_ids: existingGroupIds,
+          author_id: this.userId,
+          published_at: new Date().toISOString(),
+          discovery_count: 0,
+          attribution: 'user',
+          moderation_status: 'approved',
+          tags: mergedTags,
+          original_memory_id: request.payload.memory_id,
+        };
+        delete friendsMemory._additional;
+
+        if (existingFriendsMemory) {
+          await friendsCollection.data.update({ id: weaviateId, properties: friendsMemory });
+        } else {
+          await friendsCollection.data.insert({ id: weaviateId, properties: friendsMemory });
+        }
+
+        // Index published memory UUID → friends collection name
+        try {
+          await this.memoryIndex.index(weaviateId, friendsCollectionName);
+        } catch (err) {
+          this.logger.warn?.(`[SpaceService] Index write failed for ${weaviateId} in ${friendsCollectionName}: ${err}`);
+        }
+
+        successfulPublications.push('friends');
+      } catch (err) {
+        failedPublications.push(`friends: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     // Update source memory tracking arrays
     const finalSpaceIds = successfulPublications.some((p) => p.startsWith('spaces:'))
       ? [...new Set([...existingSpaceIds, ...spaces])]
@@ -1144,12 +1204,13 @@ export class SpaceService {
       successfulPublications.some((p) => p === `group: ${g}`),
     );
     const finalGroupIds = [...new Set([...existingGroupIds, ...successfulGroups])];
+    const finalPublishedToFriends = successfulPublications.includes('friends') ? true : existingPublishedToFriends;
 
-    if (finalSpaceIds.length > existingSpaceIds.length || finalGroupIds.length > existingGroupIds.length) {
+    if (finalSpaceIds.length > existingSpaceIds.length || finalGroupIds.length > existingGroupIds.length || finalPublishedToFriends !== existingPublishedToFriends) {
       try {
         await this.userCollection.data.update({
           id: request.payload.memory_id,
-          properties: { space_ids: finalSpaceIds, group_ids: finalGroupIds },
+          properties: { space_ids: finalSpaceIds, group_ids: finalGroupIds, published_to_friends: finalPublishedToFriends },
         });
       } catch {
         this.logger.warn('Failed to update source memory tracking arrays');
@@ -1290,6 +1351,7 @@ export class SpaceService {
       failed: failedPublications.length > 0 ? failedPublications : undefined,
       space_ids: finalSpaceIds,
       group_ids: finalGroupIds,
+      published_to_friends: finalPublishedToFriends,
     };
   }
 
@@ -1300,6 +1362,7 @@ export class SpaceService {
   ): Promise<ConfirmResult> {
     const spaces: string[] = request.payload.spaces || [];
     const groups: string[] = request.payload.groups || [];
+    const friends: boolean = request.payload.friends || false;
 
     const sourceMemory = await fetchMemoryWithAllProperties(
       this.userCollection,
@@ -1313,6 +1376,7 @@ export class SpaceService {
     const currentGroupIds: string[] = Array.isArray(sourceMemory.properties.group_ids)
       ? sourceMemory.properties.group_ids
       : [];
+    const currentPublishedToFriends: boolean = sourceMemory.properties.published_to_friends as boolean || false;
 
     const compositeId = generateCompositeId(this.userId, request.payload.memory_id);
     const weaviateId = compositeIdToUuid(compositeId);
@@ -1366,6 +1430,24 @@ export class SpaceService {
       }
     }
 
+    // Retract from friends (delete the published copy)
+    if (friends) {
+      const friendsCollectionName = getCollectionName(CollectionType.FRIENDS, this.userId);
+      try {
+        const friendsCollection = this.weaviateClient.collections.get(friendsCollectionName);
+        const friendsMemory = await fetchMemoryWithAllProperties(friendsCollection, weaviateId);
+
+        if (friendsMemory) {
+          await friendsCollection.data.delete(weaviateId);
+          successfulRetractions.push('friends');
+        } else {
+          failedRetractions.push('friends: Memory not found in friends collection');
+        }
+      } catch (err) {
+        failedRetractions.push(`friends: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
     // Update source memory tracking arrays
     const finalSpaceIds = successfulRetractions.some((r) => r.startsWith('spaces:'))
       ? currentSpaceIds.filter((id) => !spaces.includes(id))
@@ -1374,11 +1456,12 @@ export class SpaceService {
       successfulRetractions.some((r) => r === `group: ${g}`),
     );
     const finalGroupIds = currentGroupIds.filter((id) => !successfulGroupRetractions.includes(id));
+    const finalPublishedToFriends = successfulRetractions.includes('friends') ? false : currentPublishedToFriends;
 
     try {
       await this.userCollection.data.update({
         id: request.payload.memory_id,
-        properties: { space_ids: finalSpaceIds, group_ids: finalGroupIds },
+        properties: { space_ids: finalSpaceIds, group_ids: finalGroupIds, published_to_friends: finalPublishedToFriends },
       });
     } catch {
       this.logger.warn('Failed to update source memory tracking arrays after retraction');
@@ -1422,6 +1505,7 @@ export class SpaceService {
       failed: failedRetractions.length > 0 ? failedRetractions : undefined,
       space_ids: finalSpaceIds,
       group_ids: finalGroupIds,
+      published_to_friends: finalPublishedToFriends,
     };
   }
 
@@ -1430,7 +1514,7 @@ export class SpaceService {
   private async executeRevise(
     request: ConfirmationRequest & { request_id: string },
   ): Promise<ConfirmResult> {
-    const { memory_id, space_ids = [], group_ids = [] } = request.payload;
+    const { memory_id, space_ids = [], group_ids = [], published_to_friends = false } = request.payload;
 
     const sourceMemory = await fetchMemoryWithAllProperties(this.userCollection, memory_id);
     if (!sourceMemory) throw new NotFoundError('Memory', memory_id);
@@ -1493,6 +1577,14 @@ export class SpaceService {
       await reviseInCollection(
         getCollectionName(CollectionType.GROUPS, groupId),
         `Memory_groups_${groupId}`,
+      );
+    }
+
+    // Revise in friends collection
+    if (published_to_friends) {
+      await reviseInCollection(
+        getCollectionName(CollectionType.FRIENDS, this.userId),
+        `Memory_friends_${this.userId}`,
       );
     }
 

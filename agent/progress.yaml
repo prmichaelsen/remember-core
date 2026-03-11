@@ -661,6 +661,24 @@ milestones:
       See: agent/milestones/milestone-41-follow-up-notification-scheduler.md
       Design: agentbase.me/agent/design/local.follow-up-notification-scheduling.md
 
+
+  - id: M72
+    name: Friends Collection Sharing
+    status: completed
+    progress: 100
+    started: 2026-03-11
+    completed: 2026-03-11
+    estimated_weeks: 2
+    tasks_completed: 4
+    tasks_total: 4
+    dependencies: []
+    notes: |
+      Per-user friends collections (Memory_friends_<user_id>) for sharing memories
+      with friends. Boolean publish model (friends: true), array search model
+      (friends: string[]), client-side ranking with bounded fanout (≤50 friends).
+      Extends SpaceService publish/retract/revise/search operations. All 1717 tests passing.
+      See: agent/milestones/milestone-72-friends-collection-sharing.md
+      Clarification: agent/clarifications/clarification-1-friends-collection-model.md
 tasks:
   milestone_1:
     - id: task-1
@@ -2753,11 +2771,44 @@ tasks:
       dependencies: [task-201]
       description: "Comprehensive tests for scanning, emission, dedup, retry."
 
+
+  milestone_72:
+    - id: task-493
+      name: "Friends Collection Type Infrastructure"
+      status: completed
+      completed_date: 2026-03-11
+      file: agent/tasks/milestone-72-friends-collection-sharing/task-493-friends-collection-type.md
+      estimated_hours: 2
+      description: "Memory_friends_<user_id> collection type, schema, ensureFriendsCollection(), dedupe tier 3."
+    - id: task-494
+      name: "Friends Publish/Retract/Revise Support"
+      status: completed
+      completed_date: 2026-03-11
+      file: agent/tasks/milestone-72-friends-collection-sharing/task-494-friends-publish-retract-revise.md
+      estimated_hours: 5
+      dependencies: [task-493]
+      description: "Extend SpaceService with friends: boolean support, single collection writes, tracking."
+    - id: task-495
+      name: "Friends Search Support"
+      status: completed
+      completed_date: 2026-03-11
+      file: agent/tasks/milestone-72-friends-collection-sharing/task-495-friends-search-support.md
+      estimated_hours: 4
+      dependencies: [task-494]
+      description: "Search with friends: string[] (bounded fanout), extend UserCredentials."
+    - id: task-496
+      name: "Friends Collection Test Suite"
+      status: completed
+      completed_date: 2026-03-11
+      file: agent/tasks/milestone-72-friends-collection-sharing/task-496-friends-tests.md
+      estimated_hours: 5
+      dependencies: [task-494, task-495]
+      description: "30+ tests covering publish/retract/revise/search, validation, tracking, lifecycle."
 documentation:
   design_documents: 28
-  milestone_documents: 41
+  milestone_documents: 42
   pattern_documents: 29
-  task_documents: 203
+  task_documents: 206
 
 progress:
   planning: 100

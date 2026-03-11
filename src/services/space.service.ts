@@ -16,7 +16,7 @@ import type { ConfirmationTokenService, ConfirmationRequest } from './confirmati
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import { ensurePublicCollection, isValidSpaceId } from '../database/weaviate/space-schema.js';
 import { SPACE_CONTENT_TYPE_RESTRICTIONS, type SpaceId } from '../types/space.types.js';
-import { ensureGroupCollection } from '../database/weaviate/v2-collections.js';
+import { ensureGroupCollection, ensureFriendsCollection } from '../database/weaviate/v2-collections.js';
 import { CollectionType, getCollectionName } from '../collections/dot-notation.js';
 import { generateCompositeId, compositeIdToUuid, parseCompositeId } from '../collections/composite-ids.js';
 import { getSpaceConfig } from './space-config.service.js';
@@ -108,6 +108,7 @@ export interface PublishInput {
   memory_id: string;
   spaces?: string[];
   groups?: string[];
+  friends?: string[];
   additional_tags?: string[];
 }
 
@@ -119,6 +120,7 @@ export interface RetractInput {
   memory_id: string;
   spaces?: string[];
   groups?: string[];
+  friends?: string[];
 }
 
 export interface RetractResult {
@@ -127,6 +129,7 @@ export interface RetractResult {
 
 export interface ReviseInput {
   memory_id: string;
+  friends?: string[];
 }
 
 export interface ReviseResult {

@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.58.0] - 2026-03-11
+
+### Added
+- `FRIENDS` collection type for per-user friend space memories (`Memory_friends_{userId}`)
+- `createFriendsCollectionSchema()` function following published memory schema pattern
+- `ensureFriendsCollection()` with lazy creation on first publish
+- `isFriendsCollection()` helper function for collection type checking
+- `friend_ids` TEXT_ARRAY tracking field in Weaviate schema for publication tracking
+- `friends?: string[]` field added to `PublishInput`, `RetractInput`, and `ReviseInput` interfaces
+- Friends collection support in dedupe precedence logic (tier 3: between groups and users)
+- Friends collection type support in `CollectionRegistryEntry` type
+- 7 new unit tests for friends collection type in dot-notation.spec.ts
+
+### Changed
+- Updated `getCollectionName()` to handle FRIENDS collection type
+- Updated `parseCollectionName()` to parse `Memory_friends_{userId}` format
+- Updated `validateV2CollectionName()` to accept friends collection pattern
+- Updated `getCollectionType()` return type to include 'friends'
+- Updated `extractIdFromCollectionName()` to extract user ID from friends collections
+- Updated dedupe `getTier()` function to assign friends tier 3 (spaces=1, groups=2, friends=3, users=4)
+
 ## [0.57.0] - 2026-03-10
 
 ### Added

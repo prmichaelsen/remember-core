@@ -2,10 +2,11 @@
  * Weaviate Schema Definitions for Memory Collection Pattern v2.
  * Ported from remember-mcp/src/schema/v2-collections.ts
  *
- * Defines schemas for the three collection types:
+ * Defines schemas for the four collection types:
  * 1. Memory_users_{userId} - User's private memories
  * 2. Memory_spaces_public - Shared space memories
  * 3. Memory_groups_{groupId} - Group memories
+ * 4. Memory_friends_{userId} - Friend-published memories
  */
 
 import { configure } from 'weaviate-client';
@@ -49,6 +50,7 @@ const COMMON_MEMORY_PROPERTIES = [
   // Tracking arrays (v2 feature)
   { name: 'space_ids', dataType: configure.dataType.TEXT_ARRAY },
   { name: 'group_ids', dataType: configure.dataType.TEXT_ARRAY },
+  { name: 'friend_ids', dataType: configure.dataType.TEXT_ARRAY },
 
   // Metadata
   { name: 'created_at', dataType: configure.dataType.DATE },
@@ -347,6 +349,32 @@ export function createGroupCollectionSchema(groupId: string) {
 }
 
 /**
+ * Create schema for a friend memory collection
+ */
+export function createFriendsCollectionSchema(userId: string) {
+  const collectionName = `Memory_friends_${userId}`;
+
+  return {
+    name: collectionName,
+    description: `Friend-published memory collection for user: ${userId}`,
+    vectorizers: configure.vectorizer.text2VecOpenAI({
+      model: 'text-embedding-3-small',
+      dimensions: 1536,
+      vectorizeCollectionName: false,
+    }),
+    properties: [
+      ...COMMON_MEMORY_PROPERTIES,
+      ...PUBLISHED_MEMORY_PROPERTIES,
+    ],
+    invertedIndex: configure.invertedIndex({
+      indexNullState: true,
+      indexPropertyLength: true,
+      indexTimestamps: true,
+    }),
+  };
+}
+
+/**
  * Reconcile missing properties on an existing collection.
  * Compares the expected properties against the collection's current schema
  * and adds any that are missing via collection.config.addProperty().
@@ -471,6 +499,41 @@ export async function ensureGroupCollection(
 }
 
 /**
+ * Ensure a friends collection exists (create if needed).
+ * If the collection already exists, reconciles any missing properties.
+ */
+export async function ensureFriendsCollection(
+  client: WeaviateClient,
+  userId: string
+): Promise<boolean> {
+  const collectionName = `Memory_friends_${userId}`;
+
+  if (isCollectionCached(collectionName)) return false;
+
+  const exists = await client.collections.exists(collectionName);
+  if (exists) {
+    await reconcileCollectionProperties(
+      client,
+      collectionName,
+      [...COMMON_MEMORY_PROPERTIES, ...PUBLISHED_MEMORY_PROPERTIES],
+    );
+    cacheCollection(collectionName);
+    return false;
+  }
+
+  const schema = createFriendsCollectionSchema(userId);
+  await client.collections.create(schema);
+  await registerCollection({
+    collection_name: collectionName,
+    collection_type: 'friends',
+    owner_id: userId,
+    created_at: new Date().toISOString(),
+  });
+  cacheCollection(collectionName);
+  return true;
+}
+
+/**
  * Get all property names for user collections
  */
 export function getUserCollectionProperties(): string[] {
@@ -494,37 +557,41 @@ export function validateV2CollectionName(collectionName: string): boolean {
   const userPattern = /^Memory_users_[a-zA-Z0-9_-]+$/;
   const spacePattern = /^Memory_spaces_public$/;
   const groupPattern = /^Memory_groups_[a-zA-Z0-9_-]+$/;
+  const friendsPattern = /^Memory_friends_[a-zA-Z0-9_-]+$/;
 
   if (
     userPattern.test(collectionName) ||
     spacePattern.test(collectionName) ||
-    groupPattern.test(collectionName)
+    groupPattern.test(collectionName) ||
+    friendsPattern.test(collectionName)
   ) {
     return true;
   }
 
   throw new Error(
     `Invalid v2 collection name: ${collectionName}. ` +
-    `Must match: Memory_users_{userId}, Memory_spaces_public, or Memory_groups_{groupId}`
+    `Must match: Memory_users_{userId}, Memory_spaces_public, Memory_groups_{groupId}, or Memory_friends_{userId}`
   );
 }
 
 /**
  * Get the collection type from a collection name
  */
-export function getCollectionType(collectionName: string): 'users' | 'spaces' | 'groups' {
+export function getCollectionType(collectionName: string): 'users' | 'spaces' | 'groups' | 'friends' {
   if (collectionName.startsWith('Memory_users_')) return 'users';
   if (collectionName === 'Memory_spaces_public') return 'spaces';
   if (collectionName.startsWith('Memory_groups_')) return 'groups';
+  if (collectionName.startsWith('Memory_friends_')) return 'friends';
   throw new Error(`Unknown collection type for: ${collectionName}`);
 }
 
 /**
- * Extract the ID from a user or group collection name
+ * Extract the ID from a user, group, or friends collection name
  */
 export function extractIdFromCollectionName(collectionName: string): string | null {
   if (collectionName.startsWith('Memory_users_')) return collectionName.replace('Memory_users_', '');
   if (collectionName.startsWith('Memory_groups_')) return collectionName.replace('Memory_groups_', '');
+  if (collectionName.startsWith('Memory_friends_')) return collectionName.replace('Memory_friends_', '');
   if (collectionName === 'Memory_spaces_public') return null;
   throw new Error(`Cannot extract ID from: ${collectionName}`);
 }

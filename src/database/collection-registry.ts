@@ -13,7 +13,7 @@ import { getCollectionRegistryPath } from './firestore/paths.js';
 
 export type CollectionRegistryEntry = {
   collection_name: string;
-  collection_type: 'users' | 'spaces' | 'groups';
+  collection_type: 'users' | 'spaces' | 'groups' | 'friends';
   owner_id: string | null;
   created_at: string;
 };

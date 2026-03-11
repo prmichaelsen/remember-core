@@ -6,6 +6,7 @@ import {
   isUserCollection,
   isSpacesCollection,
   isGroupCollection,
+  isFriendsCollection,
   InvalidCollectionNameError,
 } from '../dot-notation.js';
 
@@ -23,6 +24,10 @@ describe('dot-notation', () => {
       expect(getCollectionName(CollectionType.GROUPS, 'g1')).toBe('Memory_groups_g1');
     });
 
+    it('generates friends collection name', () => {
+      expect(getCollectionName(CollectionType.FRIENDS, 'alice')).toBe('Memory_friends_alice');
+    });
+
     it('throws if USERS missing id', () => {
       expect(() => getCollectionName(CollectionType.USERS)).toThrow(InvalidCollectionNameError);
     });
@@ -31,12 +36,20 @@ describe('dot-notation', () => {
       expect(() => getCollectionName(CollectionType.GROUPS)).toThrow(InvalidCollectionNameError);
     });
 
+    it('throws if FRIENDS missing id', () => {
+      expect(() => getCollectionName(CollectionType.FRIENDS)).toThrow(InvalidCollectionNameError);
+    });
+
     it('throws if user ID contains dots', () => {
       expect(() => getCollectionName(CollectionType.USERS, 'a.b')).toThrow(InvalidCollectionNameError);
     });
 
     it('throws if group ID contains dots', () => {
       expect(() => getCollectionName(CollectionType.GROUPS, 'a.b')).toThrow(InvalidCollectionNameError);
+    });
+
+    it('throws if friends ID contains dots', () => {
+      expect(() => getCollectionName(CollectionType.FRIENDS, 'a.b')).toThrow(InvalidCollectionNameError);
     });
   });
 
@@ -54,6 +67,11 @@ describe('dot-notation', () => {
     it('parses group collection', () => {
       const result = parseCollectionName('Memory_groups_team1');
       expect(result).toEqual({ type: CollectionType.GROUPS, id: 'team1', name: 'Memory_groups_team1' });
+    });
+
+    it('parses friends collection', () => {
+      const result = parseCollectionName('Memory_friends_alice');
+      expect(result).toEqual({ type: CollectionType.FRIENDS, id: 'alice', name: 'Memory_friends_alice' });
     });
 
     it('throws for invalid format', () => {
@@ -91,6 +109,12 @@ describe('dot-notation', () => {
       expect(isGroupCollection('Memory_groups_g1')).toBe(true);
       expect(isGroupCollection('Memory_users_alice')).toBe(false);
       expect(isGroupCollection('invalid')).toBe(false);
+    });
+
+    it('isFriendsCollection', () => {
+      expect(isFriendsCollection('Memory_friends_alice')).toBe(true);
+      expect(isFriendsCollection('Memory_users_alice')).toBe(false);
+      expect(isFriendsCollection('invalid')).toBe(false);
     });
   });
 });

@@ -39,10 +39,11 @@ function getTier(collectionName: string): number {
     switch (type) {
       case 'spaces': return 1;
       case 'groups': return 2;
-      case 'users': return 3;
+      case 'friends': return 3;
+      case 'users': return 4;
     }
   } catch {
-    return 4; // unknown — lowest
+    return 5; // unknown — lowest
   }
 }
 

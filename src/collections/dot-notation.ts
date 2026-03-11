@@ -8,12 +8,14 @@
  * - USERS: Memory_users_{userId}
  * - SPACES: Memory_spaces_public
  * - GROUPS: Memory_groups_{groupId}
+ * - FRIENDS: Memory_friends_{userId}
  */
 
 export enum CollectionType {
   USERS = 'USERS',
   SPACES = 'SPACES',
   GROUPS = 'GROUPS',
+  FRIENDS = 'FRIENDS',
 }
 
 export interface CollectionMetadata {
@@ -44,6 +46,10 @@ export function getCollectionName(type: CollectionType, id?: string): string {
       if (!id) throw new InvalidCollectionNameError('Group ID is required for GROUPS collection type');
       if (id.includes('.')) throw new InvalidCollectionNameError(`Group ID cannot contain dots: ${id}`);
       return `Memory_groups_${id}`;
+    case CollectionType.FRIENDS:
+      if (!id) throw new InvalidCollectionNameError('User ID is required for FRIENDS collection type');
+      if (id.includes('.')) throw new InvalidCollectionNameError(`User ID cannot contain dots: ${id}`);
+      return `Memory_friends_${id}`;
     default:
       throw new InvalidCollectionNameError(`Unknown collection type: ${type}`);
   }
@@ -53,7 +59,7 @@ export function getCollectionName(type: CollectionType, id?: string): string {
  * Parse a collection name into its components.
  */
 export function parseCollectionName(name: string): CollectionMetadata {
-  const match = name.match(/^Memory_(users|spaces|groups)_(.+)$/);
+  const match = name.match(/^Memory_(users|spaces|groups|friends)_(.+)$/);
   if (!match) {
     throw new InvalidCollectionNameError(
       `Invalid collection name format: ${name}. Expected format: Memory_{type}_{id}`,
@@ -72,6 +78,8 @@ export function parseCollectionName(name: string): CollectionMetadata {
       return { type: CollectionType.SPACES, id: undefined, name };
     case 'groups':
       return { type: CollectionType.GROUPS, id: idOrPublic, name };
+    case 'friends':
+      return { type: CollectionType.FRIENDS, id: idOrPublic, name };
     default:
       throw new InvalidCollectionNameError(`Unknown collection type: ${typeStr}`);
   }
@@ -102,6 +110,14 @@ export function isSpacesCollection(name: string): boolean {
 export function isGroupCollection(name: string): boolean {
   try {
     return parseCollectionName(name).type === CollectionType.GROUPS;
+  } catch {
+    return false;
+  }
+}
+
+export function isFriendsCollection(name: string): boolean {
+  try {
+    return parseCollectionName(name).type === CollectionType.FRIENDS;
   } catch {
     return false;
   }

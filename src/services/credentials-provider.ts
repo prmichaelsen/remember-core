@@ -17,6 +17,7 @@ export class StubCredentialsProvider implements CredentialsProvider {
     return {
       user_id: userId,
       group_memberships: [],
+      friend_user_ids: [],
     };
   }
 }

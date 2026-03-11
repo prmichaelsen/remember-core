@@ -861,6 +861,14 @@ export class SpaceService {
 
     // Search friends collections
     for (const friendUserId of friends) {
+      // Access validation: verify user is friends with the target user
+      const friendUserIds = authContext?.credentials?.friend_user_ids || [];
+      if (!friendUserIds.includes(friendUserId) && friendUserId !== this.userId) {
+        // User is not friends with friendUserId and is not the owner - skip this collection
+        this.logger.debug?.(`[SpaceService] Access denied: ${this.userId} is not friends with ${friendUserId}`);
+        continue;
+      }
+
       const friendsCollectionName = getCollectionName(CollectionType.FRIENDS, friendUserId);
       const exists = await this.weaviateClient.collections.exists(friendsCollectionName);
       if (!exists) continue;

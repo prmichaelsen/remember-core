@@ -469,4 +469,74 @@ export class RatingService {
 
     return { items, total, offset, limit };
   }
+
+  /**
+   * Get most recent rating activity for multiple users on a specific memory owner's content.
+   * Used for friend ranking signals (Task 501).
+   *
+   * For each rater in raterUserIds, returns the timestamp when they most recently
+   * rated a memory belonging to memoryOwnerId.
+   *
+   * @param raterUserIds - Array of user IDs to check rating activity for
+   * @param memoryOwnerId - User ID of the memory owner
+   * @returns Map of userId -> { last_rated_at: string | null }
+   */
+  async getBulkRatingActivity(
+    raterUserIds: string[],
+    memoryOwnerId: string,
+  ): Promise<Map<string, { last_rated_at: string | null }>> {
+    const result = new Map<string, { last_rated_at: string | null }>();
+
+    if (raterUserIds.length === 0) {
+      return result;
+    }
+
+    // For each rater user ID
+    for (const userId of raterUserIds) {
+      const ratingsPath = getUserRatingsPath(userId);
+
+      // Query all ratings by this user, ordered by most recent first
+      const docs = await queryDocuments(ratingsPath, {
+        orderBy: [{ field: 'updated_at', direction: 'DESCENDING' }],
+      });
+
+      // Find most recent rating of memoryOwnerId's content
+      let mostRecent: string | null = null;
+      for (const doc of docs) {
+        const data = doc.data as Record<string, unknown>;
+        const memoryId = (data.memoryId as string) ?? doc.id;
+        const collectionName = data.collectionName as string | undefined;
+
+        if (!collectionName) {
+          // Pre-backfill doc, attempt fallback lookup
+          const resolved = await this.memoryIndexService.lookup(memoryId);
+          if (!resolved) continue;
+        }
+
+        // Fetch memory to check owner
+        const memory = await this.getMemoryOwner(memoryId);
+        if (memory?.user_id === memoryOwnerId) {
+          mostRecent = data.updated_at as string;
+          break; // Already ordered by updated_at DESC
+        }
+      }
+
+      result.set(userId, { last_rated_at: mostRecent });
+    }
+
+    return result;
+  }
+
+  /**
+   * Helper: Get memory owner user_id from memory
+   * Can be optimized by storing user_id in rating doc during write
+   */
+  private async getMemoryOwner(memoryId: string): Promise<{ user_id: string } | null> {
+    const collectionName = await this.memoryIndexService.lookup(memoryId);
+    if (!collectionName) return null;
+
+    const collection = this.weaviateClient.collections.get(collectionName);
+    const memory = await fetchMemoryWithAllProperties(collection, memoryId);
+    return memory ? { user_id: (memory.properties as Record<string, unknown>).user_id as string } : null;
+  }
 }

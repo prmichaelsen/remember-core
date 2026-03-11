@@ -40,6 +40,7 @@ export interface MemoriesResource {
   incrementClick(userId: string, memoryId: string): Promise<SdkResponse<void>>;
   incrementShare(userId: string, memoryId: string): Promise<SdkResponse<void>>;
   incrementComment(userId: string, memoryId: string): Promise<SdkResponse<void>>;
+  getBulkRatingActivity(userId: string, raterUserIds: string[], memoryOwnerId: string): Promise<SdkResponse<Record<string, { last_rated_at: string | null }>>>;
 }
 
 export function createMemoriesResource(http: HttpClient): MemoriesResource {
@@ -124,6 +125,12 @@ export function createMemoriesResource(http: HttpClient): MemoriesResource {
     },
     incrementComment(userId, memoryId) {
       return http.request('POST', `/api/svc/v1/memories/${memoryId}/comment-count`, { userId });
+    },
+    getBulkRatingActivity(userId, raterUserIds, memoryOwnerId) {
+      return http.request('POST', '/api/svc/v1/memories/bulk-rating-activity', {
+        userId,
+        body: { rater_user_ids: raterUserIds, memory_owner_id: memoryOwnerId },
+      });
     },
   };
 }

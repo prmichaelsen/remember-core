@@ -100,7 +100,7 @@ describe('Space Publishing Flow (integration)', () => {
     const m = await memoryService.create({ content: 'test memory' });
     await expect(
       spaceService.publish({ memory_id: m.memory_id }),
-    ).rejects.toThrow('Must specify at least one space or group');
+    ).rejects.toThrow('Must specify at least one space, group, or friends target to publish to');
   });
 
   it('publish validates space IDs', async () => {
@@ -160,7 +160,7 @@ describe('Space Publishing Flow (integration)', () => {
     const m = await memoryService.create({ content: 'published memory' });
     await expect(
       spaceService.retract({ memory_id: m.memory_id }),
-    ).rejects.toThrow('Must specify at least one space or group');
+    ).rejects.toThrow('Must specify at least one space, group, or friends target to retract from');
   });
 
   it('publish via group (no space ID validation needed)', async () => {

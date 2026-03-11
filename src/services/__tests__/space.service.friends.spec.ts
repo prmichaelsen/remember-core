@@ -610,7 +610,7 @@ describe('SpaceService — Friends Collections', () => {
         query: 'memory',
         friends: [friend1],
         content_type: 'note',
-      });
+      }, { credentials: { friend_user_ids: [friend1] } } as any);
 
       expect(result.memories.length).toBe(1);
       expect(result.memories[0].content_type).toBe('note');
@@ -646,7 +646,7 @@ describe('SpaceService — Friends Collections', () => {
         query: 'memory',
         friends: [friend1],
         tags: ['work'],
-      });
+      }, { credentials: { friend_user_ids: [friend1] } } as any);
 
       expect(result.memories.length).toBe(1);
       expect(result.memories[0].tags).toContain('work');

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.59.1] - 2026-03-11
+
+### Fixed
+- Fix friends search tests to pass `authContext` with `friend_user_ids` for access validation
+- Fix e2e tests to match updated validation error messages that include friends targets
+
 ## [0.59.0] - 2026-03-11
 
 ### Added

@@ -644,7 +644,7 @@ export class MemoryService {
         [deletedFilter, searchFilters, ...ghostFilters].filter((f) => f !== null),
       );
 
-      const searchOptions: any = { limit: limit + offset };
+      const searchOptions: any = { limit, offset };
       if (combinedFilters) searchOptions.filters = combinedFilters;
 
       if (isWildcard) {
@@ -656,7 +656,7 @@ export class MemoryService {
     };
 
     const results = await this.retryWithoutDeletedFilter(executeSearch);
-    const paginated = results.objects.slice(offset);
+    const paginated = results.objects;
 
     const memories: Record<string, unknown>[] = [];
     const relationships: Record<string, unknown>[] = [];
@@ -708,7 +708,8 @@ export class MemoryService {
       );
 
       const queryOptions: any = {
-        limit: limit + offset,
+        limit,
+        offset,
         sort: this.collection.sort.byProperty('created_at', direction === 'asc'),
       };
 
@@ -720,7 +721,7 @@ export class MemoryService {
     };
 
     const results = await this.retryWithoutDeletedFilter(executeQuery);
-    const paginated = results.objects.slice(offset);
+    const paginated = results.objects;
 
     const memories: Record<string, unknown>[] = [];
     for (const obj of paginated) {
@@ -777,7 +778,8 @@ export class MemoryService {
       );
 
       const queryOptions: any = {
-        limit: limit + offset,
+        limit,
+        offset,
         sort: this.collection.sort.byProperty('relationship_count', false),
       };
 
@@ -789,7 +791,7 @@ export class MemoryService {
     };
 
     const results = await this.retryWithoutDeletedFilter(executeQuery);
-    const paginated = results.objects.slice(offset);
+    const paginated = results.objects;
 
     const memories: Record<string, unknown>[] = [];
     for (const obj of paginated) {
@@ -839,7 +841,8 @@ export class MemoryService {
       );
 
       const queryOptions: any = {
-        limit: limit + offset,
+        limit,
+        offset,
         sort: this.collection.sort.byProperty('rating_bayesian', direction === 'asc'),
       };
 
@@ -851,7 +854,7 @@ export class MemoryService {
     };
 
     const results = await this.retryWithoutDeletedFilter(executeQuery);
-    const paginated = results.objects.slice(offset);
+    const paginated = results.objects;
 
     const memories: Record<string, unknown>[] = [];
     for (const obj of paginated) {
@@ -1105,7 +1108,8 @@ export class MemoryService {
       );
 
       const queryOptions: any = {
-        limit: limit + offset,
+        limit,
+        offset,
         sort: this.collection.sort.byProperty(sort_field, sort_direction === 'asc'),
       };
 
@@ -1117,7 +1121,7 @@ export class MemoryService {
     };
 
     const results = await this.retryWithoutDeletedFilter(executeQuery);
-    const paginated = results.objects.slice(offset);
+    const paginated = results.objects;
 
     const memories: Record<string, unknown>[] = [];
     for (const obj of paginated) {
@@ -1166,7 +1170,8 @@ export class MemoryService {
       );
 
       const queryOptions: any = {
-        limit: limit + offset,
+        limit,
+        offset,
         sort: this.collection.sort.byProperty('created_at', sortOrder === 'asc'),
       };
 
@@ -1178,7 +1183,7 @@ export class MemoryService {
     };
 
     const results = await this.retryWithoutDeletedFilter(executeQuery);
-    const paginated = results.objects.slice(offset);
+    const paginated = results.objects;
 
     const broadResults: BroadSearchResult[] = [];
     for (const obj of paginated) {

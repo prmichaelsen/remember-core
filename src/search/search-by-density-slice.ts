@@ -46,7 +46,8 @@ export async function searchByDensitySlice(
   query: string,
   options: DensitySliceSearchOptions,
 ): Promise<DensitySliceSearchResult> {
-  const perBucketLimit = Math.max(Math.ceil(options.limit / 3), 5);
+  // Account for offset so pagination doesn't hit a ceiling
+  const perBucketLimit = Math.max(Math.ceil((options.limit + options.offset) / 3), 5);
 
   let slices;
 

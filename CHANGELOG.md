@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.59.2] - 2026-03-11
+
+### Fixed
+- Fix pagination across all Weaviate query methods — switch from `fetchObjects({ limit: limit + offset })` with manual `.slice(offset)` to native Weaviate `{ limit, offset }` for correct database-level pagination
+- Fix `searchByTimeSlice` and `searchByDensitySlice` per-bucket limits — account for offset so pagination doesn't hit a ceiling at ~98 items (14 buckets × 7 items)
+- Affected methods: `search`, `byTime`, `byDensity`, `byRating`, `bySorted`, `byBroad`
+
 ## [0.59.1] - 2026-03-11
 
 ### Fixed

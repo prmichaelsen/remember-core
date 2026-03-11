@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.59.0] - 2026-03-11
+
+### Added
+- Friends collection publish/retract/revise support in `SpaceService`
+- `friends: boolean` parameter to `PublishInput`, `RetractInput`, and `ReviseInput` interfaces
+- `published_to_friends: boolean` tracking field in source memory properties
+- `published_to_friends?: boolean` field in `ConfirmResult` interface
+- Friends collection search support with `friends: string[]` parameter (client-ranked, bounded fanout)
+- `friends_searched: string[]` field in `SearchSpaceResult` interface
+- `friend_user_ids: string[]` field to `UserCredentials` type for access control contract
+- Comprehensive test suite with 41 tests for friends collections (space.service.friends.spec.ts)
+- Complete M72 Friends Collection Sharing milestone (Tasks 494-496)
+
+### Changed
+- `SpaceService.publish()` now writes to `Memory_friends_<user_id>` when `friends: true`
+- `SpaceService.retract()` now deletes from friends collection when `friends: true`
+- `SpaceService.revise()` now updates friends collection copies when published to friends
+- `SpaceService.search()` loops through friend collections with bounded fanout (≤50 friends)
+- Source memory tracking now includes `published_to_friends` boolean alongside `space_ids` and `group_ids`
+- Validation logic updated to include friends checks for publish/retract/revise operations
+- `fetchLimit` calculation in search now accounts for friends collection count
+
+### Fixed
+- Fixed mock collection to use `deleteById()` instead of non-existent `delete()` method
+
 ## [0.58.0] - 2026-03-11
 
 ### Added

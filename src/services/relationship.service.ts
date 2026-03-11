@@ -46,6 +46,7 @@ export interface UpdateRelationshipInput {
   confidence?: number;
   tags?: string[];
   add_memory_ids?: string[];
+  remove_memory_ids?: string[];
 }
 
 export interface UpdateRelationshipResult {
@@ -283,8 +284,9 @@ export class RelationshipService {
 
   async update(input: UpdateRelationshipInput): Promise<UpdateRelationshipResult> {
     const fetchProps = ['user_id', 'doc_type', 'version'];
-    const needMemoryIds = input.add_memory_ids && input.add_memory_ids.length > 0;
-    if (needMemoryIds) fetchProps.push('related_memory_ids');
+    const needAddMemoryIds = input.add_memory_ids && input.add_memory_ids.length > 0;
+    const needRemoveMemoryIds = input.remove_memory_ids && input.remove_memory_ids.length > 0;
+    if (needAddMemoryIds || needRemoveMemoryIds) fetchProps.push('related_memory_ids');
 
     const existing = await this.collection.query.fetchObjectById(input.relationship_id, {
       returnProperties: fetchProps,
@@ -308,20 +310,37 @@ export class RelationshipService {
     }
     if (input.tags !== undefined) { updates.tags = input.tags; updatedFields.push('tags'); }
 
-    // Handle add_memory_ids: deduplicate, validate, link
+    // Track memory ID changes
+    let existingMemoryIds = new Set((existing.properties.related_memory_ids as string[]) || []);
     let newMemoryIds: string[] = [];
     let validated: Array<{ memoryId: string; relationships: string[]; ownerId: string }> = [];
-    if (needMemoryIds) {
-      const existingMemoryIds = new Set((existing.properties.related_memory_ids as string[]) || []);
+    let removedMemoryIds: string[] = [];
+
+    // Handle add_memory_ids: deduplicate, validate, link
+    if (needAddMemoryIds) {
       newMemoryIds = input.add_memory_ids!.filter((id) => !existingMemoryIds.has(id));
 
       if (newMemoryIds.length > 0) {
         validated = await this.validateMemoryIds(newMemoryIds);
-        const allMemoryIds = [...existingMemoryIds, ...newMemoryIds];
-        updates.related_memory_ids = allMemoryIds;
-        updates.member_count = allMemoryIds.length;
-        updatedFields.push('related_memory_ids', 'member_count');
+        newMemoryIds.forEach((id) => existingMemoryIds.add(id));
       }
+    }
+
+    // Handle remove_memory_ids: filter out from existing
+    if (needRemoveMemoryIds) {
+      const removeSet = new Set(input.remove_memory_ids!);
+      removedMemoryIds = input.remove_memory_ids!.filter((id) => existingMemoryIds.has(id));
+      if (removedMemoryIds.length > 0) {
+        removedMemoryIds.forEach((id) => existingMemoryIds.delete(id));
+      }
+    }
+
+    // Update related_memory_ids if changed
+    if (newMemoryIds.length > 0 || removedMemoryIds.length > 0) {
+      const allMemoryIds = [...existingMemoryIds];
+      updates.related_memory_ids = allMemoryIds;
+      updates.member_count = allMemoryIds.length;
+      updatedFields.push('related_memory_ids', 'member_count');
     }
 
     if (updatedFields.length === 0) throw new Error('No fields provided for update');
@@ -339,6 +358,33 @@ export class RelationshipService {
         this.linkMemoriesToRelationship(input.relationship_id, validated, now),
         ...ownedNewMemoryIds.map((memoryId) => this.updateRelationshipCount(memoryId, +1)),
       ]);
+    }
+
+    // Unlink removed memories and decrement their relationship_count
+    if (removedMemoryIds.length > 0) {
+      await Promise.all(
+        removedMemoryIds.map(async (memoryId) => {
+          try {
+            const memory = await this.collection.query.fetchObjectById(memoryId, {
+              returnProperties: ['relationship_ids', 'doc_type', 'user_id'],
+            });
+            if (!memory || memory.properties.doc_type !== 'memory') return;
+            const current = (memory.properties.relationship_ids as string[]) || [];
+            const updated = current.filter((id) => id !== input.relationship_id);
+            if (updated.length !== current.length) {
+              await this.collection.data.update({
+                id: memoryId,
+                properties: { relationship_ids: updated, updated_at: now },
+              });
+            }
+            if (memory.properties.user_id === this.userId) {
+              await this.updateRelationshipCount(memoryId, -1);
+            }
+          } catch {
+            this.logger.warn(`Failed to unlink memory ${memoryId} from relationship`);
+          }
+        }),
+      );
     }
 
     this.logger.info('Relationship updated', { relationshipId: input.relationship_id, updatedFields });

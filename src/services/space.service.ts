@@ -1466,7 +1466,7 @@ export class SpaceService {
         const friendsMemory = await fetchMemoryWithAllProperties(friendsCollection, weaviateId);
 
         if (friendsMemory) {
-          await friendsCollection.data.delete(weaviateId);
+          await friendsCollection.data.deleteById(weaviateId);
           successfulRetractions.push('friends');
         } else {
           failedRetractions.push('friends: Memory not found in friends collection');

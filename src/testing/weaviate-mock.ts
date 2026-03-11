@@ -70,7 +70,7 @@ export function createMockCollection() {
       },
 
       async fetchObjects(
-        opts?: { filters?: any; limit?: number; sort?: { sorts: Array<{ property: string; ascending: boolean }> } },
+        opts?: { filters?: any; limit?: number; offset?: number; sort?: { sorts: Array<{ property: string; ascending: boolean }> } },
       ): Promise<{ objects: MockWeaviateObject[] }> {
         let objects = Array.from(store.values());
         if (opts?.filters) {
@@ -92,6 +92,9 @@ export function createMockCollection() {
             return sortConfig.ascending ? comparison : -comparison;
           });
         }
+        if (opts?.offset) {
+          objects = objects.slice(opts.offset);
+        }
         if (opts?.limit) {
           objects = objects.slice(0, opts.limit);
         }
@@ -100,7 +103,7 @@ export function createMockCollection() {
 
       async hybrid(
         _query: string,
-        opts?: { alpha?: number; limit?: number; filters?: any },
+        opts?: { alpha?: number; limit?: number; offset?: number; filters?: any },
       ): Promise<{ objects: MockWeaviateObject[] }> {
         let objects = Array.from(store.values());
         if (opts?.filters) {
@@ -111,6 +114,9 @@ export function createMockCollection() {
           ...obj,
           metadata: { ...obj.metadata, score: 1 - i * 0.1 },
         }));
+        if (opts?.offset) {
+          objects = objects.slice(opts.offset);
+        }
         if (opts?.limit) {
           objects = objects.slice(0, opts.limit);
         }
@@ -119,7 +125,7 @@ export function createMockCollection() {
 
       async nearText(
         _query: string | string[],
-        opts?: { limit?: number; distance?: number; returnMetadata?: string[]; filters?: any },
+        opts?: { limit?: number; offset?: number; distance?: number; returnMetadata?: string[]; filters?: any },
       ): Promise<{ objects: MockWeaviateObject[] }> {
         let objects = Array.from(store.values());
         if (opts?.filters) {
@@ -130,6 +136,9 @@ export function createMockCollection() {
           ...obj,
           metadata: { ...obj.metadata, distance: i * 0.1 },
         }));
+        if (opts?.offset) {
+          objects = objects.slice(opts.offset);
+        }
         if (opts?.limit) {
           objects = objects.slice(0, opts.limit);
         }
@@ -138,7 +147,7 @@ export function createMockCollection() {
 
       async nearObject(
         _id: string,
-        opts?: { limit?: number; distance?: number; returnMetadata?: string[]; filters?: any },
+        opts?: { limit?: number; offset?: number; distance?: number; returnMetadata?: string[]; filters?: any },
       ): Promise<{ objects: MockWeaviateObject[] }> {
         let objects = Array.from(store.values());
         if (opts?.filters) {
@@ -148,6 +157,9 @@ export function createMockCollection() {
           ...obj,
           metadata: { ...obj.metadata, distance: i * 0.1 },
         }));
+        if (opts?.offset) {
+          objects = objects.slice(opts.offset);
+        }
         if (opts?.limit) {
           objects = objects.slice(0, opts.limit);
         }
@@ -156,7 +168,7 @@ export function createMockCollection() {
 
       async nearVector(
         _vector: number[],
-        opts?: { limit?: number; filters?: any; returnMetadata?: string[] },
+        opts?: { limit?: number; offset?: number; filters?: any; returnMetadata?: string[] },
       ): Promise<{ objects: MockWeaviateObject[] }> {
         let objects = Array.from(store.values());
         if (opts?.filters) {
@@ -167,6 +179,9 @@ export function createMockCollection() {
           ...obj,
           metadata: { ...obj.metadata, distance: i * 0.05 },
         }));
+        if (opts?.offset) {
+          objects = objects.slice(opts.offset);
+        }
         if (opts?.limit) {
           objects = objects.slice(0, opts.limit);
         }
@@ -175,11 +190,14 @@ export function createMockCollection() {
 
       async bm25(
         _query: string,
-        opts?: { limit?: number; filters?: any },
+        opts?: { limit?: number; offset?: number; filters?: any },
       ): Promise<{ objects: MockWeaviateObject[] }> {
         let objects = Array.from(store.values());
         if (opts?.filters) {
           objects = applyFilter(objects, opts.filters);
+        }
+        if (opts?.offset) {
+          objects = objects.slice(opts.offset);
         }
         if (opts?.limit) {
           objects = objects.slice(0, opts.limit);

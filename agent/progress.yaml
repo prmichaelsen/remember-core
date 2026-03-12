@@ -2966,7 +2966,8 @@ tasks:
       description: "Intercept 'core' in spaces array, strip before Weaviate, fetch synthetic results, merge with real results."
     - id: task-512
       name: "Mood/Perception Formatters"
-      status: not_started
+      status: completed
+      completed_date: 2026-03-12
       file: agent/tasks/milestone-76-synthetic-core-space/task-512-mood-perception-formatters.md
       estimated_hours: 2
       dependencies: [task-513]

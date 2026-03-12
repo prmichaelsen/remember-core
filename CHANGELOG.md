@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.69.0] - 2026-03-12
+
+### Added
+- Mood/perception formatters — `formatMoodAsMemory()`, `formatPerceptionAsMemory()` (M76-T512)
+- `MoodMemoryProvider` and `PerceptionMemoryProvider` concrete providers
+- `createCoreRegistry()` factory to wire services into registry
+- 16 tests covering formatters, providers, and factory
+
 ## [0.68.0] - 2026-03-12
 
 ### Added

@@ -587,4 +587,13 @@ export {
   type SyntheticMemoryRegistry,
 } from './synthetic-memory-registry.js';
 
+// Synthetic Memory Providers (mood, perception formatters + factory)
+export {
+  formatMoodAsMemory,
+  formatPerceptionAsMemory,
+  MoodMemoryProvider,
+  PerceptionMemoryProvider,
+  createCoreRegistry,
+} from './synthetic-memory-providers.js';
+
 // EventBus and other webhook types are re-exported from src/webhooks/index.ts via root barrel

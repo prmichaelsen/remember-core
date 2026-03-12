@@ -15,7 +15,8 @@ import type { AuthContext } from '../types/auth.types.js';
 import type { ConfirmationTokenService, ConfirmationRequest } from './confirmation-token.service.js';
 import { fetchMemoryWithAllProperties } from '../database/weaviate/client.js';
 import { ensurePublicCollection, isValidSpaceId } from '../database/weaviate/space-schema.js';
-import { SPACE_CONTENT_TYPE_RESTRICTIONS, type SpaceId } from '../types/space.types.js';
+import { SPACE_CONTENT_TYPE_RESTRICTIONS, SYNTHETIC_SPACES, type SpaceId, type SyntheticSpaceId } from '../types/space.types.js';
+import type { SyntheticMemoryRegistry } from './synthetic-memory-registry.js';
 import { ensureGroupCollection, ensureFriendsCollection } from '../database/weaviate/v2-collections.js';
 import { CollectionType, getCollectionName } from '../collections/dot-notation.js';
 import { generateCompositeId, compositeIdToUuid, parseCompositeId } from '../collections/composite-ids.js';
@@ -198,6 +199,8 @@ export interface SearchSpaceInput {
   offset?: number;
   /** Content-hash deduplication options */
   dedupe?: DedupeOptions;
+  /** Ghost composite ID — required when searching the 'core' synthetic space */
+  ghostCompositeId?: string;
 }
 
 export interface SearchSpaceResult {
@@ -246,6 +249,8 @@ export interface DiscoverySpaceInput {
   limit?: number;
   offset?: number;
   dedupe?: DedupeOptions;
+  /** Ghost composite ID — required when searching the 'core' synthetic space */
+  ghostCompositeId?: string;
 }
 
 export interface DiscoverySpaceResult {
@@ -274,6 +279,8 @@ export interface RecommendationSpaceInput {
   limit?: number;
   offset?: number;
   dedupe?: DedupeOptions;
+  /** Ghost composite ID — required when searching the 'core' synthetic space */
+  ghostCompositeId?: string;
 }
 
 export interface RecommendedSpaceMemory {
@@ -310,6 +317,8 @@ export interface SpaceSortBaseInput {
   limit?: number;
   offset?: number;
   dedupe?: DedupeOptions;
+  /** Ghost composite ID — required when searching the 'core' synthetic space */
+  ghostCompositeId?: string;
 }
 
 // ── byTime ──
@@ -426,6 +435,7 @@ export class SpaceService {
   private memoryIndex: MemoryIndexService;
   private recommendationService?: RecommendationService;
   private eventBus?: EventBus;
+  private syntheticRegistry?: SyntheticMemoryRegistry;
 
   constructor(
     private weaviateClient: any,
@@ -434,12 +444,30 @@ export class SpaceService {
     private confirmationTokenService: ConfirmationTokenService,
     private logger: Logger,
     private memoryIndexService: MemoryIndexService,
-    options?: { moderationClient?: ModerationClient; recommendationService?: RecommendationService; eventBus?: EventBus },
+    options?: { moderationClient?: ModerationClient; recommendationService?: RecommendationService; eventBus?: EventBus; syntheticRegistry?: SyntheticMemoryRegistry },
   ) {
     this.moderationClient = options?.moderationClient;
     this.recommendationService = options?.recommendationService;
     this.eventBus = options?.eventBus;
+    this.syntheticRegistry = options?.syntheticRegistry;
     this.memoryIndex = memoryIndexService;
+  }
+
+  // ── Synthetic space helpers ─────────────────────────────────────────
+
+  private extractSyntheticSpaces(spaces: string[]): { hasSynthetic: boolean; syntheticIds: string[]; remainingSpaces: string[] } {
+    const syntheticIds = spaces.filter(s => SYNTHETIC_SPACES.includes(s as SyntheticSpaceId));
+    const remainingSpaces = spaces.filter(s => !SYNTHETIC_SPACES.includes(s as SyntheticSpaceId));
+    return { hasSynthetic: syntheticIds.length > 0, syntheticIds, remainingSpaces };
+  }
+
+  private async fetchSyntheticResults(ghostCompositeId?: string): Promise<Record<string, unknown>[]> {
+    if (!this.syntheticRegistry || !ghostCompositeId) return [];
+    try {
+      return await this.syntheticRegistry.fetchAll(this.userId, ghostCompositeId);
+    } catch {
+      return [];
+    }
   }
 
   // ── Content moderation helper ────────────────────────────────────────
@@ -521,6 +549,11 @@ export class SpaceService {
       if (invalidSpaces.length > 0) {
         throw new ValidationError(`Invalid space IDs: ${invalidSpaces.join(', ')}`, { spaces: invalidSpaces });
       }
+      // Guard: cannot publish to synthetic spaces
+      const syntheticTargets = spaces.filter(s => SYNTHETIC_SPACES.includes(s as SyntheticSpaceId));
+      if (syntheticTargets.length > 0) {
+        throw new ValidationError(`Cannot publish to synthetic space '${syntheticTargets[0]}'`);
+      }
     }
 
     // Validate group IDs (no dots, not empty)
@@ -583,6 +616,14 @@ export class SpaceService {
 
     if (spaces.length === 0 && groups.length === 0 && !friends) {
       throw new ValidationError('Must specify at least one space, group, or friends target to retract from');
+    }
+
+    // Guard: cannot retract from synthetic spaces
+    if (spaces.length > 0) {
+      const syntheticTargets = spaces.filter(s => SYNTHETIC_SPACES.includes(s as SyntheticSpaceId));
+      if (syntheticTargets.length > 0) {
+        throw new ValidationError(`Cannot retract from synthetic space '${syntheticTargets[0]}'`);
+      }
     }
 
     // Validate group IDs
@@ -788,7 +829,7 @@ export class SpaceService {
   // ── Search Space ────────────────────────────────────────────────────
 
   async search(input: SearchSpaceInput, authContext?: AuthContext): Promise<SearchSpaceResult> {
-    const spaces = input.spaces || [];
+    const rawSpaces = input.spaces || [];
     const groups = input.groups || [];
     const friends = input.friends || [];
     const searchType = input.search_type || 'hybrid';
@@ -796,12 +837,16 @@ export class SpaceService {
     const offset = input.offset ?? 0;
 
     // Validate space IDs
-    if (spaces.length > 0) {
-      const invalidSpaces = spaces.filter((s) => !isValidSpaceId(s));
+    if (rawSpaces.length > 0) {
+      const invalidSpaces = rawSpaces.filter((s) => !isValidSpaceId(s));
       if (invalidSpaces.length > 0) {
         throw new ValidationError(`Invalid space IDs: ${invalidSpaces.join(', ')}`, { spaces: invalidSpaces });
       }
     }
+
+    // Extract synthetic spaces before Weaviate queries
+    const { hasSynthetic, remainingSpaces } = this.extractSyntheticSpaces(rawSpaces);
+    const spaces = remainingSpaces;
 
     // Validate group IDs
     if (groups.length > 0) {
@@ -838,7 +883,9 @@ export class SpaceService {
     let rawFetchCount = 0;
 
     // Search spaces collection (when spaces specified or no targets at all)
-    if (spaces.length > 0 || (groups.length === 0 && friends.length === 0)) {
+    // Skip Weaviate entirely if only synthetic spaces were requested
+    const hasRealTargets = spaces.length > 0 || groups.length > 0 || friends.length > 0;
+    if (spaces.length > 0 || (groups.length === 0 && friends.length === 0 && !hasSynthetic)) {
       await ensurePublicCollection(this.weaviateClient);
       const spacesCollectionName = getCollectionName(CollectionType.SPACES);
       const spacesCollection = this.weaviateClient.collections.get(spacesCollectionName);
@@ -915,14 +962,20 @@ export class SpaceService {
       ...(obj._also_in?.length ? { also_in: obj._also_in } : {}),
     }));
 
-    const isAllPublic = spaces.length === 0 && groups.length === 0 && friends.length === 0;
+    // Prepend synthetic results if core space was requested
+    const syntheticResults = hasSynthetic
+      ? await this.fetchSyntheticResults(input.ghostCompositeId)
+      : [];
+    const allMemories = [...syntheticResults, ...memories];
+
+    const isAllPublic = spaces.length === 0 && groups.length === 0 && friends.length === 0 && !hasSynthetic;
 
     return {
-      spaces_searched: isAllPublic ? 'all_public' : spaces,
+      spaces_searched: isAllPublic ? 'all_public' : rawSpaces,
       groups_searched: groups,
       friends_searched: friends,
-      memories,
-      total: contentDeduped.length,
+      memories: allMemories,
+      total: contentDeduped.length + syntheticResults.length,
       hasMore: contentDeduped.length > offset + limit || rawFetchCount >= fetchLimit,
       offset,
       limit,
@@ -1654,7 +1707,9 @@ export class SpaceService {
   // ── By Discovery (interleaved rated + unrated for spaces/groups) ────
 
   async byDiscovery(input: DiscoverySpaceInput, authContext?: AuthContext): Promise<DiscoverySpaceResult> {
-    const spaces = input.spaces || [];
+    const rawSpaces = input.spaces || [];
+    const { hasSynthetic, remainingSpaces } = this.extractSyntheticSpaces(rawSpaces);
+    const spaces = remainingSpaces;
     const groups = input.groups || [];
     const limit = input.limit ?? 10;
     const offset = input.offset ?? 0;
@@ -1725,8 +1780,8 @@ export class SpaceService {
     let rawRatedCount = 0;
     let rawDiscoveryCount = 0;
 
-    // Search spaces collection
-    if (spaces.length > 0 || groups.length === 0) {
+    // Search spaces collection (skip if only synthetic, no groups)
+    if (spaces.length > 0 || (groups.length === 0 && !hasSynthetic)) {
       await ensurePublicCollection(this.weaviateClient);
       const spacesCollectionName = getCollectionName(CollectionType.SPACES);
       const spacesCollection = this.weaviateClient.collections.get(spacesCollectionName);
@@ -1808,13 +1863,19 @@ export class SpaceService {
       return Object.assign({}, doc, { is_discovery: item.is_discovery });
     });
 
-    const isAllPublic = spaces.length === 0 && groups.length === 0;
+    const syntheticResults = hasSynthetic
+      ? await this.fetchSyntheticResults(input.ghostCompositeId)
+      : [];
+    const isAllPublic = spaces.length === 0 && groups.length === 0 && !hasSynthetic;
 
     return {
-      spaces_searched: isAllPublic ? 'all_public' : spaces,
+      spaces_searched: isAllPublic ? 'all_public' : rawSpaces,
       groups_searched: groups,
-      memories,
-      total: ratedDeduped.length + discoveryDeduped.length,
+      memories: [
+        ...syntheticResults.map(r => ({ ...r, is_discovery: false })),
+        ...memories,
+      ],
+      total: ratedDeduped.length + discoveryDeduped.length + syntheticResults.length,
       hasMore: (ratedDeduped.length + discoveryDeduped.length) > offset + limit || rawRatedCount >= fetchLimit || rawDiscoveryCount >= fetchLimit,
       offset,
       limit,
@@ -1828,7 +1889,9 @@ export class SpaceService {
       throw new Error('RecommendationService is required for byRecommendation sort mode');
     }
 
-    const spaces = input.spaces || [];
+    const rawSpaces = input.spaces || [];
+    const { hasSynthetic, remainingSpaces } = this.extractSyntheticSpaces(rawSpaces);
+    const spaces = remainingSpaces;
     const groups = input.groups || [];
     const limit = input.limit ?? 20;
     const offset = input.offset ?? 0;
@@ -1935,8 +1998,8 @@ export class SpaceService {
       return result.objects;
     };
 
-    // Search spaces collection
-    if (spaces.length > 0 || groups.length === 0) {
+    // Search spaces collection (skip if only synthetic, no groups)
+    if (spaces.length > 0 || (groups.length === 0 && !hasSynthetic)) {
       await ensurePublicCollection(this.weaviateClient);
       const spacesCollectionName = getCollectionName(CollectionType.SPACES);
       const spacesCollection = this.weaviateClient.collections.get(spacesCollectionName);
@@ -1986,15 +2049,21 @@ export class SpaceService {
 
     // 6. Apply pagination
     const paginated = memories.slice(offset, offset + limit);
-    const isAllPublic = spaces.length === 0 && groups.length === 0;
+    const syntheticResults = hasSynthetic
+      ? await this.fetchSyntheticResults(input.ghostCompositeId)
+      : [];
+    const isAllPublic = spaces.length === 0 && groups.length === 0 && !hasSynthetic;
 
     return {
-      spaces_searched: isAllPublic ? 'all_public' : spaces,
+      spaces_searched: isAllPublic ? 'all_public' : rawSpaces,
       groups_searched: groups,
-      memories: paginated,
+      memories: [
+        ...syntheticResults.map(r => ({ ...r, similarity_pct: 0 })),
+        ...paginated,
+      ],
       profileSize: centroidResult.centroid!.profileSize,
       insufficientData: false,
-      total: memories.length,
+      total: memories.length + syntheticResults.length,
       hasMore: memories.length > offset + limit || allResults.length >= fetchLimit,
       offset,
       limit,
@@ -2013,7 +2082,7 @@ export class SpaceService {
     this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
 
     const fetchLimit = (limit + offset) * 2;
-    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched, syntheticResults } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2038,7 +2107,7 @@ export class SpaceService {
       .filter((obj: any) => obj.properties?.doc_type === 'memory')
       .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories: [...syntheticResults, ...memories], total: deduped.length + syntheticResults.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
   }
 
   // ── By Rating (Bayesian average for spaces/groups) ─────────────────
@@ -2053,7 +2122,7 @@ export class SpaceService {
     this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
 
     const fetchLimit = (limit + offset) * 2;
-    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched, syntheticResults } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2078,7 +2147,7 @@ export class SpaceService {
       .filter((obj: any) => obj.properties?.doc_type === 'memory')
       .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories: [...syntheticResults, ...memories], total: deduped.length + syntheticResults.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
   }
 
   // ── By Property (generic sort by any Weaviate property for spaces/groups) ──
@@ -2099,7 +2168,7 @@ export class SpaceService {
     this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
 
     const fetchLimit = (limit + offset) * 2;
-    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched, syntheticResults } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2130,7 +2199,7 @@ export class SpaceService {
 
     return {
       spaces_searched: spacesSearched, groups_searched: groupsSearched,
-      memories, total: deduped.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit,
+      memories: [...syntheticResults, ...memories], total: deduped.length + syntheticResults.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit,
       sort_field, sort_direction,
     };
   }
@@ -2147,7 +2216,7 @@ export class SpaceService {
     this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
 
     const fetchLimit = (limit + offset) * 2;
-    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched, syntheticResults } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2207,7 +2276,7 @@ export class SpaceService {
 
     this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
 
-    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, spacesSearched, groupsSearched, syntheticResults } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2256,7 +2325,7 @@ export class SpaceService {
     const fetchLimit = (limit + offset) * 2;
     const hasQuery = input.query?.trim();
 
-    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched, syntheticResults } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2288,7 +2357,7 @@ export class SpaceService {
       .filter((obj: any) => obj.properties?.doc_type === 'memory')
       .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories: [...syntheticResults, ...memories], total: deduped.length + syntheticResults.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
   }
 
   // ── Private: Validate Space/Group Input ───────────────────────────
@@ -2330,18 +2399,22 @@ export class SpaceService {
     spaces: string[],
     groups: string[],
     fetchFn: (collection: any, baseFilters: any[]) => Promise<any[]>,
-  ): Promise<{ allResults: any[]; rawFetchCount: number; spacesSearched: string[] | 'all_public'; groupsSearched: string[] }> {
+  ): Promise<{ allResults: any[]; rawFetchCount: number; spacesSearched: string[] | 'all_public'; groupsSearched: string[]; syntheticResults: Record<string, unknown>[] }> {
     const allResults: any[] = [];
     let rawFetchCount = 0;
 
-    // Search spaces collection
-    if (spaces.length > 0 || groups.length === 0) {
+    // Extract synthetic spaces before Weaviate queries
+    const { hasSynthetic, remainingSpaces } = this.extractSyntheticSpaces(spaces);
+    const realSpaces = remainingSpaces;
+
+    // Search spaces collection (skip if only synthetic spaces, no groups)
+    if (realSpaces.length > 0 || (groups.length === 0 && !hasSynthetic)) {
       await ensurePublicCollection(this.weaviateClient);
       const name = getCollectionName(CollectionType.SPACES);
       const collection = this.weaviateClient.collections.get(name);
       const baseFilters = this.buildBaseFilters(collection, input);
-      if (spaces.length > 0) {
-        baseFilters.push(collection.filter.byProperty('space_ids').containsAny(spaces));
+      if (realSpaces.length > 0) {
+        baseFilters.push(collection.filter.byProperty('space_ids').containsAny(realSpaces));
       }
       const results = await fetchFn(collection, baseFilters);
       rawFetchCount += results.length;
@@ -2360,11 +2433,17 @@ export class SpaceService {
       allResults.push(...tagWithSource(results, name));
     }
 
+    // Fetch synthetic results
+    const syntheticResults = hasSynthetic
+      ? await this.fetchSyntheticResults(input.ghostCompositeId)
+      : [];
+
     return {
       allResults,
       rawFetchCount,
       spacesSearched: spaces.length > 0 ? spaces : (groups.length === 0 ? 'all_public' as const : []),
       groupsSearched: groups,
+      syntheticResults,
     };
   }
 

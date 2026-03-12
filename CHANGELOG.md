@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.70.0] - 2026-03-12
+
+### Added
+- Synthetic `'core'` space interception in SpaceService (M76-T511)
+- `SYNTHETIC_SPACES`, `SYNTHETIC_SPACE_DESCRIPTIONS`, `SYNTHETIC_SPACE_DISPLAY_NAMES` constants
+- `ghostCompositeId` field on all search/sort input types
+- Synthetic results prepended to real results across all sort modes
+- Publish/retract guards — `ValidationError` when targeting synthetic spaces
+- `isValidSpaceId()` now accepts synthetic space IDs
+- 11 tests covering search interception, publish/retract guards, byTime, constants
+
 ## [0.69.0] - 2026-03-12
 
 ### Added

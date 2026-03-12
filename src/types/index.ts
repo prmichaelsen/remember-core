@@ -171,6 +171,7 @@ export type {
   SpaceSearchOptions,
   SpaceSearchResult,
   SpaceId,
+  SyntheticSpaceId,
 } from './space.types.js';
 
 export {
@@ -178,4 +179,7 @@ export {
   SUPPORTED_SPACES,
   SPACE_CONTENT_TYPE_RESTRICTIONS,
   SPACE_DESCRIPTIONS,
+  SYNTHETIC_SPACES,
+  SYNTHETIC_SPACE_DISPLAY_NAMES,
+  SYNTHETIC_SPACE_DESCRIPTIONS,
 } from './space.types.js';

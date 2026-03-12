@@ -38,6 +38,7 @@ import { synthesizePressuresFromDimensions } from './mood-pressure-synthesis.js'
 import type { ClassificationService } from './classification.service.js';
 import { runClassificationPipeline, type ClassificationPipelineResult } from './rem.classification.js';
 import { runAbstractionPhase, type AbstractionPhaseResult } from './rem.abstraction.js';
+import { syncMoodToMemory } from './mood-sync.service.js';
 import type { EditorialScoringService } from './editorial-scoring.service.js';
 import { runCurationStep, type CurationStepResult } from './curation-step.service.js';
 import { getRemConfigPath } from '../database/firestore/paths.js';
@@ -769,6 +770,17 @@ export class RemService {
       thresholdFlags: result.thresholdFlags.map(f => f.name),
       pressuresRemaining: result.decayedPressures.length,
     });
+
+    // Sync mood state to Weaviate as a searchable memory
+    try {
+      const updatedMood = await moodService.getOrInitialize(userId, ghostCompositeId);
+      const syncResult = await syncMoodToMemory(collection, updatedMood, userId, ghostCompositeId);
+      this.logger.info?.('Mood memory synced', { id: syncResult.id, action: syncResult.action });
+    } catch (err) {
+      this.logger.warn?.('Failed to sync mood to memory, continuing', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
 
     // Create high-weight memories for threshold flags
     for (const flag of result.thresholdFlags) {

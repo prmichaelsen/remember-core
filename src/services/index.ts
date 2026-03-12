@@ -580,4 +580,13 @@ export {
   type DeleteUserDataResult,
 } from './user-deletion.service.js';
 
+// Mood-to-memory sync (REM cycle mood persistence to Weaviate)
+export {
+  getMoodMemoryId,
+  formatMoodContent,
+  buildGhostTags,
+  buildMoodMemoryProperties,
+  syncMoodToMemory,
+} from './mood-sync.service.js';
+
 // EventBus and other webhook types are re-exported from src/webhooks/index.ts via root barrel

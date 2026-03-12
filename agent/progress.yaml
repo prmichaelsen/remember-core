@@ -723,10 +723,10 @@ milestones:
 
   - id: M76
     name: Synthetic Core Space
-    status: pending
-    progress: 0
+    status: in_progress
+    progress: 25
     estimated_weeks: 1
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 4
     dependencies: []
     notes: |
@@ -2986,10 +2986,12 @@ tasks:
       description: "Update remember-mcp tool descriptions and ghost prompt to include 'core' synthetic space. Implemented in remember-mcp repo."
     - id: task-515
       name: "Sync Mood State to Weaviate Memory"
-      status: not_started
+      status: completed
+      completed: 2026-03-12
       file: agent/tasks/milestone-76-synthetic-core-space/task-515-sync-mood-to-memory.md
       estimated_hours: 2
-      dependencies: [task-512]
+      actual_hours: 1
+      dependencies: []
       description: "Upsert mood as a real Weaviate memory after each REM cycle — simpler alternative to synthetic space interception."
 
 documentation:
@@ -3004,6 +3006,15 @@ progress:
   overall: 95
 
 recent_work:
+  - date: 2026-03-12
+    description: |
+      M76 T515: Sync Mood State to Weaviate Memory
+    items:
+      - "Created mood-sync.service.ts — getMoodMemoryId, formatMoodContent, buildGhostTags, buildMoodMemoryProperties, syncMoodToMemory"
+      - "Integrated into RemService.runMoodUpdate() — upserts mood memory after Firestore writes"
+      - "21 colocated tests passing — deterministic UUID, content formatting, ghost tags, upsert behavior"
+      - "content_type: ghost, tags: [ghost, ghost_type:{type}, {ghostCompositeId}, system:mood, auto_sync]"
+      - "1776 total tests passing, typecheck clean"
   - date: 2026-03-07
     description: |
       Planned M28-M30 — REM Emotional Weighting (3 milestones, 16 tasks)

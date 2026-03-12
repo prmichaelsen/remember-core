@@ -589,4 +589,9 @@ export {
   syncMoodToMemory,
 } from './mood-sync.service.js';
 
+// Content reports (App Store guideline 1.2)
+export {
+  ReportService,
+} from './report.service.js';
+
 // EventBus and other webhook types are re-exported from src/webhooks/index.ts via root barrel

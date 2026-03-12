@@ -40,4 +40,6 @@ export {
   getMemoryIndexPath,
   getClassificationPath,
   getCuratedScorePath,
+  getReportsPath,
+  getUserReportsPath,
 } from './paths.js';

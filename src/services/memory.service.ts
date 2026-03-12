@@ -11,6 +11,7 @@
 import { Filters } from 'weaviate-client';
 import type { Logger } from '../utils/logger.js';
 import type { SearchFilters, GhostSearchContext } from '../types/search.types.js';
+import type { AuthContext } from '../types/auth.types.js';
 import type { ContentType } from '../types/index.js';
 import { normalizeTrustScore, isValidTrustLevel, TrustLevel } from '../types/trust.types.js';
 import { computeRatingAvg, type RatingModeRequest, type RatingModeResult, RATING_MIN_THRESHOLD } from '../types/rating.types.js';
@@ -609,7 +610,7 @@ export class MemoryService {
 
   // ── Search (hybrid) ─────────────────────────────────────────────────
 
-  async search(input: SearchMemoryInput): Promise<SearchMemoryResult> {
+  async search(input: SearchMemoryInput, authContext?: AuthContext): Promise<SearchMemoryResult> {
     if (!input.query?.trim()) throw new Error('Query cannot be empty');
 
     const includeRelationships = input.include_relationships !== false;
@@ -664,8 +665,11 @@ export class MemoryService {
     const memories: Record<string, unknown>[] = [];
     const relationships: Record<string, unknown>[] = [];
 
+    const blockedUserIds = authContext?.credentials?.blocked_user_ids || [];
+
     for (const obj of paginated) {
       const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
+      if (blockedUserIds.length > 0 && blockedUserIds.includes(doc.user_id as string)) continue;
       if (obj.metadata?.score != null) doc._score = obj.metadata.score;
       if (doc.doc_type === 'memory') memories.push(doc);
       else if (doc.doc_type === 'relationship') relationships.push(doc);
@@ -1412,7 +1416,7 @@ export class MemoryService {
 
   // ── Find Similar (vector) ──────────────────────────────────────────
 
-  async findSimilar(input: FindSimilarInput): Promise<FindSimilarResult> {
+  async findSimilar(input: FindSimilarInput, authContext?: AuthContext): Promise<FindSimilarResult> {
     if (!input.memory_id && !input.text) throw new Error('Either memory_id or text must be provided');
     if (input.memory_id && input.text) throw new Error('Provide either memory_id or text, not both');
 
@@ -1465,6 +1469,11 @@ export class MemoryService {
       results.objects = results.objects.filter((o: any) => o.properties.doc_type === 'memory');
     }
 
+    const blockedUserIds = authContext?.credentials?.blocked_user_ids || [];
+    if (blockedUserIds.length > 0) {
+      results.objects = results.objects.filter((o: any) => !blockedUserIds.includes(o.properties.user_id));
+    }
+
     const items: SimilarMemoryItem[] = results.objects
       .map((obj: any) => normalizeDoc({
         id: obj.uuid,
@@ -1479,7 +1488,7 @@ export class MemoryService {
 
   // ── Query (semantic / nearText) ────────────────────────────────────
 
-  async query(input: QueryMemoryInput): Promise<QueryMemoryResult> {
+  async query(input: QueryMemoryInput, authContext?: AuthContext): Promise<QueryMemoryResult> {
     if (!input.query?.trim()) throw new Error('Query cannot be empty');
 
     const limit = input.limit ?? 5;
@@ -1514,7 +1523,10 @@ export class MemoryService {
       return this.collection.query.nearText(input.query, opts);
     });
 
+    const blockedUserIds = authContext?.credentials?.blocked_user_ids || [];
+
     const items: RelevantMemoryItem[] = results.objects
+      .filter((obj: any) => blockedUserIds.length === 0 || !blockedUserIds.includes(obj.properties.user_id))
       .map((obj: any) => normalizeDoc({
         id: obj.uuid,
         ...obj.properties,

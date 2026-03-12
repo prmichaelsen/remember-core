@@ -869,7 +869,13 @@ export class SpaceService {
     }
 
     // Search friends collections
+    const blockedUserIds = authContext?.credentials?.blocked_user_ids || [];
     for (const friendUserId of friends) {
+      // Skip blocked users
+      if (blockedUserIds.includes(friendUserId)) {
+        this.logger.debug?.(`[SpaceService] Skipping blocked user: ${friendUserId}`);
+        continue;
+      }
       // Access validation: verify user is friends with the target user
       const friendUserIds = authContext?.credentials?.friend_user_ids || [];
       if (!friendUserIds.includes(friendUserId) && friendUserId !== this.userId) {
@@ -900,15 +906,20 @@ export class SpaceService {
     // Source-ID deduplication with precedence (space > group > personal)
     const contentDeduped = dedupeBySourceId(uuidDeduped, input.dedupe);
 
+    // Exclude memories from blocked users
+    const filteredDeduped = blockedUserIds.length > 0
+      ? contentDeduped.filter((obj: any) => !blockedUserIds.includes(obj.properties?.user_id))
+      : contentDeduped;
+
     // Sort by relevance score
-    contentDeduped.sort((a, b) => {
+    filteredDeduped.sort((a, b) => {
       const scoreA = a.metadata?.score ?? 0;
       const scoreB = b.metadata?.score ?? 0;
       return scoreB - scoreA;
     });
 
     // Paginate
-    const paginated = contentDeduped.slice(offset, offset + limit);
+    const paginated = filteredDeduped.slice(offset, offset + limit);
     const memories = paginated.map((obj: any) => ({
       id: obj.uuid,
       ...obj.properties,
@@ -922,8 +933,8 @@ export class SpaceService {
       groups_searched: groups,
       friends_searched: friends,
       memories,
-      total: contentDeduped.length,
-      hasMore: contentDeduped.length > offset + limit || rawFetchCount >= fetchLimit,
+      total: filteredDeduped.length,
+      hasMore: filteredDeduped.length > offset + limit || rawFetchCount >= fetchLimit,
       offset,
       limit,
     };
@@ -996,11 +1007,14 @@ export class SpaceService {
 
     const results = await publicCollection.query.nearText(input.question, opts);
 
-    const memories = results.objects.map((obj: any) => ({
-      id: obj.uuid,
-      ...obj.properties,
-      _distance: obj.metadata?.distance,
-    }));
+    const queryBlockedUserIds = authContext?.credentials?.blocked_user_ids || [];
+    const memories = results.objects
+      .filter((obj: any) => queryBlockedUserIds.length === 0 || !queryBlockedUserIds.includes(obj.properties?.user_id))
+      .map((obj: any) => ({
+        id: obj.uuid,
+        ...obj.properties,
+        _distance: obj.metadata?.distance,
+      }));
 
     return {
       question: input.question,
@@ -1783,8 +1797,13 @@ export class SpaceService {
       });
     };
 
-    const ratedDeduped = dedupeBySourceId(dedupePool(allRated), input.dedupe);
-    const discoveryDeduped = dedupeBySourceId(dedupePool(allDiscovery), input.dedupe);
+    const discoveryBlockedUserIds = authContext?.credentials?.blocked_user_ids || [];
+    const filterBlocked = (pool: any[]) => discoveryBlockedUserIds.length > 0
+      ? pool.filter((obj: any) => !discoveryBlockedUserIds.includes(obj.properties?.user_id))
+      : pool;
+
+    const ratedDeduped = filterBlocked(dedupeBySourceId(dedupePool(allRated), input.dedupe));
+    const discoveryDeduped = filterBlocked(dedupeBySourceId(dedupePool(allDiscovery), input.dedupe));
 
     const toDoc = (obj: any) => ({
       id: obj.uuid,
@@ -1969,8 +1988,10 @@ export class SpaceService {
     // Sort by distance (ascending = most similar first)
     deduped.sort((a: any, b: any) => (a.metadata?.distance ?? 1) - (b.metadata?.distance ?? 1));
 
+    const recBlockedUserIds = authContext?.credentials?.blocked_user_ids || [];
     for (const obj of deduped) {
       if (ratedIdSet.has(obj.uuid)) continue;
+      if (recBlockedUserIds.length > 0 && recBlockedUserIds.includes(obj.properties?.user_id)) continue;
 
       const distance = obj.metadata?.distance ?? 1;
       const similarityPct = Math.round((1 - distance) * 100);
@@ -2024,6 +2045,7 @@ export class SpaceService {
         if (combined) opts.filters = combined;
         return (await collection.query.fetchObjects(opts)).objects;
       },
+      authContext,
     );
 
     const deduped = dedupeBySourceId(allResults, input.dedupe);
@@ -2064,6 +2086,7 @@ export class SpaceService {
         if (combined) opts.filters = combined;
         return (await collection.query.fetchObjects(opts)).objects;
       },
+      authContext,
     );
 
     const deduped = dedupeBySourceId(allResults, input.dedupe);
@@ -2110,6 +2133,7 @@ export class SpaceService {
         if (combined) opts.filters = combined;
         return (await collection.query.fetchObjects(opts)).objects;
       },
+      authContext,
     );
 
     const deduped = dedupeBySourceId(allResults, input.dedupe);
@@ -2158,6 +2182,7 @@ export class SpaceService {
         if (combined) opts.filters = combined;
         return (await collection.query.fetchObjects(opts)).objects;
       },
+      authContext,
     );
 
     const deduped = dedupeBySourceId(allResults, input.dedupe);
@@ -2215,6 +2240,7 @@ export class SpaceService {
         if (combined) opts.filters = combined;
         return (await collection.query.fetchObjects(opts)).objects;
       },
+      authContext,
     );
 
     const deduped = dedupeBySourceId(allResults, input.dedupe);
@@ -2274,6 +2300,7 @@ export class SpaceService {
         if (combined) opts.filters = combined;
         return (await collection.query.fetchObjects(opts)).objects;
       },
+      authContext,
     );
 
     const deduped = dedupeBySourceId(allResults, input.dedupe);
@@ -2330,6 +2357,7 @@ export class SpaceService {
     spaces: string[],
     groups: string[],
     fetchFn: (collection: any, baseFilters: any[]) => Promise<any[]>,
+    authContext?: AuthContext,
   ): Promise<{ allResults: any[]; rawFetchCount: number; spacesSearched: string[] | 'all_public'; groupsSearched: string[] }> {
     const allResults: any[] = [];
     let rawFetchCount = 0;
@@ -2360,8 +2388,14 @@ export class SpaceService {
       allResults.push(...tagWithSource(results, name));
     }
 
+    // Exclude memories from blocked users
+    const fetchBlockedUserIds = authContext?.credentials?.blocked_user_ids || [];
+    const filteredResults = fetchBlockedUserIds.length > 0
+      ? allResults.filter((obj: any) => !fetchBlockedUserIds.includes(obj.properties?.user_id))
+      : allResults;
+
     return {
-      allResults,
+      allResults: filteredResults,
       rawFetchCount,
       spacesSearched: spaces.length > 0 ? spaces : (groups.length === 0 ? 'all_public' as const : []),
       groupsSearched: groups,

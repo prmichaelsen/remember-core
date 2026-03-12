@@ -40,6 +40,8 @@ tags:
     description: Async job tracking and management
   - name: users
     description: User lifecycle operations (account deletion)
+  - name: reports
+    description: Content flagging and moderation reports (App Store guideline 1.2)
   - name: health
     description: Public health and version endpoints
 
@@ -1309,6 +1311,156 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  # ============================================================
+  # Reports (App Store guideline 1.2 — content flagging)
+  # ============================================================
+  /api/svc/v1/reports:
+    post:
+      tags: [reports]
+      summary: Flag objectionable content
+      operationId: createReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReportInput'
+      responses:
+        '201':
+          description: Report created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    get:
+      tags: [reports]
+      summary: List reports filed by the authenticated user
+      operationId: listMyReports
+      responses:
+        '200':
+          description: Reports filed by the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reports]
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Report'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/svc/v1/reports/pending:
+    get:
+      tags: [reports]
+      summary: List pending reports (moderator)
+      operationId: listPendingReports
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Pending reports
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reports]
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Report'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/svc/v1/reports/{reportId}:
+    get:
+      tags: [reports]
+      summary: Get a report by ID
+      operationId: getReport
+      parameters:
+        - $ref: '#/components/parameters/reportId'
+      responses:
+        '200':
+          description: Report details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/svc/v1/reports/{reportId}/resolve:
+    post:
+      tags: [reports]
+      summary: Resolve a report (moderator)
+      operationId: resolveReport
+      parameters:
+        - $ref: '#/components/parameters/reportId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolveReportInput'
+      responses:
+        '200':
+          description: Report resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/svc/v1/reports/by-memory/{memoryId}:
+    get:
+      tags: [reports]
+      summary: List reports for a specific memory (moderator)
+      operationId: listReportsByMemory
+      parameters:
+        - $ref: '#/components/parameters/memoryId'
+      responses:
+        '200':
+          description: Reports for the memory
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reports]
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Report'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
 # ============================================================
 # Components
 # ============================================================
@@ -1346,6 +1498,15 @@ components:
       schema:
         type: string
       description: Confirmation token string
+
+    reportId:
+      name: reportId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Report UUID
 
   responses:
     ValidationError:
@@ -3680,3 +3841,69 @@ components:
         status:
           type: string
           enum: [pending]
+
+    # ----------------------------------------------------------
+    # Reports (App Store guideline 1.2)
+    # ----------------------------------------------------------
+    Report:
+      type: object
+      required: [id, reporter_user_id, memory_id, reason, description, status, created_at, resolved_at, resolved_by, resolution]
+      properties:
+        id:
+          type: string
+          format: uuid
+        reporter_user_id:
+          type: string
+        memory_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          description: Short reason category (e.g. spam, harassment, hate_speech, nudity, other)
+        description:
+          type: string
+          description: Optional free-text description from the reporter
+        status:
+          type: string
+          enum: [pending, reviewed, resolved]
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        resolved_by:
+          type: string
+          nullable: true
+          description: User ID of the moderator who resolved the report
+        resolution:
+          type: string
+          nullable: true
+          description: Moderator's resolution note
+
+    CreateReportInput:
+      type: object
+      required: [memory_id, reason]
+      properties:
+        memory_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          description: Short reason category
+        description:
+          type: string
+          description: Optional free-text details
+
+    ResolveReportInput:
+      type: object
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+          description: Moderator's resolution note
+        status:
+          type: string
+          enum: [reviewed, resolved]
+          default: resolved

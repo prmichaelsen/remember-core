@@ -165,6 +165,14 @@ export {
   isValidRating,
 } from './rating.types.js';
 
+// Report types (App Store guideline 1.2 — content flagging)
+export type {
+  Report,
+  ReportStatus,
+  CreateReportInput,
+  ResolveReportInput,
+} from './report.types.js';
+
 // Space types (ported from remember-mcp)
 export type {
   SpaceMemory,

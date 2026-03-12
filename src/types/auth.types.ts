@@ -30,6 +30,7 @@ export interface UserCredentials {
   user_id: string;
   group_memberships: GroupMembership[];
   friend_user_ids: string[];
+  blocked_user_ids: string[];
 }
 
 /** Server-resolved ghost mode context for cross-user memory access */

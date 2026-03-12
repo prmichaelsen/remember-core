@@ -371,6 +371,44 @@ describe('SpaceService', () => {
       expect(result.spaces_searched).toBe('all_public');
       expect(result.memories.length).toBeGreaterThanOrEqual(0);
     });
+
+    it('excludes memories from blocked users in search results', async () => {
+      const publicCollection = weaviateClient.collections.get('Memory_spaces_public');
+      await publicCollection.data.insert({
+        properties: {
+          doc_type: 'memory',
+          user_id: 'blocked-user',
+          content: 'blocked content',
+          deleted_at: null,
+          moderation_status: 'approved',
+          content_type: 'note',
+        },
+      });
+      await publicCollection.data.insert({
+        properties: {
+          doc_type: 'memory',
+          user_id: 'good-user',
+          content: 'good content',
+          deleted_at: null,
+          moderation_status: 'approved',
+          content_type: 'note',
+        },
+      });
+
+      const authContext = {
+        accessToken: null,
+        credentials: {
+          user_id: userId,
+          group_memberships: [],
+          friend_user_ids: [],
+          blocked_user_ids: ['blocked-user'],
+        },
+      };
+
+      const result = await service.search({ query: 'content' }, authContext as any);
+      const blockedMemories = result.memories.filter((m: any) => m.user_id === 'blocked-user');
+      expect(blockedMemories.length).toBe(0);
+    });
   });
 
   describe('query', () => {
@@ -410,6 +448,35 @@ describe('SpaceService', () => {
       expect(result.question).toBe('hiking');
       expect(result.spaces_queried).toEqual(['the_void']);
       expect(result.memories).toBeDefined();
+    });
+
+    it('excludes blocked user memories from query results', async () => {
+      const publicCollection = weaviateClient.collections.get('Memory_spaces_public');
+      await publicCollection.data.insert({
+        properties: {
+          doc_type: 'memory',
+          user_id: 'blocked-user',
+          content: 'blocked hiking info',
+          spaces: ['the_void'],
+          moderation_status: 'approved',
+          content_type: 'note',
+          deleted_at: null,
+        },
+      });
+
+      const authContext = {
+        accessToken: null,
+        credentials: {
+          user_id: userId,
+          group_memberships: [],
+          friend_user_ids: [],
+          blocked_user_ids: ['blocked-user'],
+        },
+      };
+
+      const result = await service.query({ question: 'hiking', spaces: ['the_void'] }, authContext as any);
+      const blockedMemories = result.memories.filter((m: any) => m.user_id === 'blocked-user');
+      expect(blockedMemories.length).toBe(0);
     });
   });
 

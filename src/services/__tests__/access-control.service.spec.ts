@@ -311,6 +311,7 @@ describe('AccessControlService', () => {
           },
         }],
         friend_user_ids: [],
+        blocked_user_ids: [],
       };
 
       const result = await canRevise('editor-1', memory, () => Promise.resolve(credentials));
@@ -335,6 +336,7 @@ describe('AccessControlService', () => {
           },
         }],
         friend_user_ids: [],
+        blocked_user_ids: [],
       };
 
       const result = await canRevise('reader-1', memory, () => Promise.resolve(credentials));
@@ -394,6 +396,7 @@ describe('AccessControlService', () => {
           },
         }],
         friend_user_ids: [],
+        blocked_user_ids: [],
       };
 
       const result = await canOverwrite('admin-1', memory, () => Promise.resolve(credentials));

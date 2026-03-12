@@ -258,3 +258,27 @@ export function getRemConfigPath(): { collectionPath: string; docId: string } {
 export function getCuratedScorePath(collectionId: string, memoryId: string): { collectionPath: string; docId: string } {
   return { collectionPath: `${BASE}.curated_scores/${collectionId}/memories`, docId: memoryId };
 }
+
+// ============================================================================
+// CONTENT REPORTS (App Store guideline 1.2)
+// ============================================================================
+
+/**
+ * Get path to global reports collection.
+ * Pattern: {BASE}.reports
+ *
+ * Stores all content reports for moderation review.
+ */
+export function getReportsPath(): string {
+  return `${BASE}.reports`;
+}
+
+/**
+ * Get path to a user's reports subcollection.
+ * Pattern: {BASE}.user_reports/{userId}/reports
+ *
+ * Indexed by reporter userId for efficient "my reports" queries.
+ */
+export function getUserReportsPath(userId: string): string {
+  return `${BASE}.user_reports/${userId}/reports`;
+}

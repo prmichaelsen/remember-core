@@ -1,6 +1,6 @@
 {
   "name": "@prmichaelsen/remember-core",
-  "version": "0.67.4",
+  "version": "0.68.0",
   "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
   "type": "module",
   "main": "dist/index.js",
@@ -159,12 +159,16 @@
   "peerDependencies": {
     "@google-cloud/documentai": "^8.0.0 || ^9.0.0",
     "@google-cloud/vision": "^4.0.0 || ^5.0.0",
+    "adm-zip": "^0.5.0",
     "jsonwebtoken": "^9.0.0",
     "mammoth": "^1.8.0",
     "turndown": "^7.2.0",
     "unpdf": "^0.12.0 || ^1.0.0"
   },
   "peerDependenciesMeta": {
+    "adm-zip": {
+      "optional": true
+    },
     "jsonwebtoken": {
       "optional": true
     },
@@ -185,11 +189,13 @@
     }
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.19.13",
     "@types/turndown": "^5.0.6",
     "@types/uuid": "^10.0.0",
+    "adm-zip": "^0.5.16",
     "dotenv": "^17.3.1",
     "jest": "^30.2.0",
     "jsonwebtoken": "^9.0.3",

@@ -57,6 +57,14 @@ describe('validateImportItems', () => {
     ]);
   });
 
+  it('allows application/zip even without an extractor', () => {
+    const errors = validateImportItems(
+      [{ file_url: 'https://example.com/archive.zip', mime_type: 'application/zip' }],
+      registry,
+    );
+    expect(errors).toEqual([]);
+  });
+
   it('reports multiple errors with correct indices', () => {
     const errors = validateImportItems(
       [

@@ -29,7 +29,9 @@ export function validateImportItems(
       continue;
     }
 
-    if (item.file_url && item.mime_type && !registry.getExtractor(item.mime_type)) {
+    // Zips are containers handled by the zip expander, not by an extractor
+    const ZIP_MIME_TYPES = ['application/zip'];
+    if (item.file_url && item.mime_type && !ZIP_MIME_TYPES.includes(item.mime_type) && !registry.getExtractor(item.mime_type)) {
       errors.push({
         index: i,
         error: `Unsupported file type: ${item.mime_type}`,

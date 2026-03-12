@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.68.0] - 2026-03-12
+
+### Added
+- Zip archive upload support in import pipeline — `.zip` files are expanded into individual files and processed through existing extraction flow
+- `mimeFromFilename()` extension-to-MIME lookup for determining file types inside zip archives
+- `expandZipItems()` zip expander with limits enforcement (100 entries, 500MB uncompressed)
+- `application/zip` added to `ALLOWED_MIME_TYPES`
+- `adm-zip` as optional peer dependency (pure JS, no native deps)
+- Zip origin tags on imported memories: `source:zip_import`, `zip:entry:{path}`
+- Automatic skip of macOS artifacts (`__MACOSX/`, `._` prefixes), nested zips, empty files, and unsupported formats inside archives
+
 ## [0.67.0] - 2026-03-12
 
 ### Changed

@@ -15,6 +15,7 @@ import type { ImportItem, ImportItemResult } from './import.service.js';
 import { chunkByTokens } from './import.service.js';
 import type { ExtractorRegistry } from './extractors/index.js';
 import { downloadFile } from './extractors/index.js';
+import { expandZipItems, isZipMimeType, type ZipOrigin, type ImportItemWithBuffer } from './zip-expander.js';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -56,12 +57,40 @@ export class ImportJobWorker {
   async execute(jobId: string, userId: string, params: ImportJobParams): Promise<void> {
     const chunkSize = params.chunk_size ?? DEFAULT_CHUNK_SIZE;
 
+    // -1. Expand zip archives into individual file items
+    let workingItems: ImportItemWithBuffer[] = params.items;
+    let zipOrigins = new Map<number, ZipOrigin>();
+
+    if (this.extractorRegistry) {
+      const hasZip = params.items.some(i => i.mime_type && isZipMimeType(i.mime_type));
+      if (hasZip) {
+        try {
+          const result = await expandZipItems(
+            params.items,
+            downloadFile,
+            this.extractorRegistry,
+            this.logger,
+          );
+          workingItems = result.expandedItems;
+          zipOrigins = result.zipOrigins;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.warn('Zip expansion failed', { job_id: jobId, error: message });
+          await this.jobService.complete(jobId, {
+            status: 'failed',
+            error: { code: 'zip_expansion_failed', message },
+          });
+          return;
+        }
+      }
+    }
+
     // 0. Extract file content for file-based items
     const extractionDataMap = new Map<number, ExtractionData>();
 
-    for (let i = 0; i < params.items.length; i++) {
-      const item = params.items[i];
-      if (item.file_url && item.mime_type) {
+    for (let i = 0; i < workingItems.length; i++) {
+      const item = workingItems[i];
+      if (item.file_url && item.mime_type && !isZipMimeType(item.mime_type)) {
         try {
           const extractor = this.extractorRegistry?.getExtractor(item.mime_type);
           if (!extractor) {
@@ -72,8 +101,9 @@ export class ImportJobWorker {
             return;
           }
 
+          // Use pre-loaded buffer from zip expansion if available, otherwise download
           this.logger.info('Downloading file', { job_id: jobId, mime_type: item.mime_type });
-          const buffer = await downloadFile(item.file_url);
+          const buffer = item._buffer ?? await downloadFile(item.file_url);
 
           this.logger.info('Extracting text', { job_id: jobId, mime_type: item.mime_type });
           const result = await extractor.extract(buffer, item.mime_type);
@@ -96,7 +126,7 @@ export class ImportJobWorker {
     }
 
     // 1. Chunk all items, flatten into ordered step list
-    const allChunks: ChunkEntry[] = params.items.flatMap((item, i) => {
+    const allChunks: ChunkEntry[] = workingItems.flatMap((item, i) => {
       const chunks = chunkByTokens(item.content ?? '', chunkSize);
       return chunks.map((chunk, j) => ({ itemIndex: i, chunkIndex: j, chunk, item }));
     });
@@ -131,11 +161,11 @@ export class ImportJobWorker {
     }>();
 
     // Initialize per-item tracking
-    for (let i = 0; i < params.items.length; i++) {
+    for (let i = 0; i < workingItems.length; i++) {
       itemData.set(i, {
         importId: globalThis.crypto.randomUUID(),
         chunkMemoryIds: [],
-        item: params.items[i],
+        item: workingItems[i],
       });
     }
 
@@ -179,6 +209,13 @@ export class ImportJobWorker {
         const tags = [`import:${data.importId}`];
         if (isFileImport) {
           tags.push('source:file_import');
+        }
+
+        // Add zip origin tags
+        const zipOrigin = zipOrigins.get(entry.itemIndex);
+        if (zipOrigin) {
+          tags.push('source:zip_import');
+          tags.push(`zip:entry:${zipOrigin.entry_path}`);
         }
 
         const result: CreateMemoryResult = await this.memoryService.create({

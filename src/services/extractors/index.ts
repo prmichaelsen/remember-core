@@ -11,6 +11,7 @@ export type { VisionClient } from './image.extractor.js';
 export { createVisionClient, type VisionClientConfig } from './vision.client.js';
 export { createDocumentAiClient, type DocumentAiClientConfig } from './documentai.client.js';
 export { validateImportItems, type ValidationError } from './validation.js';
+export { mimeFromFilename } from './mime-map.js';
 
 /** MIME types supported for file import */
 export const ALLOWED_MIME_TYPES = [
@@ -31,4 +32,6 @@ export const ALLOWED_MIME_TYPES = [
   'application/json',
   'application/x-yaml',
   'text/yaml',
+  // Archives
+  'application/zip',
 ] as const;

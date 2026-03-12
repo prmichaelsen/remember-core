@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.69.0] - 2026-03-12
+
+### Added
+- App Store content safety (guideline 1.2): `ReportService` with full CRUD — create, getById, listByReporter, listByMemory, listPending, resolve
+- `Report`, `CreateReportInput`, `ResolveReportInput` types and Firestore paths (global + user-scoped dual-write)
+- `blocked_user_ids` field on `UserCredentials` — credentials provider populates blocked users for server-side content exclusion
+- `blocked_user_ids` filtering in `SpaceService` across search, query, and all sort modes (byDiscovery, byRecommendation, etc.)
+- `ReportsResource` in svc client SDK — 6 methods: create, listMine, listPending, get, resolve, listByMemory
+- OpenAPI spec for 6 report endpoints under `reports` tag
+
+### Fixed
+- Removed incorrect `authContext` parameter from `MemoryService` search/query/findSimilar — single-user collections don't need blocked filtering
+
 ## [0.68.0] - 2026-03-12
 
 ### Added

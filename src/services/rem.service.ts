@@ -21,6 +21,8 @@ import {
   resolveClusterActions,
   shouldSplit,
   splitCluster,
+  type Cluster,
+  type ClusterAction,
 } from './rem.clustering.js';
 import type { EmotionalScoringService } from './emotional-scoring.service.js';
 import type { ScoringContextService } from './scoring-context.service.js';
@@ -227,7 +229,17 @@ export class RemService {
 
     // 7. Form clusters
     this.logger.info?.('Forming clusters', { candidateCount: candidates.length });
-    const clusters = await formClusters(collection, candidates, this.config, this.logger);
+    let clusters: Cluster[];
+    try {
+      clusters = await formClusters(collection, candidates, this.config, this.logger);
+    } catch (err) {
+      this.logger.warn?.('Cluster formation failed, skipping relationship discovery', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      await this.advanceCursor(collectionId, memoryCursor);
+      stats.duration_ms = Date.now() - start;
+      return stats;
+    }
     stats.clusters_found = clusters.length;
     this.logger.info?.('Clusters formed', { count: clusters.length });
 
@@ -242,7 +254,17 @@ export class RemService {
     const relationshipService = this.deps.relationshipServiceFactory(collection, userId);
 
     // 9. Resolve actions (create vs merge)
-    const actions = await resolveClusterActions(clusters, relationshipService, this.config);
+    let actions: ClusterAction[];
+    try {
+      actions = await resolveClusterActions(clusters, relationshipService, this.config);
+    } catch (err) {
+      this.logger.warn?.('Resolve cluster actions failed, skipping relationship creation', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      await this.advanceCursor(collectionId, memoryCursor);
+      stats.duration_ms = Date.now() - start;
+      return stats;
+    }
 
     // 10. Execute actions
     for (const action of actions) {

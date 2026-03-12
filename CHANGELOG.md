@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.66.2] - 2026-03-12
+
+### Fixed
+- REM cycle: wrap `formClusters()` and `resolveClusterActions()` in try/catch — timeouts or errors skip relationship discovery instead of crashing the entire cycle
+
 ## [0.66.1] - 2026-03-12
 
 ### Fixed

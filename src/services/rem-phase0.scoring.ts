@@ -15,6 +15,7 @@ import type { EmotionalScoringService, ScoringContext } from './emotional-scorin
 import type { ScoringContextService, CollectionStatsCache } from './scoring-context.service.js';
 import { createCollectionStatsCache } from './scoring-context.service.js';
 import { computeAllComposites } from './composite-scoring.js';
+import { DEFAULT_REM_CONFIG } from './rem.types.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -25,9 +26,9 @@ export interface Phase0Config {
 }
 
 export const DEFAULT_PHASE0_CONFIG: Phase0Config = {
-  batch_size: 50,
-  cost_cap: 5.0,
-  cost_per_memory: 0.0015,
+  batch_size: DEFAULT_REM_CONFIG.scoring_batch_size,
+  cost_cap: DEFAULT_REM_CONFIG.scoring_cost_cap,
+  cost_per_memory: DEFAULT_REM_CONFIG.scoring_cost_per_memory,
 };
 
 export interface Phase0Result {

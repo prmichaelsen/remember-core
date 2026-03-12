@@ -10,7 +10,8 @@ export type WebhookEventType =
   | 'memory.retracted'
   | 'memory.follow_up_due'
   | 'comment.published_to_space'
-  | 'comment.published_to_group';
+  | 'comment.published_to_group'
+  | 'account.deleted';
 
 // ─── Typed Payloads (discriminated union) ─────────────────────────────
 
@@ -73,13 +74,21 @@ export interface CommentPublishedToGroupData {
   parent_owner_id: string;
 }
 
+export interface AccountDeletedData {
+  type: 'account.deleted';
+  user_id: string;
+  job_id: string;
+  errors: string[];
+}
+
 export type WebhookEventData =
   | PublishedToSpaceData
   | PublishedToGroupData
   | RetractedData
   | FollowUpDueData
   | CommentPublishedToSpaceData
-  | CommentPublishedToGroupData;
+  | CommentPublishedToGroupData
+  | AccountDeletedData;
 
 // ─── Actor ────────────────────────────────────────────────────────────
 

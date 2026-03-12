@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.65.0] - 2026-03-12
+
+### Changed
+- REM defaults: seed_count 2→100, max_candidates_per_run 50→100, scoring_batch_size 10→100
+- Phase0Config now derives from DEFAULT_REM_CONFIG (single source of truth for batch sizes)
+
+### Added
+- `enumerateAllCollections()` async generator for Weaviate collection enumeration
+- `account.deleted` webhook event type with AccountDeletedData payload
+- Webhook emit handles events without owner_id (uses user_id fallback)
+
 ## [0.64.0] - 2026-03-12
 
 ### Added

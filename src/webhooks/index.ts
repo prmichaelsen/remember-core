@@ -11,6 +11,7 @@ export type {
   CommentPublishedToGroupData,
   RetractedData,
   FollowUpDueData,
+  AccountDeletedData,
   WebhookActor,
   WebhookEnvelope,
   EventBus,

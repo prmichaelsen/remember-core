@@ -247,7 +247,7 @@ export {
   DEFAULT_REM_CONFIG,
 } from './rem.types.js';
 
-export { getNextMemoryCollection } from './rem.collections.js';
+export { getNextMemoryCollection, enumerateAllCollections } from './rem.collections.js';
 
 export { RemStateStore } from './rem.state.js';
 

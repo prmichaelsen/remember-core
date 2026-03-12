@@ -30,17 +30,17 @@ export interface RemConfig {
 export const DEFAULT_REM_CONFIG: RemConfig = {
   min_collection_size: 50,
   similarity_threshold: 0.75,
-  max_candidates_per_run: 50,
+  max_candidates_per_run: 100,
   max_similar_per_candidate: 7,
   overlap_merge_threshold: 0.60,
   max_relationship_members: 50,
   // Multi-strategy defaults
-  seed_count: 2,
+  seed_count: 100,
   candidates_per_seed_strategy: 5,
   // Cluster validation
   cluster_confidence_threshold: 0.5,
   // Phase 0: Emotional scoring (~$0.0015 per memory = $0.75/500)
-  scoring_batch_size: 10,
+  scoring_batch_size: 100,
   scoring_cost_cap: 5.0,
   scoring_cost_per_memory: 0.0015,
   // Classification

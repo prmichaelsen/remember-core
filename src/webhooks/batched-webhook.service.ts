@@ -63,7 +63,7 @@ export class BatchedWebhookService implements EventBus {
   }
 
   async emit(event: WebhookEventData, actor?: WebhookActor): Promise<void> {
-    const ownerId = event.owner_id;
+    const ownerId = 'owner_id' in event ? event.owner_id : event.user_id;
     const endpoints = this.resolveEndpoint(ownerId);
 
     if (endpoints.length === 0) {

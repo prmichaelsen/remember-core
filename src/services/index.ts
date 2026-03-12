@@ -580,4 +580,11 @@ export {
   type DeleteUserDataResult,
 } from './user-deletion.service.js';
 
+// Synthetic Memory Registry (core space)
+export {
+  DefaultSyntheticMemoryRegistry,
+  type SyntheticMemoryProvider,
+  type SyntheticMemoryRegistry,
+} from './synthetic-memory-registry.js';
+
 // EventBus and other webhook types are re-exported from src/webhooks/index.ts via root barrel

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.63.1] - 2026-03-12
+
+### Fixed
+- `total` field in space service pagination now returns pre-pagination count instead of post-slice length
+- Affected methods: search, byDiscovery, byRecommendation, byTime, byRating, byProperty, byBroad, byCurated
+- Fixes `hasMore` calculations in consumers that broke pagination beyond the first page
+
 ## [0.62.0] - 2026-03-12
 
 ### Added

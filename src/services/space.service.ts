@@ -913,7 +913,7 @@ export class SpaceService {
       groups_searched: groups,
       friends_searched: friends,
       memories,
-      total: memories.length,
+      total: contentDeduped.length,
       offset,
       limit,
     };
@@ -1798,7 +1798,7 @@ export class SpaceService {
       spaces_searched: isAllPublic ? 'all_public' : spaces,
       groups_searched: groups,
       memories,
-      total: memories.length,
+      total: ratedDeduped.length + discoveryDeduped.length,
       offset,
       limit,
     };
@@ -1976,7 +1976,7 @@ export class SpaceService {
       memories: paginated,
       profileSize: centroidResult.centroid!.profileSize,
       insufficientData: false,
-      total: paginated.length,
+      total: memories.length,
       offset,
       limit,
     };
@@ -2019,7 +2019,7 @@ export class SpaceService {
       .filter((obj: any) => obj.properties?.doc_type === 'memory')
       .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: memories.length, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, offset, limit };
   }
 
   // ── By Rating (Bayesian average for spaces/groups) ─────────────────
@@ -2059,7 +2059,7 @@ export class SpaceService {
       .filter((obj: any) => obj.properties?.doc_type === 'memory')
       .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: memories.length, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, offset, limit };
   }
 
   // ── By Property (generic sort by any Weaviate property for spaces/groups) ──
@@ -2111,7 +2111,7 @@ export class SpaceService {
 
     return {
       spaces_searched: spacesSearched, groups_searched: groupsSearched,
-      memories, total: memories.length, offset, limit,
+      memories, total: deduped.length, offset, limit,
       sort_field, sort_direction,
     };
   }
@@ -2175,7 +2175,7 @@ export class SpaceService {
       broadResults.push(result);
     }
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, results: broadResults, total: broadResults.length, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, results: broadResults, total: deduped.length, offset, limit };
   }
 
   // ── By Random (random sampling for spaces/groups) ─────────────────
@@ -2269,7 +2269,7 @@ export class SpaceService {
       .filter((obj: any) => obj.properties?.doc_type === 'memory')
       .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: memories.length, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, offset, limit };
   }
 
   // ── Private: Validate Space/Group Input ───────────────────────────

@@ -17,6 +17,8 @@ export interface WeaviateConfig {
   url: string;
   apiKey?: string;
   openaiApiKey?: string;
+  /** Query timeout in seconds (default: 60). Weaviate SDK default is 30. */
+  queryTimeoutSeconds?: number;
 }
 
 /**
@@ -33,6 +35,10 @@ export async function initWeaviateClient(config: WeaviateConfig): Promise<Weavia
 
   const isLocal = config.url.includes('localhost') || config.url.includes('127.0.0.1');
 
+  const timeout = config.queryTimeoutSeconds
+    ? { query: config.queryTimeoutSeconds, insert: 90 }
+    : { query: 60, insert: 90 };
+
   if (!isLocal) {
     client = await weaviate.connectToWeaviateCloud(config.url, {
       authCredentials: config.apiKey
@@ -41,6 +47,7 @@ export async function initWeaviateClient(config: WeaviateConfig): Promise<Weavia
       headers: config.openaiApiKey
         ? { 'X-OpenAI-Api-Key': config.openaiApiKey }
         : undefined,
+      timeout,
     });
   } else {
     const localConfig: any = {
@@ -59,6 +66,7 @@ export async function initWeaviateClient(config: WeaviateConfig): Promise<Weavia
       localConfig.headers = { 'X-OpenAI-Api-Key': config.openaiApiKey };
     }
 
+    localConfig.timeout = timeout;
     client = await weaviate.connectToLocal(localConfig);
   }
 

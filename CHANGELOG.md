@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.66.1] - 2026-03-12
+
+### Fixed
+- REM LLM seed strategy now catches and skips individual seed failures (timeouts, errors) instead of aborting the entire cycle
+- Weaviate query timeout raised from 30s to 60s default via `queryTimeoutSeconds` config option
+
 ## [0.66.0] - 2026-03-12
 
 ### Added

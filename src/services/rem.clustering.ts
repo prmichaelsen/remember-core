@@ -159,6 +159,7 @@ export async function selectCandidates(
     returnProperties: returnProps,
   });
 
+  let seedsSkipped = 0;
   for (let i = 0; i < (seedsResult.objects ?? []).length; i++) {
     const seed = seedsResult.objects[i];
     const seedId = seed.uuid ?? seed.id;
@@ -166,51 +167,59 @@ export async function selectCandidates(
 
     logger?.info?.(`Strategy: LLM seed ${i + 1}/${config.seed_count}`, { seed_id: seedId });
 
-    // Extract features using Haiku
-    const extraction = await haikuClient.extractFeatures(seedContent);
+    try {
+      // Extract features using Haiku
+      const extraction = await haikuClient.extractFeatures(seedContent);
 
-    // nearText search for keywords
-    if (extraction.keywords.length > 0) {
-      const keywordQuery = extraction.keywords.slice(0, 5).join(' '); // Top 5 keywords
-      const keywordResult = await collection.query.nearText(keywordQuery, {
-        limit: config.candidates_per_seed_strategy,
-        filters: memoryFilter,
-      });
-      for (const obj of keywordResult.objects ?? []) addCandidate(obj);
-      logger?.debug?.(`  nearText(keywords): ${keywordResult.objects?.length ?? 0} results`);
-    }
+      // nearText search for keywords
+      if (extraction.keywords.length > 0) {
+        const keywordQuery = extraction.keywords.slice(0, 5).join(' '); // Top 5 keywords
+        const keywordResult = await collection.query.nearText(keywordQuery, {
+          limit: config.candidates_per_seed_strategy,
+          filters: memoryFilter,
+        });
+        for (const obj of keywordResult.objects ?? []) addCandidate(obj);
+        logger?.debug?.(`  nearText(keywords): ${keywordResult.objects?.length ?? 0} results`);
+      }
 
-    // nearText search for topics
-    if (extraction.topics.length > 0) {
-      const topicQuery = extraction.topics.join(' ');
-      const topicResult = await collection.query.nearText(topicQuery, {
-        limit: config.candidates_per_seed_strategy,
-        filters: memoryFilter,
-      });
-      for (const obj of topicResult.objects ?? []) addCandidate(obj);
-      logger?.debug?.(`  nearText(topics): ${topicResult.objects?.length ?? 0} results`);
-    }
+      // nearText search for topics
+      if (extraction.topics.length > 0) {
+        const topicQuery = extraction.topics.join(' ');
+        const topicResult = await collection.query.nearText(topicQuery, {
+          limit: config.candidates_per_seed_strategy,
+          filters: memoryFilter,
+        });
+        for (const obj of topicResult.objects ?? []) addCandidate(obj);
+        logger?.debug?.(`  nearText(topics): ${topicResult.objects?.length ?? 0} results`);
+      }
 
-    // nearText search for themes
-    if (extraction.themes.length > 0) {
-      const themeQuery = extraction.themes.join(' ');
-      const themeResult = await collection.query.nearText(themeQuery, {
-        limit: config.candidates_per_seed_strategy,
-        filters: memoryFilter,
-      });
-      for (const obj of themeResult.objects ?? []) addCandidate(obj);
-      logger?.debug?.(`  nearText(themes): ${themeResult.objects?.length ?? 0} results`);
-    }
+      // nearText search for themes
+      if (extraction.themes.length > 0) {
+        const themeQuery = extraction.themes.join(' ');
+        const themeResult = await collection.query.nearText(themeQuery, {
+          limit: config.candidates_per_seed_strategy,
+          filters: memoryFilter,
+        });
+        for (const obj of themeResult.objects ?? []) addCandidate(obj);
+        logger?.debug?.(`  nearText(themes): ${themeResult.objects?.length ?? 0} results`);
+      }
 
-    // nearText search for summary
-    if (extraction.summary) {
-      const summaryResult = await collection.query.nearText(extraction.summary, {
-        limit: config.candidates_per_seed_strategy,
-        filters: memoryFilter,
-      });
-      for (const obj of summaryResult.objects ?? []) addCandidate(obj);
-      logger?.debug?.(`  nearText(summary): ${summaryResult.objects?.length ?? 0} results`);
+      // nearText search for summary
+      if (extraction.summary) {
+        const summaryResult = await collection.query.nearText(extraction.summary, {
+          limit: config.candidates_per_seed_strategy,
+          filters: memoryFilter,
+        });
+        for (const obj of summaryResult.objects ?? []) addCandidate(obj);
+        logger?.debug?.(`  nearText(summary): ${summaryResult.objects?.length ?? 0} results`);
+      }
+    } catch (err) {
+      seedsSkipped++;
+      logger?.warn?.(`Strategy: LLM seed ${i + 1}/${config.seed_count} failed, skipping`, { seed_id: seedId, error: String(err) });
     }
+  }
+  if (seedsSkipped > 0) {
+    logger?.info?.(`LLM seed strategy: ${seedsSkipped}/${(seedsResult.objects ?? []).length} seeds skipped due to errors`);
   }
 
   const final = candidates.slice(0, count);

@@ -337,6 +337,8 @@ export interface UpdateMemoryInput {
   thread_root_id?: string | null;
   moderation_flags?: string[];
   is_user_organized?: boolean;
+  follow_up_at?: string | null;
+  follow_up_targets?: string[];
 }
 
 export interface UpdateMemoryResult {
@@ -1554,6 +1556,8 @@ export class MemoryService {
     if (input.thread_root_id !== undefined) { updates.thread_root_id = input.thread_root_id; updatedFields.push('thread_root_id'); }
     if (input.moderation_flags !== undefined) { updates.moderation_flags = input.moderation_flags; updatedFields.push('moderation_flags'); }
     if (input.is_user_organized !== undefined) { updates.is_user_organized = input.is_user_organized; updatedFields.push('is_user_organized'); }
+    if (input.follow_up_at !== undefined) { updates.follow_up_at = input.follow_up_at; updatedFields.push('follow_up_at'); }
+    if (input.follow_up_targets !== undefined) { updates.follow_up_targets = input.follow_up_targets; updatedFields.push('follow_up_targets'); }
 
     if (updatedFields.length === 0) throw new Error('No fields provided for update');
 

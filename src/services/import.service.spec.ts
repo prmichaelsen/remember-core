@@ -36,6 +36,7 @@ function createMockRelationshipService(): jest.Mocked<Pick<RelationshipService, 
 function createMockHaikuClient(): jest.Mocked<HaikuClient> {
   return {
     validateCluster: jest.fn(),
+    evaluateCluster: jest.fn().mockResolvedValue({ confidence: 0.8, relationship_type: 'topical', observation: 'mock', strength: 0.7, tags: [], reasoning: 'mock' }),
     extractFeatures: jest.fn().mockResolvedValue({
       keywords: ['test'],
       topics: ['testing'],

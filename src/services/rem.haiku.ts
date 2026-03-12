@@ -36,6 +36,30 @@ export interface HaikuValidationResult {
   }>;
 }
 
+/**
+ * Extended result from confidence-based evaluation.
+ * Returns a 0-1 confidence score instead of a binary pass/fail.
+ * The consumer decides the threshold.
+ */
+export interface ClusterEvalResult {
+  confidence: number;              // 0-1 overall cohesion confidence
+  relationship_type: string;
+  observation: string;
+  strength: number;                // 0-1 relationship strength
+  tags: string[];
+  reasoning: string;               // Why this confidence score
+  // Sub-cluster support: when main cluster isn't cohesive
+  sub_clusters?: Array<{
+    memory_ids: string[];
+    relationship_type: string;
+    observation: string;
+    strength: number;
+    confidence: number;
+    tags: string[];
+    reasoning: string;
+  }>;
+}
+
 export interface HaikuExtraction {
   keywords: string[];    // 5-10 specific terms
   topics: string[];      // 2-5 high-level topics
@@ -45,6 +69,7 @@ export interface HaikuExtraction {
 
 export interface HaikuClient {
   validateCluster(input: HaikuValidationInput): Promise<HaikuValidationResult>;
+  evaluateCluster(input: HaikuValidationInput): Promise<ClusterEvalResult>;
   extractFeatures(content: string): Promise<HaikuExtraction>;
 }
 
@@ -104,6 +129,36 @@ Nothing salvageable (RARE - only if truly all unrelated):
 **Directive**: AGGRESSIVELY look for sub-clusters. It's better to create 2-3 small relationships than reject everything.
 
 Respond with ONLY valid JSON. No explanation, no preamble, no markdown fences. Just the JSON object.`;
+}
+
+function buildEvaluationPrompt(input: HaikuValidationInput): string {
+  const memoryList = input.memories
+    .map((m) => `- [${m.id}] ${m.content} (tags: ${m.tags.join(', ') || 'none'})`)
+    .join('\n');
+
+  return `Rate how cohesive this group of memories is on a 0-1 confidence scale.
+
+Memories:
+${memoryList}
+
+**Scoring guide**:
+- **0.9-1.0**: All memories clearly belong together (same topic, project, event)
+- **0.7-0.89**: Strong connection, most memories related with minor outliers
+- **0.5-0.69**: Moderate connection, shared theme but loosely related
+- **0.3-0.49**: Weak connection, only tangential relationship
+- **0.0-0.29**: No meaningful connection
+
+**Valid connection types**: common topic/theme, common entities (people/places/events), common timeframe/location, common activity, hub-and-spoke, cause-and-effect, creative format (poems/lyrics/quotes), multimedia (URLs + images + text about same topic)
+
+**If confidence < 0.5**: Also check if there are sub-groups of 2+ memories that ARE strongly related. Include them as sub_clusters with their own confidence scores.
+
+**Response format** (JSON only, no other text):
+{"confidence":<0-1>,"relationship_type":"<type>","observation":"<descriptive title>","strength":<0-1>,"tags":["<tags>"],"reasoning":"<1-2 sentences explaining the score>"}
+
+**If sub-clusters exist** (when main group isn't cohesive):
+{"confidence":<0-1>,"relationship_type":"<type>","observation":"<title>","strength":<0-1>,"tags":["<tags>"],"reasoning":"<explanation>","sub_clusters":[{"memory_ids":["id1","id2"],"relationship_type":"<type>","observation":"<title>","strength":<0-1>,"confidence":<0-1>,"tags":["<tags>"],"reasoning":"<explanation>"}]}
+
+Respond with ONLY valid JSON.`;
 }
 
 function buildExtractionPrompt(content: string): string {
@@ -184,6 +239,23 @@ export function createHaikuClient(options: {
       }
     },
 
+    async evaluateCluster(input: HaikuValidationInput): Promise<ClusterEvalResult> {
+      try {
+        const prompt = buildEvaluationPrompt(input);
+        const parsed = await callApi(prompt);
+        return parsed as ClusterEvalResult;
+      } catch (err) {
+        return {
+          confidence: 0,
+          relationship_type: 'unknown',
+          observation: '',
+          strength: 0,
+          tags: [],
+          reasoning: `api_error: ${err instanceof Error ? err.message : String(err)}`,
+        };
+      }
+    },
+
     async extractFeatures(content: string): Promise<HaikuExtraction> {
       try {
         const prompt = buildExtractionPrompt(content);
@@ -211,6 +283,7 @@ export function createHaikuClient(options: {
 export function createMockHaikuClient(
   defaultResult?: HaikuValidationResult,
   defaultExtraction?: HaikuExtraction,
+  defaultEvalResult?: ClusterEvalResult,
 ): HaikuClient {
   const result = defaultResult ?? {
     valid: true,
@@ -219,6 +292,15 @@ export function createMockHaikuClient(
     strength: 0.7,
     confidence: 0.8,
     tags: ['test'],
+  };
+
+  const evalResult = defaultEvalResult ?? {
+    confidence: 0.8,
+    relationship_type: 'topical',
+    observation: 'Mock relationship',
+    strength: 0.7,
+    tags: ['test'],
+    reasoning: 'Mock evaluation for testing.',
   };
 
   const extraction = defaultExtraction ?? {
@@ -231,6 +313,10 @@ export function createMockHaikuClient(
   return {
     async validateCluster(): Promise<HaikuValidationResult> {
       return result;
+    },
+
+    async evaluateCluster(): Promise<ClusterEvalResult> {
+      return evalResult;
     },
 
     async extractFeatures(): Promise<HaikuExtraction> {

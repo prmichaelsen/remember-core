@@ -652,19 +652,53 @@ export class RemService {
           tags: m.tags,
         })),
       };
-      const result = await this.deps.haikuClient.validateCluster(input);
 
-      if (!result.valid && (!result.sub_clusters || result.sub_clusters.length === 0)) {
-        this.logger.info?.('Cluster rejected by Haiku', {
-          cluster_size: cluster.memories.length,
-          unique_count: uniqueMemories.length,
-          reason: result.reason || 'Haiku determined memories are not sufficiently related',
-        });
-        return null;
+      // Use confidence-based evaluation
+      const evalResult = await this.deps.haikuClient.evaluateCluster(input);
+      const threshold = this.config.cluster_confidence_threshold;
+
+      this.logger.info?.('Cluster evaluation result', {
+        confidence: evalResult.confidence,
+        threshold,
+        reasoning: evalResult.reasoning,
+        has_sub_clusters: !!(evalResult.sub_clusters?.length),
+      });
+
+      // If confidence meets threshold, convert to a valid HaikuValidationResult
+      if (evalResult.confidence >= threshold) {
+        return {
+          valid: true,
+          relationship_type: evalResult.relationship_type,
+          observation: evalResult.observation,
+          strength: evalResult.strength,
+          confidence: evalResult.confidence,
+          tags: evalResult.tags,
+        };
       }
 
-      // Return result even if !valid, as long as sub_clusters exist
-      return result;
+      // Below threshold — check for sub-clusters that individually meet threshold
+      if (evalResult.sub_clusters?.length) {
+        const validSubClusters = evalResult.sub_clusters.filter(
+          (sc) => sc.confidence >= threshold && sc.memory_ids.length >= 2,
+        );
+
+        if (validSubClusters.length > 0) {
+          return {
+            valid: false,
+            reason: evalResult.reasoning,
+            sub_clusters: validSubClusters,
+          };
+        }
+      }
+
+      this.logger.info?.('Cluster rejected: below confidence threshold', {
+        cluster_size: cluster.memories.length,
+        unique_count: uniqueMemories.length,
+        confidence: evalResult.confidence,
+        threshold,
+        reasoning: evalResult.reasoning,
+      });
+      return null;
     } catch (err) {
       this.logger.warn?.('Haiku validation error', {
         error: err instanceof Error ? err.message : String(err),

@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.61.0] - 2026-03-12
+
+### Added
+- `ClusterEvalResult` type — confidence-based cluster evaluation replacing binary pass/fail
+- `evaluateCluster()` method on `HaikuClient` interface — returns 0-1 confidence score with reasoning
+- `cluster_confidence_threshold` config in `RemConfig` (default: 0.5) — tunable acceptance threshold
+- `scripts/rem-cluster-eval.ts` — test script with 12 scenarios for tuning confidence thresholds against real LLM
+- 4 new unit tests for confidence-based evaluation in `rem.haiku.spec.ts`
+
+### Changed
+- `RemService.validateWithHaiku()` now uses `evaluateCluster()` instead of `validateCluster()` for confidence-based decisions
+- Sub-clusters are filtered by the same confidence threshold before creating relationships
+- Existing `validateCluster()` preserved for backward compatibility
+
 ## [0.60.0] - 2026-03-12
 
 ### Added

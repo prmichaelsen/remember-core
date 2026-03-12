@@ -173,10 +173,11 @@ describe('RemService', () => {
   it('skips clusters rejected by Haiku', async () => {
     await insertMemories('Memory_users_dave', 60);
 
-    const rejectingClient = createMockHaikuClient({
-      valid: false,
-      reason: 'not a meaningful group',
-    });
+    const rejectingClient = createMockHaikuClient(
+      { valid: false, reason: 'not a meaningful group' },
+      undefined,
+      { confidence: 0.1, relationship_type: 'unknown', observation: '', strength: 0, tags: [], reasoning: 'not a meaningful group' },
+    );
 
     const service = new RemService({
       weaviateClient: mockClient as any,

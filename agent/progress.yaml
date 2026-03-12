@@ -679,6 +679,20 @@ milestones:
       Extends SpaceService publish/retract/revise/search operations. All 1717 tests passing.
       See: agent/milestones/milestone-72-friends-collection-sharing.md
       Clarification: agent/clarifications/clarification-1-friends-collection-model.md
+
+  - id: M73
+    name: REM Eval Scripts
+    status: not_started
+    progress: 0
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 5
+    dependencies: []
+    notes: |
+      Independent test scripts for each tunable REM pipeline stage.
+      Enables fine-tuning parameters against real Weaviate data without
+      running full REM cycles. Builds on existing rem-cluster-eval.ts
+      and rem-seed-eval.ts patterns.
 tasks:
   milestone_1:
     - id: task-1
@@ -2804,6 +2818,38 @@ tasks:
       estimated_hours: 5
       dependencies: [task-494, task-495]
       description: "30+ tests covering publish/retract/revise/search, validation, tracking, lifecycle."
+
+  milestone_73:
+    - id: task-497
+      name: "Curation & PageRank Scoring Eval Script"
+      status: not_started
+      file: agent/tasks/milestone-73-rem-eval-scripts/task-497-curation-pagerank-eval.md
+      estimated_hours: 4
+      description: "Test script for curation sub-scores, composite weights, and PageRank parameters."
+    - id: task-498
+      name: "Pruning Decay Eval Script"
+      status: not_started
+      file: agent/tasks/milestone-73-rem-eval-scripts/task-498-pruning-decay-eval.md
+      estimated_hours: 3
+      description: "Test script for pruning decay thresholds, significance floor/ceiling, exemptions."
+    - id: task-499
+      name: "Abstraction Eval Script"
+      status: not_started
+      file: agent/tasks/milestone-73-rem-eval-scripts/task-499-abstraction-eval.md
+      estimated_hours: 3
+      description: "Test script for abstraction candidate detection and LLM synthesis preview."
+    - id: task-500
+      name: "Reconciliation Eval Script"
+      status: not_started
+      file: agent/tasks/milestone-73-rem-eval-scripts/task-500-reconciliation-eval.md
+      estimated_hours: 3
+      description: "Test script for conflict detection (valence opposition, similarity) and reconciliation preview."
+    - id: task-501
+      name: "Emotional Scoring Eval Script"
+      status: not_started
+      file: agent/tasks/milestone-73-rem-eval-scripts/task-501-emotional-scoring-eval.md
+      estimated_hours: 3
+      description: "Test script for composite emotional scoring dimension weights and anomaly detection."
 documentation:
   design_documents: 28
   milestone_documents: 42

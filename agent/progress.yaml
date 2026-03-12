@@ -683,9 +683,9 @@ milestones:
   - id: M73
     name: REM Eval Scripts
     status: in_progress
-    progress: 60
+    progress: 80
     estimated_weeks: 2
-    tasks_completed: 3
+    tasks_completed: 4
     tasks_total: 5
     dependencies: []
     notes: |
@@ -2843,7 +2843,8 @@ tasks:
       description: "Test script for abstraction candidate detection and LLM synthesis preview."
     - id: task-500
       name: "Reconciliation Eval Script"
-      status: not_started
+      status: completed
+      completed_date: 2026-03-12
       file: agent/tasks/milestone-73-rem-eval-scripts/task-500-reconciliation-eval.md
       estimated_hours: 3
       description: "Test script for conflict detection (valence opposition, similarity) and reconciliation preview."

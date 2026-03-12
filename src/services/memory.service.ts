@@ -653,6 +653,7 @@ export class MemoryService {
         return this.collection.query.fetchObjects(searchOptions);
       } else {
         searchOptions.alpha = alpha;
+        searchOptions.returnMetadata = ['score'];
         return this.collection.query.hybrid(input.query, searchOptions);
       }
     };
@@ -665,6 +666,7 @@ export class MemoryService {
 
     for (const obj of paginated) {
       const doc = normalizeDoc({ id: obj.uuid, ...obj.properties });
+      if (obj.metadata?.score != null) doc._score = obj.metadata.score;
       if (doc.doc_type === 'memory') memories.push(doc);
       else if (doc.doc_type === 'relationship') relationships.push(doc);
     }

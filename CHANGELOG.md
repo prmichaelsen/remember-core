@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.66.0] - 2026-03-12
+
+### Added
+- `hasMore` pagination signal on all SpaceService result types (search, byTime, byRating, byProperty, byBroad, byCurated, byDiscovery, byRecommendation)
+- `fetchAcrossCollections` now tracks raw fetch counts for accurate hasMore detection
+- Hierarchical relationships design document (proposal for umbrella/parent-child relationship grouping)
+- `cleanup-test-collections.ts` script for removing defunct live_test_* Weaviate collections
+- 12 hasMore pagination tests covering all sort modes, edge cases, and cross-collection scenarios
+
 ## [0.65.1] - 2026-03-12
 
 ### Added

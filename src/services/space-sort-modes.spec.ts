@@ -400,6 +400,122 @@ describe('SpaceService Sort Modes', () => {
     });
   });
 
+  // ── hasMore pagination signal ──
+
+  describe('hasMore', () => {
+    it('byTime returns hasMore=true when more items exist beyond page', async () => {
+      for (let i = 0; i < 5; i++) {
+        await insertSpaceMemory(spacesCollection, { created_at: `2026-0${i + 1}-01T00:00:00Z`, title: `M${i}` });
+      }
+
+      const result = await service.byTime({ spaces: ['the_void'], limit: 2, offset: 0 });
+      expect(result.hasMore).toBe(true);
+      expect(result.memories).toHaveLength(2);
+    });
+
+    it('byTime returns hasMore=false when all items fit in page', async () => {
+      await insertSpaceMemory(spacesCollection, { created_at: '2026-01-01T00:00:00Z', title: 'Only' });
+
+      const result = await service.byTime({ spaces: ['the_void'], limit: 10, offset: 0 });
+      expect(result.hasMore).toBe(false);
+      expect(result.memories).toHaveLength(1);
+    });
+
+    it('byTime returns hasMore=false on last page', async () => {
+      for (let i = 0; i < 3; i++) {
+        await insertSpaceMemory(spacesCollection, { created_at: `2026-0${i + 1}-01T00:00:00Z`, title: `M${i}` });
+      }
+
+      const result = await service.byTime({ spaces: ['the_void'], limit: 2, offset: 2 });
+      expect(result.hasMore).toBe(false);
+      expect(result.memories).toHaveLength(1);
+    });
+
+    it('byRating returns hasMore=true when deduped pool exceeds page', async () => {
+      for (let i = 0; i < 5; i++) {
+        await insertSpaceMemory(spacesCollection, { rating_bayesian: i + 1, title: `M${i}` });
+      }
+
+      const result = await service.byRating({ spaces: ['the_void'], limit: 2, offset: 0 });
+      expect(result.hasMore).toBe(true);
+    });
+
+    it('byRating returns hasMore=false when pool fits in page', async () => {
+      await insertSpaceMemory(spacesCollection, { rating_bayesian: 4.0, title: 'Only' });
+
+      const result = await service.byRating({ spaces: ['the_void'], limit: 10, offset: 0 });
+      expect(result.hasMore).toBe(false);
+    });
+
+    it('byProperty returns hasMore correctly', async () => {
+      for (let i = 0; i < 4; i++) {
+        await insertSpaceMemory(spacesCollection, { weight: (i + 1) * 0.2, title: `M${i}` });
+      }
+
+      const page1 = await service.byProperty({ spaces: ['the_void'], sort_field: 'weight', sort_direction: 'desc', limit: 2, offset: 0 });
+      expect(page1.hasMore).toBe(true);
+
+      const page2 = await service.byProperty({ spaces: ['the_void'], sort_field: 'weight', sort_direction: 'desc', limit: 2, offset: 2 });
+      expect(page2.hasMore).toBe(false);
+    });
+
+    it('byBroad returns hasMore correctly', async () => {
+      for (let i = 0; i < 3; i++) {
+        await insertSpaceMemory(spacesCollection, { created_at: `2026-0${i + 1}-01T00:00:00Z`, content: `Content ${i}` });
+      }
+
+      const result = await service.byBroad({ spaces: ['the_void'], limit: 1, offset: 0 });
+      expect(result.hasMore).toBe(true);
+
+      const result2 = await service.byBroad({ spaces: ['the_void'], limit: 10, offset: 0 });
+      expect(result2.hasMore).toBe(false);
+    });
+
+    it('byCurated returns hasMore correctly', async () => {
+      for (let i = 0; i < 4; i++) {
+        await insertSpaceMemory(spacesCollection, { curated_score: (i + 1) * 0.2, title: `M${i}` });
+      }
+
+      const result = await service.byCurated({ spaces: ['the_void'], limit: 2, offset: 0 });
+      expect(result.hasMore).toBe(true);
+
+      const result2 = await service.byCurated({ spaces: ['the_void'], limit: 10, offset: 0 });
+      expect(result2.hasMore).toBe(false);
+    });
+
+    it('search returns hasMore=true when deduped pool exceeds page', async () => {
+      for (let i = 0; i < 5; i++) {
+        await insertSpaceMemory(spacesCollection, { title: `M${i}` });
+      }
+
+      const result = await service.search({ query: '*', spaces: ['the_void'], limit: 2, offset: 0 });
+      expect(result.hasMore).toBe(true);
+    });
+
+    it('search returns hasMore=false when all items fit', async () => {
+      await insertSpaceMemory(spacesCollection, { title: 'Only' });
+
+      const result = await service.search({ query: '*', spaces: ['the_void'], limit: 10, offset: 0 });
+      expect(result.hasMore).toBe(false);
+    });
+
+    it('hasMore works across multiple collections', async () => {
+      const groupCollection = createMockCollection();
+      (weaviateClient as any)._collections.set('Memory_groups_mygroup', groupCollection);
+
+      for (let i = 0; i < 3; i++) {
+        await insertSpaceMemory(spacesCollection, { created_at: `2026-0${i + 1}-01T00:00:00Z`, title: `Space${i}` });
+      }
+      for (let i = 0; i < 3; i++) {
+        await insertSpaceMemory(groupCollection, { created_at: `2026-0${i + 4}-01T00:00:00Z`, title: `Group${i}` });
+      }
+
+      const result = await service.byTime({ spaces: ['the_void'], groups: ['mygroup'], limit: 2, offset: 0 });
+      expect(result.hasMore).toBe(true);
+      expect(result.total).toBe(6);
+    });
+  });
+
   // ── Cross-collection tests ──
 
   describe('cross-collection', () => {

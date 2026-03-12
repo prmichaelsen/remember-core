@@ -206,6 +206,7 @@ export interface SearchSpaceResult {
   friends_searched: string[];
   memories: Record<string, unknown>[];
   total: number;
+  hasMore: boolean;
   offset: number;
   limit: number;
 }
@@ -252,6 +253,7 @@ export interface DiscoverySpaceResult {
   groups_searched: string[];
   memories: (Record<string, unknown> & { is_discovery: boolean })[];
   total: number;
+  hasMore: boolean;
   offset: number;
   limit: number;
 }
@@ -287,6 +289,7 @@ export interface RecommendationSpaceResult {
   insufficientData: boolean;
   fallback_sort_mode?: 'byDiscovery';
   total: number;
+  hasMore: boolean;
   offset: number;
   limit: number;
 }
@@ -320,6 +323,7 @@ export interface TimeSpaceResult {
   groups_searched: string[];
   memories: Record<string, unknown>[];
   total: number;
+  hasMore: boolean;
   offset: number;
   limit: number;
 }
@@ -335,6 +339,7 @@ export interface RatingSpaceResult {
   groups_searched: string[];
   memories: Record<string, unknown>[];
   total: number;
+  hasMore: boolean;
   offset: number;
   limit: number;
 }
@@ -351,6 +356,7 @@ export interface PropertySpaceResult {
   groups_searched: string[];
   memories: Record<string, unknown>[];
   total: number;
+  hasMore: boolean;
   offset: number;
   limit: number;
   sort_field: string;
@@ -369,6 +375,7 @@ export interface BroadSpaceResult {
   groups_searched: string[];
   results: BroadSearchResult[];
   total: number;
+  hasMore: boolean;
   offset: number;
   limit: number;
 }
@@ -398,6 +405,7 @@ export interface CuratedSpaceResult {
   groups_searched: string[];
   memories: Record<string, unknown>[];
   total: number;
+  hasMore: boolean;
   offset: number;
   limit: number;
 }
@@ -824,11 +832,10 @@ export class SpaceService {
       }
     }
 
-    const fetchLimit = (limit + offset) * Math.max(
-      1,
-      groups.length + friends.length + (spaces.length > 0 || (groups.length === 0 && friends.length === 0) ? 1 : 0)
-    );
+    const numCollections = groups.length + friends.length + (spaces.length > 0 || (groups.length === 0 && friends.length === 0) ? 1 : 0);
+    const fetchLimit = (limit + offset) * Math.max(1, numCollections);
     const allObjects: any[] = [];
+    let rawFetchCount = 0;
 
     // Search spaces collection (when spaces specified or no targets at all)
     if (spaces.length > 0 || (groups.length === 0 && friends.length === 0)) {
@@ -843,6 +850,7 @@ export class SpaceService {
 
       const combinedFilters = filterList.length > 0 ? Filters.and(...filterList) : undefined;
       const spaceObjects = await this.executeSearch(spacesCollection, input.query, searchType, combinedFilters, fetchLimit);
+      rawFetchCount += spaceObjects.length;
       allObjects.push(...tagWithSource(spaceObjects, spacesCollectionName));
     }
 
@@ -856,6 +864,7 @@ export class SpaceService {
       const filterList = this.buildBaseFilters(groupCollection, input);
       const combinedFilters = filterList.length > 0 ? Filters.and(...filterList) : undefined;
       const groupObjects = await this.executeSearch(groupCollection, input.query, searchType, combinedFilters, fetchLimit);
+      rawFetchCount += groupObjects.length;
       allObjects.push(...tagWithSource(groupObjects, groupCollectionName));
     }
 
@@ -914,6 +923,7 @@ export class SpaceService {
       friends_searched: friends,
       memories,
       total: contentDeduped.length,
+      hasMore: contentDeduped.length > offset + limit || rawFetchCount >= fetchLimit,
       offset,
       limit,
     };
@@ -1712,6 +1722,8 @@ export class SpaceService {
 
     const allRated: any[] = [];
     const allDiscovery: any[] = [];
+    let rawRatedCount = 0;
+    let rawDiscoveryCount = 0;
 
     // Search spaces collection
     if (spaces.length > 0 || groups.length === 0) {
@@ -1732,6 +1744,8 @@ export class SpaceService {
         fetchPool(spacesCollection, baseFilters, discoveryFilter, 'created_at'),
       ]);
 
+      rawRatedCount += rated.length;
+      rawDiscoveryCount += discovery.length;
       allRated.push(...tagWithSource(rated, spacesCollectionName));
       allDiscovery.push(...tagWithSource(discovery, spacesCollectionName));
     }
@@ -1753,6 +1767,8 @@ export class SpaceService {
         fetchPool(groupCollection, baseFilters, discoveryFilter, 'created_at'),
       ]);
 
+      rawRatedCount += rated.length;
+      rawDiscoveryCount += discovery.length;
       allRated.push(...tagWithSource(rated, groupCollectionName));
       allDiscovery.push(...tagWithSource(discovery, groupCollectionName));
     }
@@ -1799,6 +1815,7 @@ export class SpaceService {
       groups_searched: groups,
       memories,
       total: ratedDeduped.length + discoveryDeduped.length,
+      hasMore: (ratedDeduped.length + discoveryDeduped.length) > offset + limit || rawRatedCount >= fetchLimit || rawDiscoveryCount >= fetchLimit,
       offset,
       limit,
     };
@@ -1878,6 +1895,7 @@ export class SpaceService {
         insufficientData: true,
         fallback_sort_mode: 'byDiscovery',
         total: discoveryResults.total,
+        hasMore: discoveryResults.hasMore,
         offset: discoveryResults.offset,
         limit: discoveryResults.limit,
       };
@@ -1977,6 +1995,7 @@ export class SpaceService {
       profileSize: centroidResult.centroid!.profileSize,
       insufficientData: false,
       total: memories.length,
+      hasMore: memories.length > offset + limit || allResults.length >= fetchLimit,
       offset,
       limit,
     };
@@ -1994,7 +2013,7 @@ export class SpaceService {
     this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
 
     const fetchLimit = (limit + offset) * 2;
-    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2019,7 +2038,7 @@ export class SpaceService {
       .filter((obj: any) => obj.properties?.doc_type === 'memory')
       .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
   }
 
   // ── By Rating (Bayesian average for spaces/groups) ─────────────────
@@ -2034,7 +2053,7 @@ export class SpaceService {
     this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
 
     const fetchLimit = (limit + offset) * 2;
-    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2059,7 +2078,7 @@ export class SpaceService {
       .filter((obj: any) => obj.properties?.doc_type === 'memory')
       .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
   }
 
   // ── By Property (generic sort by any Weaviate property for spaces/groups) ──
@@ -2080,7 +2099,7 @@ export class SpaceService {
     this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
 
     const fetchLimit = (limit + offset) * 2;
-    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2111,7 +2130,7 @@ export class SpaceService {
 
     return {
       spaces_searched: spacesSearched, groups_searched: groupsSearched,
-      memories, total: deduped.length, offset, limit,
+      memories, total: deduped.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit,
       sort_field, sort_direction,
     };
   }
@@ -2128,7 +2147,7 @@ export class SpaceService {
     this.validateSpaceGroupInput(spaces, groups, input.moderation_filter || 'approved', authContext);
 
     const fetchLimit = (limit + offset) * 2;
-    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2175,7 +2194,7 @@ export class SpaceService {
       broadResults.push(result);
     }
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, results: broadResults, total: deduped.length, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, results: broadResults, total: deduped.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
   }
 
   // ── By Random (random sampling for spaces/groups) ─────────────────
@@ -2237,7 +2256,7 @@ export class SpaceService {
     const fetchLimit = (limit + offset) * 2;
     const hasQuery = input.query?.trim();
 
-    const { allResults, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
+    const { allResults, rawFetchCount, spacesSearched, groupsSearched } = await this.fetchAcrossCollections(
       input, spaces, groups,
       async (collection, baseFilters) => {
         const combined = baseFilters.length > 0 ? Filters.and(...baseFilters) : undefined;
@@ -2269,7 +2288,7 @@ export class SpaceService {
       .filter((obj: any) => obj.properties?.doc_type === 'memory')
       .map((obj: any) => ({ id: obj.uuid, ...obj.properties }));
 
-    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, offset, limit };
+    return { spaces_searched: spacesSearched, groups_searched: groupsSearched, memories, total: deduped.length, hasMore: deduped.length > offset + limit || rawFetchCount >= fetchLimit, offset, limit };
   }
 
   // ── Private: Validate Space/Group Input ───────────────────────────
@@ -2311,8 +2330,9 @@ export class SpaceService {
     spaces: string[],
     groups: string[],
     fetchFn: (collection: any, baseFilters: any[]) => Promise<any[]>,
-  ): Promise<{ allResults: any[]; spacesSearched: string[] | 'all_public'; groupsSearched: string[] }> {
+  ): Promise<{ allResults: any[]; rawFetchCount: number; spacesSearched: string[] | 'all_public'; groupsSearched: string[] }> {
     const allResults: any[] = [];
+    let rawFetchCount = 0;
 
     // Search spaces collection
     if (spaces.length > 0 || groups.length === 0) {
@@ -2323,7 +2343,9 @@ export class SpaceService {
       if (spaces.length > 0) {
         baseFilters.push(collection.filter.byProperty('space_ids').containsAny(spaces));
       }
-      allResults.push(...tagWithSource(await fetchFn(collection, baseFilters), name));
+      const results = await fetchFn(collection, baseFilters);
+      rawFetchCount += results.length;
+      allResults.push(...tagWithSource(results, name));
     }
 
     // Search group collections
@@ -2333,11 +2355,14 @@ export class SpaceService {
       if (!exists) continue;
       const collection = this.weaviateClient.collections.get(name);
       const baseFilters = this.buildBaseFilters(collection, input);
-      allResults.push(...tagWithSource(await fetchFn(collection, baseFilters), name));
+      const results = await fetchFn(collection, baseFilters);
+      rawFetchCount += results.length;
+      allResults.push(...tagWithSource(results, name));
     }
 
     return {
       allResults,
+      rawFetchCount,
       spacesSearched: spaces.length > 0 ? spaces : (groups.length === 0 ? 'all_public' as const : []),
       groupsSearched: groups,
     };

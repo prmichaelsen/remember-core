@@ -139,3 +139,15 @@ local:
         Low weight — only relevant when working on MemoryResolutionService
         or MemoryService create/delete paths.
       applies: acp.proceed, acp.task-create
+
+    - path: agent/design/local.hierarchical-relationships.md
+      weight: 0.5
+      kind: design
+      description: |
+        Hierarchical relationships — adding relationship_ids field so relationships
+        can contain child relationships. Enables umbrella grouping (e.g., project
+        parent with sub-category clusters underneath).
+      rationale: |
+        Proposal for extending relationship model. Required context when working
+        on RelationshipService, relationship types, or REM umbrella discovery.
+      applies: acp.proceed, acp.task-create

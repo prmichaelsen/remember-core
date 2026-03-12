@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.70.0] - 2026-03-12
+
+### Changed
+- Migrate from `@prmichaelsen/firebase-admin-sdk-v8` (REST-based edge wrapper) to official `firebase-admin` (v13.7.0)
+- `src/database/firestore/init.ts` rewritten as compatibility layer preserving identical API surface (`getDocument`, `setDocument`, `addDocument`, `updateDocument`, `deleteDocument`, `queryDocuments`, `batchWrite`, `FieldValue`, `verifyIdToken`, `QueryOptions`)
+- No changes required in any consuming service — all 1829 tests pass
+
 ## [0.69.0] - 2026-03-12
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "@prmichaelsen/remember-core",
-  "version": "0.69.0",
+  "version": "0.70.0",
   "description": "Core SDK for Remember — transport-agnostic business logic for memory services",
   "type": "module",
   "main": "dist/index.js",
@@ -152,7 +152,7 @@
   "author": "prmichaelsen",
   "license": "MIT",
   "dependencies": {
-    "@prmichaelsen/firebase-admin-sdk-v8": "^2.5.1",
+    "firebase-admin": "^13.7.0",
     "uuid": "^11.0.0",
     "weaviate-client": "^3.11.0"
   },

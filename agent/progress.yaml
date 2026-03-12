@@ -2973,8 +2973,7 @@ tasks:
       description: "Convert MoodService/PerceptionService output into memory-shaped objects for core space."
     - id: task-513
       name: "Extensible Synthetic Memory Registry"
-      status: completed
-      completed_date: 2026-03-12
+      status: not_started
       file: agent/tasks/milestone-76-synthetic-core-space/task-513-synthetic-memory-registry.md
       estimated_hours: 2
       description: "Registry pattern for synthetic memory providers — register a provider to add new core memory types."

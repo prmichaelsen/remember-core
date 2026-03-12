@@ -4,14 +4,6 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [0.68.0] - 2026-03-12
-
-### Added
-- `SyntheticMemoryRegistry` — extensible provider registry for synthetic memory types (M76-T513)
-- `DefaultSyntheticMemoryRegistry` implementation with fault-tolerant `fetchAll()`
-- `SyntheticMemoryProvider` interface for adding new core memory types
-- Exported from `src/services/index.ts`
-
 ## [0.67.0] - 2026-03-12
 
 ### Changed

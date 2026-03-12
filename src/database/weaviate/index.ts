@@ -43,6 +43,7 @@ export {
   ensureUserCollection,
   ensureSpacesCollection,
   ensureGroupCollection,
+  ensureCollection,
   getUserCollectionProperties,
   getPublishedCollectionProperties,
   validateV2CollectionName,

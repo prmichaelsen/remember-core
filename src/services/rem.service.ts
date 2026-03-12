@@ -43,6 +43,7 @@ import type { EditorialScoringService } from './editorial-scoring.service.js';
 import { runCurationStep, type CurationStepResult } from './curation-step.service.js';
 import { getRemConfigPath } from '../database/firestore/paths.js';
 import { getDocument } from '../database/firestore/init.js';
+import { ensureCollection } from '../database/weaviate/v2-collections.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -135,8 +136,16 @@ export class RemService {
 
     this.logger.info?.('REM cycle starting', { collectionId });
 
-    // 3. Get collection handle
+    // 3. Get collection handle + reconcile missing properties
     const collection = this.deps.weaviateClient.collections.get(collectionId);
+    try {
+      await ensureCollection(this.deps.weaviateClient, collectionId);
+    } catch (err) {
+      this.logger.warn?.('Collection reconciliation failed, continuing', {
+        collectionId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
 
     // 4. Check collection size
     const aggregate = await collection.aggregate.overAll();

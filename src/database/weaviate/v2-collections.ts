@@ -534,6 +534,37 @@ export async function ensureFriendsCollection(
 }
 
 /**
+ * Ensure any v2 collection exists and is reconciled.
+ * Dispatches to the correct ensure* function based on collection name.
+ */
+export async function ensureCollection(
+  client: WeaviateClient,
+  collectionName: string,
+): Promise<void> {
+  const type = getCollectionType(collectionName);
+  switch (type) {
+    case 'users': {
+      const id = extractIdFromCollectionName(collectionName);
+      if (id) await ensureUserCollection(client, id);
+      break;
+    }
+    case 'spaces':
+      await ensureSpacesCollection(client);
+      break;
+    case 'groups': {
+      const id = extractIdFromCollectionName(collectionName);
+      if (id) await ensureGroupCollection(client, id);
+      break;
+    }
+    case 'friends': {
+      const id = extractIdFromCollectionName(collectionName);
+      if (id) await ensureFriendsCollection(client, id);
+      break;
+    }
+  }
+}
+
+/**
  * Get all property names for user collections
  */
 export function getUserCollectionProperties(): string[] {

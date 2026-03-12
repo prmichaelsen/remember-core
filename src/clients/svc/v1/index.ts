@@ -13,6 +13,7 @@ import { createTrustResource } from './trust.js';
 import { createHealthResource } from './health.js';
 import { createJobsResource } from './jobs.js';
 import { createUsersResource } from './users.js';
+import { createReportsResource } from './reports.js';
 import type { MemoriesResource } from './memories.js';
 import type { RelationshipsResource } from './relationships.js';
 import type { SpacesResource } from './spaces.js';
@@ -22,6 +23,7 @@ import type { TrustResource } from './trust.js';
 import type { HealthResource } from './health.js';
 import type { JobsResource } from './jobs.js';
 import type { UsersResource } from './users.js';
+import type { ReportsResource } from './reports.js';
 
 export interface SvcClient {
   memories: MemoriesResource;
@@ -33,6 +35,7 @@ export interface SvcClient {
   health: HealthResource;
   jobs: JobsResource;
   users: UsersResource;
+  reports: ReportsResource;
 }
 
 /**
@@ -54,6 +57,7 @@ export function createSvcClient(config: HttpClientConfig): SvcClient {
     health: createHealthResource(http),
     jobs: createJobsResource(http),
     users: createUsersResource(http),
+    reports: createReportsResource(http),
   };
 }
 
@@ -69,3 +73,4 @@ export type { TrustResource } from './trust.js';
 export type { HealthResource } from './health.js';
 export type { JobsResource, PollOptions } from './jobs.js';
 export type { UsersResource, DeleteUserResponse } from './users.js';
+export type { ReportsResource, Report, CreateReportInput, ResolveReportInput, ReportsListResult } from './reports.js';

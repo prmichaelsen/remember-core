@@ -10,7 +10,7 @@ describe('createSvcClient', () => {
     mockFetch.mockReset();
   });
 
-  it('returns all 7 resource groups', () => {
+  it('returns all 10 resource groups', () => {
     const client = createSvcClient({
       baseUrl: 'https://api.example.com',
       getAuthToken: async () => 'token',
@@ -23,6 +23,7 @@ describe('createSvcClient', () => {
     expect(client.preferences).toBeDefined();
     expect(client.trust).toBeDefined();
     expect(client.health).toBeDefined();
+    expect(client.reports).toBeDefined();
   });
 
   it('memories has all 16 methods', () => {
@@ -120,7 +121,21 @@ describe('createSvcClient', () => {
     expect(typeof client.health.version).toBe('function');
   });
 
-  it('total method count is 30', () => {
+  it('reports has all 6 methods', () => {
+    const client = createSvcClient({
+      baseUrl: 'https://api.example.com',
+      getAuthToken: async () => 'token',
+    });
+
+    expect(typeof client.reports.create).toBe('function');
+    expect(typeof client.reports.listMine).toBe('function');
+    expect(typeof client.reports.listPending).toBe('function');
+    expect(typeof client.reports.get).toBe('function');
+    expect(typeof client.reports.resolve).toBe('function');
+    expect(typeof client.reports.listByMemory).toBe('function');
+  });
+
+  it('total method count is 63', () => {
     const client = createSvcClient({
       baseUrl: 'https://api.example.com',
       getAuthToken: async () => 'token',
@@ -133,8 +148,9 @@ describe('createSvcClient', () => {
       Object.keys(client.confirmations).length +
       Object.keys(client.preferences).length +
       Object.keys(client.trust).length +
-      Object.keys(client.health).length;
+      Object.keys(client.health).length +
+      Object.keys(client.reports).length;
 
-    expect(methodCount).toBe(57);
+    expect(methodCount).toBe(63);
   });
 });

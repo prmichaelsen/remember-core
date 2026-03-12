@@ -2960,8 +2960,7 @@ tasks:
   milestone_76:
     - id: task-511
       name: "Core Space Interception in SpaceService"
-      status: completed
-      completed_date: 2026-03-12
+      status: not_started
       file: agent/tasks/milestone-76-synthetic-core-space/task-511-core-space-interception.md
       estimated_hours: 3
       description: "Intercept 'core' in spaces array, strip before Weaviate, fetch synthetic results, merge with real results."

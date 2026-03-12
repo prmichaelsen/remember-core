@@ -126,21 +126,3 @@ export const SPACE_DESCRIPTIONS: Record<SpaceId, string> = {
   profiles: 'User profiles. Discover people and learn about members of the community.',
   ghosts: 'Ghost personas. Discover AI-mediated personas for cross-user interactions.',
 };
-
-// ─── Synthetic Spaces ───────────────────────────────────────────────────
-
-/**
- * Synthetic space IDs — read-only pseudo-spaces backed by internal services,
- * not Weaviate collections. Results are fetched via SyntheticMemoryRegistry.
- */
-export type SyntheticSpaceId = 'core';
-
-export const SYNTHETIC_SPACES: SyntheticSpaceId[] = ['core'];
-
-export const SYNTHETIC_SPACE_DISPLAY_NAMES: Record<SyntheticSpaceId, string> = {
-  core: 'Core',
-};
-
-export const SYNTHETIC_SPACE_DESCRIPTIONS: Record<SyntheticSpaceId, string> = {
-  core: 'Internal state — mood, perception, preferences. Read-only, not publishable.',
-};

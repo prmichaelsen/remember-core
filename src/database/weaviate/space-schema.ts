@@ -4,7 +4,7 @@
  */
 
 import type { WeaviateClient, Collection } from 'weaviate-client';
-import { SUPPORTED_SPACES, SYNTHETIC_SPACES, SPACE_DISPLAY_NAMES, type SpaceId, type SyntheticSpaceId } from '../../types/space.types.js';
+import { SUPPORTED_SPACES, SPACE_DISPLAY_NAMES, type SpaceId } from '../../types/space.types.js';
 import { createSpaceCollectionSchema, isCollectionCached, cacheCollection } from './v2-collections.js';
 
 /**
@@ -38,8 +38,7 @@ export function getSpaceDisplayName(spaceId: string): string {
  * Validate space ID.
  */
 export function isValidSpaceId(spaceId: string): boolean {
-  return SUPPORTED_SPACES.includes(spaceId as SpaceId) ||
-    SYNTHETIC_SPACES.includes(spaceId as SyntheticSpaceId);
+  return SUPPORTED_SPACES.includes(spaceId as SpaceId);
 }
 
 /**

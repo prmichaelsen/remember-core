@@ -727,7 +727,7 @@ milestones:
     progress: 0
     estimated_weeks: 1
     tasks_completed: 0
-    tasks_total: 3
+    tasks_total: 4
     dependencies: []
     notes: |
       Synthetic 'core' space in SpaceService — intercepts search requests
@@ -2977,6 +2977,13 @@ tasks:
       file: agent/tasks/milestone-76-synthetic-core-space/task-513-synthetic-memory-registry.md
       estimated_hours: 2
       description: "Registry pattern for synthetic memory providers — register a provider to add new core memory types."
+    - id: task-514
+      name: "remember-mcp — Consume Synthetic Core Space"
+      status: not_started
+      file: agent/tasks/milestone-76-synthetic-core-space/task-514-remember-mcp-consume-core-space.md
+      estimated_hours: 2
+      dependencies: [task-511, task-512, task-513]
+      description: "Update remember-mcp tool descriptions and ghost prompt to include 'core' synthetic space. Implemented in remember-mcp repo."
 
 documentation:
   design_documents: 28

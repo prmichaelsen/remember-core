@@ -2,7 +2,7 @@
 
 **ID**: M76
 **Status**: pending
-**Progress**: 0% (0/3 tasks completed)
+**Progress**: 0% (0/4 tasks completed)
 **Started**: (not yet)
 **Estimated Duration**: 1 week
 **Completed**: (not yet)
@@ -40,8 +40,9 @@ This lets the ghost transparently retrieve its own mood/state by doing a normal 
 | T511 | Core space interception in SpaceService | pending | 3h |
 | T512 | Mood/perception formatters | pending | 2h |
 | T513 | Extensible synthetic memory registry | pending | 2h |
+| T514 | remember-mcp — consume core space | pending | 2h |
 
-**Total estimated**: ~7 hours
+**Total estimated**: ~9 hours
 
 ---
 

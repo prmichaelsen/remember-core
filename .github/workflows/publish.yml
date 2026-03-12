@@ -52,9 +52,16 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Summary
-        if: steps.version.outputs.changed == 'true'
-        run: echo "Published @prmichaelsen/remember-core@${{ steps.version.outputs.version }} to npm"
-
-      - name: Skip
-        if: steps.version.outputs.changed != 'true'
-        run: echo "Version unchanged, skipping publish"
+        run: |
+          if [ "${{ steps.version.outputs.changed }}" == "true" ]; then
+            echo "### 📦 Published to npm" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Package**: \`@prmichaelsen/remember-core@${{ steps.version.outputs.version }}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "[View on npm](https://www.npmjs.com/package/@prmichaelsen/remember-core/v/${{ steps.version.outputs.version }})" >> "$GITHUB_STEP_SUMMARY"
+          else
+            CURRENT=$(node -p "require('./package.json').version")
+            echo "### ⏭️ Publish skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Version \`$CURRENT\` unchanged — no publish needed." >> "$GITHUB_STEP_SUMMARY"
+          fi

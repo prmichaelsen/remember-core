@@ -52,7 +52,7 @@ function buildDocTypeFilters(
   // Content type filter — only for memories
   if (docType === 'memory') {
     // Default-excluded content types (hidden unless explicitly requested via types filter)
-    const DEFAULT_EXCLUDED_TYPES = ['agent'];
+    const DEFAULT_EXCLUDED_TYPES = ['agent', 'reference'];
 
     if (filters?.types && filters.types.length > 0) {
       // Caller explicitly specified types — use as include filter (no default exclusion)

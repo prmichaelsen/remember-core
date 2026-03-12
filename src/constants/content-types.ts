@@ -107,9 +107,14 @@ export const CONTENT_TYPE_METADATA: Record<ContentType, ContentTypeMetadata> = {
   },
   reference: {
     name: 'reference',
-    category: 'core',
-    description: 'Quick reference guides and cheat sheets',
-    examples: ['Command references', 'Keyboard shortcuts', 'API references', 'Cheat sheets'],
+    category: 'system',
+    description: 'Bulk-ingested external content — crawled web pages, documentation, repos',
+    examples: [
+      'Crawled GitHub repo page',
+      'Ingested documentation site page',
+      'Imported wiki article',
+      'Scraped blog post',
+    ],
   },
 
   // Task & Planning
@@ -447,7 +452,7 @@ export const CONTENT_TYPE_METADATA: Record<ContentType, ContentTypeMetadata> = {
  * Content type categories
  */
 export const CONTENT_TYPE_CATEGORIES = {
-  core: ['code', 'note', 'documentation', 'reference'],
+  core: ['code', 'note', 'documentation'],
   task: ['todo', 'checklist', 'project', 'goal', 'habit'],
   communication: ['email', 'conversation', 'meeting', 'person'],
   content: ['article', 'webpage', 'social', 'presentation', 'spreadsheet', 'pdf'],
@@ -456,7 +461,7 @@ export const CONTENT_TYPE_CATEGORIES = {
   personal: ['journal', 'memory', 'event'],
   organizational: ['bookmark', 'form', 'location'],
   business: ['invoice', 'contract'],
-  system: ['system', 'action', 'audit', 'history', 'agent', 'rem'],
+  system: ['system', 'action', 'audit', 'history', 'agent', 'rem', 'reference'],
   cross_user: ['ghost', 'comment', 'profile'],
 } as const;
 

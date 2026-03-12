@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.67.0] - 2026-03-12
+
+### Changed
+- `reference` content type repurposed for bulk-ingested external content (crawled web pages, docs, repos)
+- `reference` category moved from `core` to `system`
+- `reference` now excluded from default searches (same treatment as `agent`)
+
 ## [0.66.2] - 2026-03-12
 
 ### Fixed

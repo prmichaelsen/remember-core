@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.62.0] - 2026-03-12
+
+### Added
+- `account_deletion` job type with 48-hour TTL for tracked account deletion via job system
+- `AccountDeletionJobWorker` — executes UserDeletionService as a tracked job with 7 discrete steps (Weaviate collections, Firestore user data, ratings retraction, preference centroids, collection registry, memory index, user permissions)
+- `DELETE /api/svc/v1/users/{userId}` API endpoint — creates account_deletion job, returns job_id for polling
+- `UsersResource` svc client with `users.delete(userId)` method
+- `DeleteUserResponse` schema in OpenAPI spec
+
 ## [0.61.0] - 2026-03-12
 
 ### Added

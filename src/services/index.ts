@@ -223,6 +223,11 @@ export {
   scheduleRemJobs,
 } from './rem-job.worker.js';
 
+export {
+  AccountDeletionJobWorker,
+  type AccountDeletionJobParams,
+} from './account-deletion-job.worker.js';
+
 // Import service
 export {
   ImportService,

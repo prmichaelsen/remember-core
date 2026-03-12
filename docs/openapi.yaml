@@ -38,6 +38,8 @@ tags:
     description: Ghost config and trust enforcement
   - name: jobs
     description: Async job tracking and management
+  - name: users
+    description: User lifecycle operations (account deletion)
   - name: health
     description: Public health and version endpoints
 
@@ -697,6 +699,33 @@ paths:
                 $ref: '#/components/schemas/CancelJobResponse'
         '404':
           description: Job not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ============================================================
+  # Users
+  # ============================================================
+  /api/svc/v1/users/{userId}:
+    delete:
+      tags: [users]
+      summary: Delete user data
+      description: |
+        Creates an account_deletion job that removes all user data from Weaviate
+        and Firestore. Returns the job ID for status polling.
+      operationId: deleteUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Deletion job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteUserResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -3538,7 +3567,7 @@ components:
 
     JobType:
       type: string
-      enum: [import, rem_cycle]
+      enum: [import, rem_cycle, account_deletion]
 
     JobStatus:
       type: string
@@ -3640,3 +3669,14 @@ components:
         status:
           type: string
           enum: [cancelled]
+
+    DeleteUserResponse:
+      type: object
+      required: [job_id, status]
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending]

@@ -473,6 +473,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete user data
+         * @description Creates an account_deletion job that removes all user data from Weaviate
+         *     and Firestore. Returns the job ID for status polling.
+         */
+        delete: operations["deleteUser"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/relationships": {
         parameters: {
             query?: never;
@@ -1557,6 +1578,13 @@ export interface components {
             /** @default 0 */
             offset: number;
             deleted_filter?: components["schemas"]["DeletedFilter"];
+            /** @enum {string} */
+            sort_by?: "created_at" | "updated_at" | "member_count" | "relationship_type";
+            /**
+             * @default desc
+             * @enum {string}
+             */
+            sort_direction: "asc" | "desc";
         };
         UpdateRelationshipInput: {
             relationship_type?: string;
@@ -1564,6 +1592,8 @@ export interface components {
             strength?: number;
             confidence?: number;
             tags?: string[];
+            /** @description Memory IDs to add to this relationship. Deduplicates against existing members. Each memory is validated and bidirectionally linked. */
+            add_memory_ids?: string[];
         };
         CreateRelationshipResult: {
             relationship_id: string;
@@ -1809,7 +1839,7 @@ export interface components {
             message: string;
         };
         /** @enum {string} */
-        JobType: "import" | "rem_cycle";
+        JobType: "import" | "rem_cycle" | "account_deletion";
         /** @enum {string} */
         JobStatus: "pending" | "running" | "completed" | "completed_with_errors" | "failed" | "cancelled" | "paused";
         /** @enum {string} */
@@ -1858,6 +1888,12 @@ export interface components {
         CancelJobResponse: {
             /** @enum {string} */
             status: "cancelled";
+        };
+        DeleteUserResponse: {
+            /** Format: uuid */
+            job_id: string;
+            /** @enum {string} */
+            status: "pending";
         };
     };
     responses: {
@@ -2715,6 +2751,29 @@ export interface operations {
                 };
                 content?: never;
             };
+        };
+    };
+    deleteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deletion job created */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteUserResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
         };
     };
     createRelationship: {

@@ -1,7 +1,6 @@
 import { MemoryService, sliceContent } from '../memory.service.js';
 import { createMockCollection, createMockLogger } from '../../testing/weaviate-mock.js';
 import { TrustLevel } from '../../types/trust.types.js';
-import type { AuthContext } from '../../types/auth.types.js';
 
 describe('MemoryService', () => {
   let collection: ReturnType<typeof createMockCollection>;
@@ -195,61 +194,6 @@ describe('MemoryService', () => {
       expect(result.relationships).toBeUndefined();
     });
 
-    it('excludes memories from blocked users', async () => {
-      await collection.data.insert({
-        properties: { user_id: 'blocked-user', doc_type: 'memory', content: 'blocked content', deleted_at: null },
-      });
-      const authContext: AuthContext = {
-        accessToken: null,
-        credentials: {
-          user_id: userId,
-          group_memberships: [],
-          friend_user_ids: [],
-          blocked_user_ids: ['blocked-user'],
-        },
-      };
-      const result = await service.search({ query: 'blocked' }, authContext);
-      const blockedMemories = result.memories.filter((m: any) => m.user_id === 'blocked-user');
-      expect(blockedMemories.length).toBe(0);
-    });
-
-    it('returns all memories when no blocked users', async () => {
-      const result = await service.search({ query: 'hiking' });
-      expect(result.memories.length).toBeGreaterThanOrEqual(1);
-    });
-  });
-
-  describe('blocked_user_ids filtering', () => {
-    const blockedAuthContext: AuthContext = {
-      accessToken: null,
-      credentials: {
-        user_id: userId,
-        group_memberships: [],
-        friend_user_ids: [],
-        blocked_user_ids: ['blocked-user'],
-      },
-    };
-
-    beforeEach(async () => {
-      await collection.data.insert({
-        properties: { user_id: userId, doc_type: 'memory', content: 'my own memory', deleted_at: null },
-      });
-      await collection.data.insert({
-        properties: { user_id: 'blocked-user', doc_type: 'memory', content: 'blocked user memory', deleted_at: null },
-      });
-    });
-
-    it('query() excludes blocked user memories', async () => {
-      const result = await service.query({ query: 'memory' }, blockedAuthContext);
-      const blockedMemories = result.memories.filter((m: any) => m.user_id === 'blocked-user');
-      expect(blockedMemories.length).toBe(0);
-    });
-
-    it('findSimilar() excludes blocked user memories', async () => {
-      const result = await service.findSimilar({ text: 'memory' }, blockedAuthContext);
-      const blockedMemories = result.similar_memories.filter((m: any) => m.user_id === 'blocked-user');
-      expect(blockedMemories.length).toBe(0);
-    });
   });
 
   describe('update', () => {

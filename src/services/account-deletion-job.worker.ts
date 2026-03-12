@@ -6,6 +6,7 @@
  */
 
 import type { Logger } from '../utils/logger.js';
+import type { EventBus } from '../webhooks/events.js';
 import type { JobService } from './job.service.js';
 import { UserDeletionService } from './user-deletion.service.js';
 
@@ -33,6 +34,7 @@ export class AccountDeletionJobWorker {
   constructor(
     private jobService: JobService,
     private logger: Logger,
+    private eventBus?: EventBus | null,
   ) {}
 
   async execute(jobId: string, params: AccountDeletionJobParams): Promise<void> {
@@ -102,6 +104,15 @@ export class AccountDeletionJobWorker {
           errors: result.errors,
         },
       });
+
+      if (this.eventBus) {
+        await this.eventBus.emit({
+          type: 'account.deleted',
+          user_id,
+          job_id: jobId,
+          errors: result.errors,
+        }, { type: 'system', id: 'deletion-worker' });
+      }
 
       this.logger.info('Account deletion job complete', {
         job_id: jobId,

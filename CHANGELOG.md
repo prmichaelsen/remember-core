@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.65.1] - 2026-03-12
+
+### Added
+- AccountDeletionJobWorker emits `account.deleted` webhook event on job completion via optional EventBus parameter
+
 ## [0.65.0] - 2026-03-12
 
 ### Changed

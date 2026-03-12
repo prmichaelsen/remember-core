@@ -682,10 +682,11 @@ milestones:
 
   - id: M73
     name: REM Eval Scripts
-    status: in_progress
-    progress: 80
+    status: completed
+    progress: 100
+    completed: 2026-03-12
     estimated_weeks: 2
-    tasks_completed: 4
+    tasks_completed: 5
     tasks_total: 5
     dependencies: []
     notes: |
@@ -2850,7 +2851,7 @@ tasks:
       description: "Test script for conflict detection (valence opposition, similarity) and reconciliation preview."
     - id: task-501
       name: "Emotional Scoring Eval Script"
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-73-rem-eval-scripts/task-501-emotional-scoring-eval.md
       estimated_hours: 3
       description: "Test script for composite emotional scoring dimension weights and anomaly detection."

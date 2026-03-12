@@ -73,6 +73,36 @@ interface SpaceServiceDeps {
 
 Optional — if not provided, `'core'` space is silently ignored (backward compatible).
 
+### 6. Add SYNTHETIC_SPACES constant to space.types.ts
+
+Separate from `SUPPORTED_SPACES` (publishable spaces) — synthetic spaces are read-only.
+
+```typescript
+export type SyntheticSpaceId = 'core';
+
+export const SYNTHETIC_SPACES: SyntheticSpaceId[] = ['core'];
+
+export const SYNTHETIC_SPACE_DISPLAY_NAMES: Record<SyntheticSpaceId, string> = {
+  core: 'Core',
+};
+
+export const SYNTHETIC_SPACE_DESCRIPTIONS: Record<SyntheticSpaceId, string> = {
+  core: 'Internal state — mood, perception, preferences. Read-only, not publishable.',
+};
+```
+
+Export from `src/types/index.ts` so consumers (remember-mcp) can include synthetic spaces in tool descriptions alongside real spaces.
+
+### 7. Guard publish/retract against synthetic spaces
+
+In `SpaceService.publish()` and `SpaceService.retract()`, reject if any space_id is in `SYNTHETIC_SPACES`:
+
+```typescript
+if (SYNTHETIC_SPACES.includes(input.space_id as SyntheticSpaceId)) {
+  throw new ValidationError(`Cannot publish to synthetic space '${input.space_id}'`);
+}
+```
+
 ## Verification
 
 - [ ] `spaces: ['core']` returns synthetic results without hitting Weaviate
@@ -82,3 +112,7 @@ Optional — if not provided, `'core'` space is silently ignored (backward compa
 - [ ] No registry provided → `'core'` silently stripped, no error
 - [ ] All existing SpaceService tests pass
 - [ ] Tests in `space-sort-modes.spec.ts`
+- [ ] `SYNTHETIC_SPACES` exported from `src/types/index.ts`
+- [ ] `SYNTHETIC_SPACE_DESCRIPTIONS` available for tool description generation
+- [ ] Publish to `'core'` throws ValidationError
+- [ ] Retract from `'core'` throws ValidationError

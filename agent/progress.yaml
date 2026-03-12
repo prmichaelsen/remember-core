@@ -682,10 +682,10 @@ milestones:
 
   - id: M73
     name: REM Eval Scripts
-    status: not_started
-    progress: 0
+    status: in_progress
+    progress: 20
     estimated_weeks: 2
-    tasks_completed: 0
+    tasks_completed: 1
     tasks_total: 5
     dependencies: []
     notes: |
@@ -2822,7 +2822,8 @@ tasks:
   milestone_73:
     - id: task-497
       name: "Curation & PageRank Scoring Eval Script"
-      status: not_started
+      status: completed
+      completed_date: 2026-03-12
       file: agent/tasks/milestone-73-rem-eval-scripts/task-497-curation-pagerank-eval.md
       estimated_hours: 4
       description: "Test script for curation sub-scores, composite weights, and PageRank parameters."

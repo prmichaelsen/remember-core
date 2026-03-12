@@ -683,9 +683,9 @@ milestones:
   - id: M73
     name: REM Eval Scripts
     status: in_progress
-    progress: 20
+    progress: 40
     estimated_weeks: 2
-    tasks_completed: 1
+    tasks_completed: 2
     tasks_total: 5
     dependencies: []
     notes: |
@@ -2829,7 +2829,8 @@ tasks:
       description: "Test script for curation sub-scores, composite weights, and PageRank parameters."
     - id: task-498
       name: "Pruning Decay Eval Script"
-      status: not_started
+      status: completed
+      completed_date: 2026-03-12
       file: agent/tasks/milestone-73-rem-eval-scripts/task-498-pruning-decay-eval.md
       estimated_hours: 3
       description: "Test script for pruning decay thresholds, significance floor/ceiling, exemptions."

@@ -30,8 +30,8 @@ export interface RemConfig {
 export const DEFAULT_REM_CONFIG: RemConfig = {
   min_collection_size: 50,
   similarity_threshold: 0.75,
-  max_candidates_per_run: 30,
-  max_similar_per_candidate: 20,
+  max_candidates_per_run: 50,
+  max_similar_per_candidate: 7,
   overlap_merge_threshold: 0.60,
   max_relationship_members: 50,
   // Multi-strategy defaults

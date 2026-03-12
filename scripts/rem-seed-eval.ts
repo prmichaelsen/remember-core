@@ -43,7 +43,7 @@ Usage:
 Options:
   --collection-type <type>  Collection type (default: users)
   --seeds <n>               Number of random seeds (default: 5)
-  --similar-limit <n>       Max similar memories per seed (default: 10)
+  --similar-limit <n>       Max similar memories per seed (default: 7)
   --similarity <n>          Vector similarity threshold 0-1 (default: 0.75)
   --confidence <n>          Min confidence for relationship (default: 0.5)
   --duplicate <n>           Similarity above this = duplicate (default: 0.95)
@@ -63,7 +63,7 @@ Options:
     userId,
     collectionType: getArg('--collection-type') ?? 'users',
     seedCount: parseInt(getArg('--seeds') ?? '5', 10),
-    similarLimit: parseInt(getArg('--similar-limit') ?? '10', 10),
+    similarLimit: parseInt(getArg('--similar-limit') ?? '7', 10),
     similarityThreshold: parseFloat(getArg('--similarity') ?? '0.75'),
     confidenceThreshold: parseFloat(getArg('--confidence') ?? '0.5'),
     duplicateThreshold: parseFloat(getArg('--duplicate') ?? '0.95'),

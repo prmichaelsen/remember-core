@@ -682,12 +682,11 @@ milestones:
 
   - id: M73
     name: REM Eval Scripts
-    status: completed
-    progress: 100
-    completed: 2026-03-12
+    status: in_progress
+    progress: 83
     estimated_weeks: 2
     tasks_completed: 5
-    tasks_total: 5
+    tasks_total: 6
     dependencies: []
     notes: |
       Independent test scripts for each tunable REM pipeline stage.
@@ -2855,6 +2854,12 @@ tasks:
       file: agent/tasks/milestone-73-rem-eval-scripts/task-501-emotional-scoring-eval.md
       estimated_hours: 3
       description: "Test script for composite emotional scoring dimension weights and anomaly detection."
+    - id: task-502
+      name: "Add Classification Detection to Seed Eval"
+      status: not_started
+      file: agent/tasks/milestone-73-rem-eval-scripts/task-502-seed-eval-classification.md
+      estimated_hours: 4
+      description: "Enhance seed eval to run classification (is_duplicate, merge_candidates, contradictions) via --classify flag."
 documentation:
   design_documents: 28
   milestone_documents: 42

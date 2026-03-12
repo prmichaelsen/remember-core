@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.63.2] - 2026-03-12
+
+### Changed
+- Tune REM pipeline defaults: `max_candidates_per_run` 30 → 50 for richer random seed coverage
+- Tune REM pipeline defaults: `max_similar_per_candidate` 20 → 7 to prevent JSON parse failures on large clusters
+- Seed eval script `--similar-limit` default 10 → 7 to match core pipeline
+
 ## [0.63.1] - 2026-03-12
 
 ### Fixed

@@ -693,6 +693,21 @@ milestones:
       Enables fine-tuning parameters against real Weaviate data without
       running full REM cycles. Builds on existing rem-cluster-eval.ts
       and rem-seed-eval.ts patterns.
+
+  - id: M74
+    name: Hierarchical Relationships
+    status: pending
+    progress: 0
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 7
+    dependencies: []
+    notes: |
+      Add relationship_ids field so relationships can contain child relationships.
+      Enables umbrella grouping (e.g., project parent with sub-category clusters).
+      Core CRUD + validation + cycle detection + flatten utilities + OpenAPI updates.
+      Design: agent/design/local.hierarchical-relationships.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -2860,6 +2875,54 @@ tasks:
       file: agent/tasks/milestone-73-rem-eval-scripts/task-502-seed-eval-classification.md
       estimated_hours: 4
       description: "Enhance seed eval to run classification (is_duplicate, merge_candidates, contradictions) via --classify flag."
+  milestone_74:
+    - id: task-503
+      name: "Type & Schema Changes"
+      status: not_started
+      file: agent/tasks/milestone-74-hierarchical-relationships/task-503-type-schema-changes.md
+      estimated_hours: 2
+      description: "Add relationship_ids, parent_relationship_id, child_relationship_count to Relationship type and Weaviate schema."
+    - id: task-504
+      name: "Relationship Validation"
+      status: not_started
+      file: agent/tasks/milestone-74-hierarchical-relationships/task-504-relationship-validation.md
+      estimated_hours: 3
+      description: "validateRelationshipIds() with doc_type check, deletion check, cycle detection."
+    - id: task-505
+      name: "Create with Hierarchy"
+      status: not_started
+      file: agent/tasks/milestone-74-hierarchical-relationships/task-505-create-with-hierarchy.md
+      estimated_hours: 3
+      dependencies: [task-503, task-504]
+      description: "Extend create() to accept relationship_ids, set parent_relationship_id on children."
+    - id: task-506
+      name: "Update with Hierarchy"
+      status: not_started
+      file: agent/tasks/milestone-74-hierarchical-relationships/task-506-update-with-hierarchy.md
+      estimated_hours: 3
+      dependencies: [task-503, task-504]
+      description: "add_relationship_ids / remove_relationship_ids on update(), manage bidirectional links."
+    - id: task-507
+      name: "Delete with Hierarchy"
+      status: not_started
+      file: agent/tasks/milestone-74-hierarchical-relationships/task-507-delete-with-hierarchy.md
+      estimated_hours: 2
+      dependencies: [task-505]
+      description: "Orphan children on parent delete, remove from parent on child delete."
+    - id: task-508
+      name: "Query & Flatten Utilities"
+      status: not_started
+      file: agent/tasks/milestone-74-hierarchical-relationships/task-508-query-flatten-utilities.md
+      estimated_hours: 3
+      dependencies: [task-503]
+      description: "findChildRelationships(), getHierarchy(), flattenMemoryIds() with depth limit."
+    - id: task-509
+      name: "OpenAPI & REST Handlers"
+      status: not_started
+      file: agent/tasks/milestone-74-hierarchical-relationships/task-509-openapi-rest-handlers.md
+      estimated_hours: 3
+      dependencies: [task-505, task-506, task-507, task-508]
+      description: "Update openapi.yaml schema, add /relationships/{id}/children and /relationships/{id}/flatten endpoints."
 documentation:
   design_documents: 28
   milestone_documents: 42
@@ -3322,6 +3385,7 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
+  - M74: Hierarchical Relationships — umbrella/parent-child relationship grouping (7 tasks, pending)
   - M38: Response Envelope Migration (placeholder, tasks TBD — define tasks now that M37 envelope pattern is proven)
   - Define M38 tasks: migrate byRating, byDiscovery, byBroad, byRandom, byCurated to { memory, metadata } envelope
   - Open bug: agent/bugs/bug-weaviate-filter-chain-and-classification-parse.md

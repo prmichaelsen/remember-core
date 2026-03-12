@@ -722,18 +722,18 @@ milestones:
       Prerequisite for agentbase_ingest tool in agentbase.me.
 
   - id: M76
-    name: Synthetic Core Space
-    status: in_progress
-    progress: 25
+    name: Mood-to-Memory Sync
+    status: completed
+    progress: 100
     estimated_weeks: 1
     tasks_completed: 1
-    tasks_total: 4
+    tasks_total: 1
+    completed: 2026-03-12
     dependencies: []
     notes: |
-      Synthetic 'core' space in SpaceService — intercepts search requests
-      containing spaces: ['core'], fetches ghost internal state (mood, perception)
-      from Firestore, formats as memory-shaped results, merges with real Weaviate
-      results. Extensible registry pattern for adding new synthetic memory types.
+      Sync mood state to a real Weaviate memory after each REM cycle.
+      Replaced the synthetic core space approach (T511-T513, reverted) with
+      a simple upsert using deterministic UUID and content_type: ghost.
 
 tasks:
   milestone_1:
@@ -2958,32 +2958,6 @@ tasks:
       estimated_hours: 1
       description: "Update reference metadata category to system, update description/examples, add to DEFAULT_EXCLUDED_TYPES, publish."
   milestone_76:
-    - id: task-511
-      name: "Core Space Interception in SpaceService"
-      status: not_started
-      file: agent/tasks/milestone-76-synthetic-core-space/task-511-core-space-interception.md
-      estimated_hours: 3
-      description: "Intercept 'core' in spaces array, strip before Weaviate, fetch synthetic results, merge with real results."
-    - id: task-512
-      name: "Mood/Perception Formatters"
-      status: not_started
-      file: agent/tasks/milestone-76-synthetic-core-space/task-512-mood-perception-formatters.md
-      estimated_hours: 2
-      dependencies: [task-513]
-      description: "Convert MoodService/PerceptionService output into memory-shaped objects for core space."
-    - id: task-513
-      name: "Extensible Synthetic Memory Registry"
-      status: not_started
-      file: agent/tasks/milestone-76-synthetic-core-space/task-513-synthetic-memory-registry.md
-      estimated_hours: 2
-      description: "Registry pattern for synthetic memory providers — register a provider to add new core memory types."
-    - id: task-514
-      name: "remember-mcp — Consume Synthetic Core Space"
-      status: not_started
-      file: agent/tasks/milestone-76-synthetic-core-space/task-514-remember-mcp-consume-core-space.md
-      estimated_hours: 2
-      dependencies: [task-511, task-512, task-513]
-      description: "Update remember-mcp tool descriptions and ghost prompt to include 'core' synthetic space. Implemented in remember-mcp repo."
     - id: task-515
       name: "Sync Mood State to Weaviate Memory"
       status: completed

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.60.0] - 2026-03-12
+
+### Added
+- `UserDeletionService` for account deletion — bulk-deletes all user data from Weaviate collections, Firestore user-scoped data, ratings, preference centroids, collection registry entries, memory index entries, and user permissions
+- `DeleteUserDataInput` and `DeleteUserDataResult` types exported from `src/services`
+- Idempotent design — safe to call multiple times on the same user
+- Paginated deletion across all Firestore subcollections for reliability at scale
+
 ## [0.59.2] - 2026-03-11
 
 ### Fixed

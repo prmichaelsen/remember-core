@@ -558,4 +558,11 @@ export {
   type ScanResult,
 } from './follow-up-scheduler.service.js';
 
+// User data deletion (account deletion)
+export {
+  UserDeletionService,
+  type DeleteUserDataInput,
+  type DeleteUserDataResult,
+} from './user-deletion.service.js';
+
 // EventBus and other webhook types are re-exported from src/webhooks/index.ts via root barrel

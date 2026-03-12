@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.64.0] - 2026-03-12
+
+### Added
+- Mood pressure synthesis service — converts scored emotional dimensions into mood pressures during REM Phase 0
+- Tuned dimension→mood mappings: trust center 0.8, coherence center 0.3, social_warmth center 0.4
+- `synthesizePressuresFromDimensions()` exported from services index
+- Phase 0 now creates mood pressures from newly scored memories (pressures_created stat)
+- `run-phase0.ts` script for standalone Phase 0 scoring
+- `rem-mood-eval.ts` script for simulating ghost mood drift
+- `seed-ghost-variance.ts` script for seeding distinct ghost personality profiles
+- 13 tests for mood pressure synthesis
+
 ## [0.63.2] - 2026-03-12
 
 ### Changed

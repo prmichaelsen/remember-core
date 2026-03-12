@@ -32,6 +32,7 @@ import { runReconciliationPhase, type ReconciliationResult } from './rem.reconci
 import type { SubLlmProvider } from './emotional-scoring.service.js';
 import type { MoodService } from './mood.service.js';
 import { runMoodUpdate, buildThresholdMemoryContent, type MoodUpdateResult } from './mood-update.service.js';
+import { synthesizePressuresFromDimensions } from './mood-pressure-synthesis.js';
 import type { ClassificationService } from './classification.service.js';
 import { runClassificationPipeline, type ClassificationPipelineResult } from './rem.classification.js';
 import { runAbstractionPhase, type AbstractionPhaseResult } from './rem.abstraction.js';
@@ -68,6 +69,7 @@ export interface Phase0Stats {
   memories_skipped: number;
   cost_consumed: number;
   stopped_by_cost_cap: boolean;
+  pressures_created: number;
 }
 
 export interface RunCycleResult {
@@ -491,6 +493,7 @@ export class RemService {
       memories_skipped: 0,
       cost_consumed: 0,
       stopped_by_cost_cap: false,
+      pressures_created: 0,
     };
 
     const scoringService = this.deps.emotionalScoringService!;
@@ -578,6 +581,18 @@ export class RemService {
         updateProps.rem_visits = remMeta.rem_visits;
 
         await collection.data.update({ id: memory.uuid, properties: updateProps });
+
+        // 6. Synthesize mood pressures from scored dimensions
+        if (this.deps.moodService && this.deps.ghostCompositeId) {
+          const pressures = synthesizePressuresFromDimensions(memory.uuid, scores);
+          if (pressures.length > 0) {
+            const userId = this.extractUserId(collectionId);
+            for (const pressure of pressures) {
+              await this.deps.moodService.addPressure(userId, this.deps.ghostCompositeId, pressure);
+            }
+            stats.pressures_created += pressures.length;
+          }
+        }
 
         stats.memories_scored++;
         stats.cost_consumed += this.config.scoring_cost_per_memory;

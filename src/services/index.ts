@@ -411,6 +411,16 @@ export {
   type MoodUpdateResult,
 } from './mood-update.service.js';
 
+// Mood Pressure Synthesis (dimension → mood pressure mapping)
+export {
+  synthesizePressuresFromDimensions,
+  DIMENSION_MOOD_MAPPINGS,
+  DEFAULT_PRESSURE_MAGNITUDE_SCALE,
+  DEFAULT_DIMENSION_PRESSURE_DECAY,
+  MIN_PRESSURE_MAGNITUDE,
+  type DimensionMapping,
+} from './mood-pressure-synthesis.js';
+
 // Sub-LLM Narration (mood label derivation)
 export {
   deriveMoodLabels,

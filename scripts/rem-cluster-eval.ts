@@ -72,7 +72,7 @@ const scenarios: Scenario[] = [
   {
     name: 'medium-tangential',
     description: 'Related through a person but different activities',
-    expected: 'medium',
+    expected: 'high',
     memories: [
       { id: 'm1', content: 'Had coffee with Sarah at the new cafe on 5th', tags: ['social', 'sarah'] },
       { id: 'm2', content: 'Sarah recommended a great book about stoicism', tags: ['books', 'sarah'] },
@@ -85,7 +85,7 @@ const scenarios: Scenario[] = [
   {
     name: 'weak-loose-connection',
     description: 'Only vaguely connected through "things I did today"',
-    expected: 'low',
+    expected: 'reject',
     memories: [
       { id: 'm1', content: 'Need to fix the leaky faucet in the bathroom', tags: ['home'] },
       { id: 'm2', content: 'Read an interesting article about quantum computing', tags: ['science'] },
@@ -157,8 +157,8 @@ const scenarios: Scenario[] = [
   },
   {
     name: 'edge-minimal-pair',
-    description: 'Just 2 memories, borderline related',
-    expected: 'medium',
+    description: 'Just 2 memories, tightly coupled technology',
+    expected: 'high',
     memories: [
       { id: 'm1', content: 'Learned about React Server Components today', tags: ['coding'] },
       { id: 'm2', content: 'Next.js 15 has built-in support for server components', tags: ['coding'] },

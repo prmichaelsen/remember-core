@@ -708,6 +708,19 @@ milestones:
       Core CRUD + validation + cycle detection + flatten utilities + OpenAPI updates.
       Design: agent/design/local.hierarchical-relationships.md
 
+  - id: M75
+    name: Reference Content Type
+    status: planned
+    progress: 0
+    estimated_weeks: 0.5
+    tasks_completed: 0
+    tasks_total: 1
+    dependencies: []
+    notes: |
+      Repurpose 'reference' content type for bulk-ingested external content.
+      Update metadata category core→system, add to DEFAULT_EXCLUDED_TYPES.
+      Prerequisite for agentbase_ingest tool in agentbase.me.
+
 tasks:
   milestone_1:
     - id: task-1
@@ -2923,6 +2936,14 @@ tasks:
       estimated_hours: 3
       dependencies: [task-505, task-506, task-507, task-508]
       description: "Update openapi.yaml schema, add /relationships/{id}/children and /relationships/{id}/flatten endpoints."
+  milestone_75:
+    - id: task-510
+      name: "Reference Metadata & Search Exclusion"
+      status: not_started
+      file: agent/tasks/milestone-75-reference-content-type/task-510-reference-metadata-and-search-exclusion.md
+      estimated_hours: 1
+      description: "Update reference metadata category to system, update description/examples, add to DEFAULT_EXCLUDED_TYPES, publish."
+
 documentation:
   design_documents: 28
   milestone_documents: 42

@@ -721,6 +721,20 @@ milestones:
       Update metadata category core→system, add to DEFAULT_EXCLUDED_TYPES.
       Prerequisite for agentbase_ingest tool in agentbase.me.
 
+  - id: M76
+    name: Synthetic Core Space
+    status: pending
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 3
+    dependencies: []
+    notes: |
+      Synthetic 'core' space in SpaceService — intercepts search requests
+      containing spaces: ['core'], fetches ghost internal state (mood, perception)
+      from Firestore, formats as memory-shaped results, merges with real Weaviate
+      results. Extensible registry pattern for adding new synthetic memory types.
+
 tasks:
   milestone_1:
     - id: task-1
@@ -2943,6 +2957,26 @@ tasks:
       file: agent/tasks/milestone-75-reference-content-type/task-510-reference-metadata-and-search-exclusion.md
       estimated_hours: 1
       description: "Update reference metadata category to system, update description/examples, add to DEFAULT_EXCLUDED_TYPES, publish."
+  milestone_76:
+    - id: task-511
+      name: "Core Space Interception in SpaceService"
+      status: not_started
+      file: agent/tasks/milestone-76-synthetic-core-space/task-511-core-space-interception.md
+      estimated_hours: 3
+      description: "Intercept 'core' in spaces array, strip before Weaviate, fetch synthetic results, merge with real results."
+    - id: task-512
+      name: "Mood/Perception Formatters"
+      status: not_started
+      file: agent/tasks/milestone-76-synthetic-core-space/task-512-mood-perception-formatters.md
+      estimated_hours: 2
+      dependencies: [task-513]
+      description: "Convert MoodService/PerceptionService output into memory-shaped objects for core space."
+    - id: task-513
+      name: "Extensible Synthetic Memory Registry"
+      status: not_started
+      file: agent/tasks/milestone-76-synthetic-core-space/task-513-synthetic-memory-registry.md
+      estimated_hours: 2
+      description: "Registry pattern for synthetic memory providers — register a provider to add new core memory types."
 
 documentation:
   design_documents: 28

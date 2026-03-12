@@ -2984,6 +2984,13 @@ tasks:
       estimated_hours: 2
       dependencies: [task-511, task-512, task-513]
       description: "Update remember-mcp tool descriptions and ghost prompt to include 'core' synthetic space. Implemented in remember-mcp repo."
+    - id: task-515
+      name: "Sync Mood State to Weaviate Memory"
+      status: not_started
+      file: agent/tasks/milestone-76-synthetic-core-space/task-515-sync-mood-to-memory.md
+      estimated_hours: 2
+      dependencies: [task-512]
+      description: "Upsert mood as a real Weaviate memory after each REM cycle — simpler alternative to synthetic space interception."
 
 documentation:
   design_documents: 28

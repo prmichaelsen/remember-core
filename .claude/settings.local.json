@@ -80,7 +80,8 @@
       "Bash(find /home/prmichaelsen/.acp/projects/remember-core -type f \\\\\\( -name \"*.ts\" -o -name \"*.js\" \\\\\\) -path \"*/functions/*\" 2>/dev/null | head -20)",
       "Bash(node -e \"console.log\\(require\\('./package.json'\\).version\\)\")",
       "Bash(find /home/prmichaelsen/.acp/projects/remember-core/src -type f \\\\\\( -name \"*handler*\" -o -name \"*controller*\" -o -name \"*router*\" \\\\\\) 2>/dev/null | head -10)",
-      "Bash(find /home/prmichaelsen/.acp/projects/goodneighbor/src -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) 2>/dev/null | sort)"
+      "Bash(find /home/prmichaelsen/.acp/projects/goodneighbor/src -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) 2>/dev/null | sort)",
+      "Bash(node -p \"require\\('./package.json'\\).version\")"
     ]
   }
 }

@@ -3000,7 +3000,7 @@ tasks:
       description: "Pure reorder operation handlers: move_to_index, swap, set_order, move_before, move_after."
     - id: task-518
       name: "RelationshipService Integration"
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-77-ordered-relationships/task-518-relationship-service-integration.md
       estimated_hours: 4
       dependencies: [task-516, task-517]

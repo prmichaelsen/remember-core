@@ -16,7 +16,15 @@ import {
   combineFiltersWithAnd,
   type DeletedFilter,
 } from '../utils/filters.js';
-import type { RelationshipSource } from '../types/memory.types.js';
+import type { RelationshipSource, ReorderOperation } from '../types/memory.types.js';
+import {
+  applyReorder,
+  parseMemberOrder,
+  serializeMemberOrder,
+  buildDefaultOrder,
+  compactOrder,
+  sortMemberIdsByOrder,
+} from './relationship-reorder.js';
 
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
@@ -91,6 +99,19 @@ export interface FindByMemoryIdsResult {
 export type GetRelationshipResult =
   | { found: true; relationship: Record<string, unknown> }
   | { found: false; relationship?: undefined };
+
+export interface ReorderRelationshipInput {
+  relationship_id: string;
+  operation: ReorderOperation;
+  version: number;
+}
+
+export interface ReorderRelationshipResult {
+  relationship_id: string;
+  member_order: Record<string, number>;
+  version: number;
+  updated_at: string;
+}
 
 export interface DeleteRelationshipInput {
   relationship_id: string;
@@ -225,7 +246,7 @@ export class RelationshipService {
       returnProperties: [
         'user_id', 'related_memory_ids', 'relationship_type', 'observation',
         'strength', 'confidence', 'source', 'tags', 'member_count',
-        'created_at', 'updated_at', 'version',
+        'created_at', 'updated_at', 'version', 'member_order_json',
       ],
     });
 
@@ -235,7 +256,7 @@ export class RelationshipService {
 
     return {
       found: true,
-      relationship: { id: relationshipId, ...result.properties },
+      relationship: this.hydrateRelationship(relationshipId, result.properties),
     };
   }
 
@@ -259,6 +280,7 @@ export class RelationshipService {
       confidence: input.confidence ?? 0.8,
       source: input.source ?? 'user',
       member_count: input.memory_ids.length,
+      member_order_json: serializeMemberOrder(buildDefaultOrder(input.memory_ids)),
       created_at: now,
       updated_at: now,
       version: 1,
@@ -286,7 +308,7 @@ export class RelationshipService {
     const fetchProps = ['user_id', 'doc_type', 'version'];
     const needAddMemoryIds = input.add_memory_ids && input.add_memory_ids.length > 0;
     const needRemoveMemoryIds = input.remove_memory_ids && input.remove_memory_ids.length > 0;
-    if (needAddMemoryIds || needRemoveMemoryIds) fetchProps.push('related_memory_ids');
+    if (needAddMemoryIds || needRemoveMemoryIds) fetchProps.push('related_memory_ids', 'member_order_json');
 
     const existing = await this.collection.query.fetchObjectById(input.relationship_id, {
       returnProperties: fetchProps,
@@ -335,12 +357,37 @@ export class RelationshipService {
       }
     }
 
-    // Update related_memory_ids if changed
+    // Update related_memory_ids and member_order_json if changed
     if (newMemoryIds.length > 0 || removedMemoryIds.length > 0) {
       const allMemoryIds = [...existingMemoryIds];
       updates.related_memory_ids = allMemoryIds;
       updates.member_count = allMemoryIds.length;
       updatedFields.push('related_memory_ids', 'member_count');
+
+      // Update member_order_json
+      const currentOrder = parseMemberOrder(existing.properties.member_order_json as string | null);
+      let order = Object.keys(currentOrder).length > 0
+        ? { ...currentOrder }
+        : buildDefaultOrder((existing.properties.related_memory_ids as string[]) || []);
+
+      // Append new members at the end
+      if (newMemoryIds.length > 0) {
+        const maxPos = Math.max(-1, ...Object.values(order));
+        for (let i = 0; i < newMemoryIds.length; i++) {
+          order[newMemoryIds[i]] = maxPos + 1 + i;
+        }
+      }
+
+      // Remove members and compact
+      if (removedMemoryIds.length > 0) {
+        for (const id of removedMemoryIds) {
+          delete order[id];
+        }
+        order = compactOrder(order);
+      }
+
+      updates.member_order_json = serializeMemberOrder(order);
+      updatedFields.push('member_order');
     }
 
     if (updatedFields.length === 0) throw new Error('No fields provided for update');
@@ -450,10 +497,9 @@ export class RelationshipService {
       : await this.collection.query.hybrid(input.query, { ...opts, alpha: 1.0 });
     const paginated = results.objects.slice(offset, offset + limit);
 
-    const relationships = paginated.map((obj: any) => ({
-      id: obj.uuid,
-      ...obj.properties,
-    }));
+    const relationships = paginated.map((obj: any) =>
+      this.hydrateRelationship(obj.uuid, obj.properties),
+    );
 
     return { relationships, total: results.objects.length, offset, limit };
   }
@@ -483,15 +529,85 @@ export class RelationshipService {
         'user_id', 'doc_type', 'related_memory_ids', 'memory_ids',
         'relationship_type', 'observation', 'strength', 'confidence',
         'source', 'tags', 'member_count', 'created_at', 'updated_at', 'version',
+        'member_order_json',
       ],
     });
 
-    const relationships = results.objects.map((obj: any) => ({
-      id: obj.uuid,
-      ...obj.properties,
-    }));
+    const relationships = results.objects.map((obj: any) =>
+      this.hydrateRelationship(obj.uuid, obj.properties),
+    );
 
     return { relationships, total: relationships.length };
+  }
+
+  // ── Reorder ─────────────────────────────────────────────────────────
+
+  async reorder(input: ReorderRelationshipInput): Promise<ReorderRelationshipResult> {
+    const existing = await this.collection.query.fetchObjectById(input.relationship_id, {
+      returnProperties: ['user_id', 'doc_type', 'version', 'related_memory_ids', 'member_order_json'],
+    });
+    if (!existing) throw new Error(`Relationship not found: ${input.relationship_id}`);
+    if (existing.properties.user_id !== this.userId) throw new Error('Unauthorized');
+    if (existing.properties.doc_type !== 'relationship') throw new Error('Not a relationship document');
+
+    const currentVersion = existing.properties.version as number;
+    if (currentVersion !== input.version) {
+      throw new Error(`409: Version conflict — expected ${input.version}, found ${currentVersion}`);
+    }
+
+    const memberIds = (existing.properties.related_memory_ids as string[]) || [];
+    const currentOrder = parseMemberOrder(existing.properties.member_order_json as string | null);
+    const newOrder = applyReorder(currentOrder, memberIds, input.operation);
+
+    const now = new Date().toISOString();
+    const newVersion = currentVersion + 1;
+
+    await this.collection.data.update({
+      id: input.relationship_id,
+      properties: {
+        member_order_json: serializeMemberOrder(newOrder),
+        version: newVersion,
+        updated_at: now,
+      },
+    });
+
+    this.logger.info('Relationship reordered', { relationshipId: input.relationship_id, operation: input.operation.type });
+    return {
+      relationship_id: input.relationship_id,
+      member_order: newOrder,
+      version: newVersion,
+      updated_at: now,
+    };
+  }
+
+  // ── Hydration Helper ──────────────────────────────────────────────
+
+  /**
+   * Hydrate a raw Weaviate relationship object:
+   * - Parse member_order_json → member_order
+   * - Lazy backfill: generate default order if missing
+   * - Sort related_memory_ids by position
+   */
+  private hydrateRelationship(id: string, properties: Record<string, unknown>): Record<string, unknown> {
+    const memberIds = (properties.related_memory_ids as string[]) || [];
+    const rawOrder = properties.member_order_json as string | null | undefined;
+    let memberOrder = parseMemberOrder(rawOrder);
+
+    // Lazy backfill: if no order stored, derive from array position
+    if (Object.keys(memberOrder).length === 0 && memberIds.length > 0) {
+      memberOrder = buildDefaultOrder(memberIds);
+    }
+
+    // Sort member IDs by position
+    const sortedMemberIds = sortMemberIdsByOrder(memberIds, memberOrder);
+
+    const { member_order_json: _raw, ...rest } = properties;
+    return {
+      id,
+      ...rest,
+      related_memory_ids: sortedMemberIds,
+      member_order: memberOrder,
+    };
   }
 
   // ── Delete ──────────────────────────────────────────────────────────

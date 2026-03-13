@@ -3,7 +3,7 @@ project:
   version: 0.49.7
   started: 2026-02-27
   status: in_progress
-  current_milestone: M38
+  current_milestone: M77
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -2986,7 +2986,7 @@ tasks:
   milestone_77:
     - id: task-516
       name: "Schema & Types"
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-77-ordered-relationships/task-516-schema-and-types.md
       estimated_hours: 2
       dependencies: []

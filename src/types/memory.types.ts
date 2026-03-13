@@ -205,6 +205,9 @@ export interface Relationship {
   // Denormalized counts
   member_count?: number; // Number of memory_ids in this relationship
 
+  // Ordering (M77)
+  member_order?: Record<string, number>; // memory_id → zero-indexed position
+
   // Metadata
   created_at: string;
   updated_at: string;
@@ -226,3 +229,22 @@ export type MemoryUpdate = Partial<Omit<Memory, 'id' | 'user_id' | 'doc_type' | 
  * Partial relationship for updates
  */
 export type RelationshipUpdate = Partial<Omit<Relationship, 'id' | 'user_id' | 'doc_type' | 'created_at' | 'version'>>;
+
+/**
+ * Discriminated union for relationship reorder operations (M77).
+ */
+export type ReorderOperation =
+  | { type: 'move_to_index'; memory_id: string; index: number }
+  | { type: 'swap'; memory_id_a: string; memory_id_b: string }
+  | { type: 'set_order'; ordered_memory_ids: string[] }
+  | { type: 'move_before'; memory_id: string; before: string }
+  | { type: 'move_after'; memory_id: string; after: string };
+
+/**
+ * Input for a relationship reorder request.
+ */
+export interface ReorderInput {
+  relationship_id: string;
+  operation: ReorderOperation;
+  version: number;
+}

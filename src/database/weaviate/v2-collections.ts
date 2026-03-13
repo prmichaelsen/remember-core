@@ -186,6 +186,9 @@ const COMMON_MEMORY_PROPERTIES = [
   // User organization (M64)
   { name: 'is_user_organized', dataType: configure.dataType.BOOLEAN },
 
+  // Ordered relationships (M77)
+  { name: 'member_order_json', dataType: configure.dataType.TEXT },
+
   // Curation scoring (M36)
   { name: 'curated_score', dataType: configure.dataType.NUMBER },
   { name: 'editorial_score', dataType: configure.dataType.NUMBER },

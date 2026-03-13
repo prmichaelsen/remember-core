@@ -70,6 +70,8 @@ export type {
   MemoryDocument,
   MemoryUpdate,
   RelationshipUpdate,
+  ReorderOperation,
+  ReorderInput,
 } from './memory.types.js';
 
 // Search types (ported from remember-mcp)

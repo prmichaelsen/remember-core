@@ -2537,15 +2537,36 @@ components:
     RelationshipMemoriesResponse:
       type: object
       required: [relationship, memories, total, has_more]
+      description: |
+        Items are returned in position order when the relationship has member_order.
       properties:
         relationship:
           $ref: '#/components/schemas/RelationshipMetadata'
         memories:
           type: array
           items:
-            type: object
-            description: Full memory document
+            $ref: '#/components/schemas/OrderedContentItem'
         total:
           type: integer
         has_more:
           type: boolean
+
+    OrderedContentItem:
+      type: object
+      required: [memory_id, position, content, tags, created_at]
+      description: A memory within a relationship, with its position in the ordering.
+      properties:
+        memory_id:
+          type: string
+        position:
+          type: integer
+          description: Zero-indexed position within the relationship
+        content:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time

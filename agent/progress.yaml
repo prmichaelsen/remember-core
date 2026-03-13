@@ -3007,7 +3007,7 @@ tasks:
       description: "Wire reorder() into service, auto-order on create/update, sorted reads, lazy backfill."
     - id: task-519
       name: "OpenAPI & Type Generation"
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-77-ordered-relationships/task-519-openapi-type-generation.md
       estimated_hours: 2
       dependencies: [task-516]

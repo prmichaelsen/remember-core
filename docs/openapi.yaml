@@ -825,6 +825,42 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/relationships/{relationshipId}/reorder:
+    post:
+      tags: [relationships]
+      summary: Reorder members of a relationship
+      description: |
+        Apply a reorder operation to the relationship's member order.
+        Uses optimistic locking — the request must include the current version.
+      operationId: reorderRelationship
+      parameters:
+        - $ref: '#/components/parameters/relationshipId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderInput'
+      responses:
+        '200':
+          description: Reorder applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReorderResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: Version conflict or set_order membership mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   # ============================================================
   # Spaces
   # ============================================================
@@ -3225,6 +3261,93 @@ components:
           type: string
         memories_updated:
           type: integer
+
+    # ----------------------------------------------------------
+    # Reorder types (M77)
+    # ----------------------------------------------------------
+    ReorderOperation:
+      description: Discriminated union for reorder operations
+      oneOf:
+        - type: object
+          required: [type, memory_id, index]
+          properties:
+            type:
+              type: string
+              enum: [move_to_index]
+            memory_id:
+              type: string
+            index:
+              type: integer
+              minimum: 0
+        - type: object
+          required: [type, memory_id_a, memory_id_b]
+          properties:
+            type:
+              type: string
+              enum: [swap]
+            memory_id_a:
+              type: string
+            memory_id_b:
+              type: string
+        - type: object
+          required: [type, ordered_memory_ids]
+          properties:
+            type:
+              type: string
+              enum: [set_order]
+            ordered_memory_ids:
+              type: array
+              items:
+                type: string
+        - type: object
+          required: [type, memory_id, before]
+          properties:
+            type:
+              type: string
+              enum: [move_before]
+            memory_id:
+              type: string
+            before:
+              type: string
+        - type: object
+          required: [type, memory_id, after]
+          properties:
+            type:
+              type: string
+              enum: [move_after]
+            memory_id:
+              type: string
+            after:
+              type: string
+      discriminator:
+        propertyName: type
+
+    ReorderInput:
+      type: object
+      required: [operation, version]
+      properties:
+        operation:
+          $ref: '#/components/schemas/ReorderOperation'
+        version:
+          type: integer
+          description: Current relationship version for optimistic locking
+
+    ReorderResult:
+      type: object
+      required: [relationship_id, member_order, version, updated_at]
+      properties:
+        relationship_id:
+          type: string
+        member_order:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Map of memory_id to zero-indexed position
+        version:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
 
     # ----------------------------------------------------------
     # Space inputs

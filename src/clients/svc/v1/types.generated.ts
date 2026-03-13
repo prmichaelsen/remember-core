@@ -546,6 +546,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/relationships/{relationshipId}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reorder members of a relationship
+         * @description Apply a reorder operation to the relationship's member order.
+         *     Uses optimistic locking — the request must include the current version.
+         */
+        post: operations["reorderRelationship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/spaces/publish": {
         parameters: {
             query?: never;
@@ -863,6 +884,92 @@ export interface paths {
         put?: never;
         /** Check memory access for a user */
         post: operations["checkAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List reports filed by the authenticated user */
+        get: operations["listMyReports"];
+        put?: never;
+        /** Flag objectionable content */
+        post: operations["createReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/reports/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List pending reports (moderator) */
+        get: operations["listPendingReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/reports/{reportId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a report by ID */
+        get: operations["getReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/reports/{reportId}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve a report (moderator) */
+        post: operations["resolveReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/svc/v1/reports/by-memory/{memoryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List reports for a specific memory (moderator) */
+        get: operations["listReportsByMemory"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1620,6 +1727,47 @@ export interface components {
             relationship_id: string;
             memories_updated: number;
         };
+        /** @description Discriminated union for reorder operations */
+        ReorderOperation: {
+            /** @enum {string} */
+            type: "move_to_index";
+            memory_id: string;
+            index: number;
+        } | {
+            /** @enum {string} */
+            type: "swap";
+            memory_id_a: string;
+            memory_id_b: string;
+        } | {
+            /** @enum {string} */
+            type: "set_order";
+            ordered_memory_ids: string[];
+        } | {
+            /** @enum {string} */
+            type: "move_before";
+            memory_id: string;
+            before: string;
+        } | {
+            /** @enum {string} */
+            type: "move_after";
+            memory_id: string;
+            after: string;
+        };
+        ReorderInput: {
+            operation: components["schemas"]["ReorderOperation"];
+            /** @description Current relationship version for optimistic locking */
+            version: number;
+        };
+        ReorderResult: {
+            relationship_id: string;
+            /** @description Map of memory_id to zero-indexed position */
+            member_order: {
+                [key: string]: number;
+            };
+            version: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
         PublishInput: {
             memory_id: string;
             spaces?: string[];
@@ -1895,6 +2043,44 @@ export interface components {
             /** @enum {string} */
             status: "pending";
         };
+        Report: {
+            /** Format: uuid */
+            id: string;
+            reporter_user_id: string;
+            /** Format: uuid */
+            memory_id: string;
+            /** @description Short reason category (e.g. spam, harassment, hate_speech, nudity, other) */
+            reason: string;
+            /** @description Optional free-text description from the reporter */
+            description: string;
+            /** @enum {string} */
+            status: "pending" | "reviewed" | "resolved";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            resolved_at: string | null;
+            /** @description User ID of the moderator who resolved the report */
+            resolved_by: string | null;
+            /** @description Moderator's resolution note */
+            resolution: string | null;
+        };
+        CreateReportInput: {
+            /** Format: uuid */
+            memory_id: string;
+            /** @description Short reason category */
+            reason: string;
+            /** @description Optional free-text details */
+            description?: string;
+        };
+        ResolveReportInput: {
+            /** @description Moderator's resolution note */
+            resolution: string;
+            /**
+             * @default resolved
+             * @enum {string}
+             */
+            status: "reviewed" | "resolved";
+        };
     };
     responses: {
         /** @description Validation error */
@@ -1986,6 +2172,8 @@ export interface components {
         relationshipId: string;
         /** @description Confirmation token string */
         confirmationToken: string;
+        /** @description Report UUID */
+        reportId: string;
     };
     requestBodies: never;
     headers: never;
@@ -2883,6 +3071,45 @@ export interface operations {
             401: components["responses"]["UnauthorizedError"];
         };
     };
+    reorderRelationship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Relationship UUID */
+                relationshipId: components["parameters"]["relationshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderInput"];
+            };
+        };
+        responses: {
+            /** @description Reorder applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReorderResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+            /** @description Version conflict or set_order membership mismatch */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     publishToSpace: {
         parameters: {
             query?: never;
@@ -3403,6 +3630,164 @@ export interface operations {
                 };
             };
             401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    listMyReports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reports filed by the caller */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        reports: components["schemas"]["Report"][];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    createReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReportInput"];
+            };
+        };
+        responses: {
+            /** @description Report created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    listPendingReports: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending reports */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        reports: components["schemas"]["Report"][];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+        };
+    };
+    getReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Report UUID */
+                reportId: components["parameters"]["reportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Report details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    resolveReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Report UUID */
+                reportId: components["parameters"]["reportId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveReportInput"];
+            };
+        };
+        responses: {
+            /** @description Report resolved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    listReportsByMemory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Memory UUID */
+                memoryId: components["parameters"]["memoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reports for the memory */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        reports: components["schemas"]["Report"][];
+                    };
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            403: components["responses"]["ForbiddenError"];
         };
     };
 }

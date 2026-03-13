@@ -825,6 +825,13 @@ export interface components {
             /** @default 0 */
             offset: number;
             deleted_filter?: components["schemas"]["DeletedFilter"];
+            /** @enum {string} */
+            sort_by?: "created_at" | "updated_at" | "member_count" | "relationship_type";
+            /**
+             * @default desc
+             * @enum {string}
+             */
+            sort_direction: "asc" | "desc";
         };
         UpdateRelationshipInput: {
             relationship_type?: string;
@@ -832,6 +839,8 @@ export interface components {
             strength?: number;
             confidence?: number;
             tags?: string[];
+            /** @description Memory IDs to add to this relationship. Deduplicates against existing members. Each memory is validated and bidirectionally linked. */
+            add_memory_ids?: string[];
         };
         CreateRelationshipResult: {
             relationship_id: string;
@@ -1166,11 +1175,22 @@ export interface components {
             updated_at: string;
             tags: string[];
         };
+        /** @description Items are returned in position order when the relationship has member_order. */
         RelationshipMemoriesResponse: {
             relationship: components["schemas"]["RelationshipMetadata"];
-            memories: Record<string, never>[];
+            memories: components["schemas"]["OrderedContentItem"][];
             total: number;
             has_more: boolean;
+        };
+        /** @description A memory within a relationship, with its position in the ordering. */
+        OrderedContentItem: {
+            memory_id: string;
+            /** @description Zero-indexed position within the relationship */
+            position: number;
+            content: string;
+            tags: string[];
+            /** Format: date-time */
+            created_at: string;
         };
     };
     responses: {

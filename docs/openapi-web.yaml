@@ -818,9 +818,9 @@ paths:
                 target_user_id:
                   type: string
                 trust_level:
-                  type: number
-                  minimum: 0
-                  maximum: 1
+                  type: integer
+                  minimum: 1
+                  maximum: 5
       responses:
         '200':
           description: Trust level set
@@ -1189,13 +1189,13 @@ components:
           minimum: 0
           maximum: 1
         trust_min:
-          type: number
-          minimum: 0
-          maximum: 1
+          type: integer
+          minimum: 1
+          maximum: 5
         trust_max:
-          type: number
-          minimum: 0
-          maximum: 1
+          type: integer
+          minimum: 1
+          maximum: 5
         date_from:
           type: string
           format: date-time
@@ -2432,7 +2432,9 @@ components:
       type: object
       properties:
         default_trust_level:
-          type: number
+          type: integer
+          minimum: 1
+          maximum: 5
         allow_cross_user_access:
           type: boolean
         auto_approve_requests:

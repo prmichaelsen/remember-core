@@ -1,7 +1,7 @@
 # Task 516: Schema & Types
 
 **Milestone**: M77 — Ordered Relationships
-**Status**: Not Started
+**Status**: Completed
 **Estimated Hours**: 2
 **Dependencies**: None
 

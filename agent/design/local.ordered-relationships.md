@@ -2,7 +2,7 @@
 
 **Concept**: Positional ordering for relationship members via a `member_order` map, with a dedicated `reorder` operation and App client compound operations for script composition
 **Created**: 2026-03-13
-**Status**: Proposal
+**Status**: Implemented
 
 ---
 
@@ -165,35 +165,26 @@ If step 2 or 3 fails, the memory still exists (no rollback) — this is acceptab
 
 ### 5. App Client — `getOrderedContent`
 
-Fetch a relationship's members in position order with full content inlined. Paginated.
+Fetch a relationship's members in position order with full content inlined. Paginated. Separate endpoint from `getMemories`.
 
 ```typescript
-interface GetOrderedContentInput {
-  relationship_id: string;
-  limit?: number;       // default 20
-  offset?: number;      // default 0, applied to the ordered list
+/** Full memory object with _position calculated property added. */
+interface OrderedContentMemory extends Record<string, unknown> {
+  _position: number;  // underscore prefix signals calculated/derived field
 }
 
-interface OrderedContentItem {
-  memory_id: string;
-  position: number;
-  content: string;
-  tags: string[];
-  created_at: string;
-}
-
-interface GetOrderedContentResponse {
+interface OrderedContentResponse {
   relationship: RelationshipMetadata;
-  items: OrderedContentItem[];    // sorted by position
+  items: OrderedContentMemory[];    // sorted by position
   total: number;
   has_more: boolean;
 }
 ```
 
 **Under the hood**:
-1. `GET /api/app/v1/relationships/:id/memories?limit=N&offset=M` — existing endpoint, but enhanced to return items sorted by `member_order` and include `position` field
+1. `GET /api/app/v1/relationships/:id/ordered-content?limit=N&offset=M` — dedicated endpoint returning items sorted by `member_order` with `_position` calculated field
 
-This is an enhancement to the existing `getMemories` App client method rather than a wholly new endpoint. The response shape gains a `position` field per item and guarantees position-order sorting.
+This is a separate endpoint from the existing `getMemories`. The `getMemories` endpoint continues to return unadorned memory objects; `getOrderedContent` returns full memory objects augmented with `_position`.
 
 ```typescript
 // client.relationships.getOrderedContent(userId, relationshipId, { limit, offset })
@@ -210,10 +201,13 @@ src/services/relationship.service.ts      — reorder(), order management in cre
 src/services/relationship.service.spec.ts — reorder tests, order management tests
 src/clients/svc/v1/relationships.ts       — add reorder()
 src/clients/svc/v1/relationships.spec.ts  — reorder tests
-src/app/relationships.ts                  — add insertMemoryAt(), enhance getMemories→getOrderedContent
+src/services/relationship-reorder.ts      — pure reorder logic (operation handlers + helpers)
+src/services/relationship-reorder.spec.ts — reorder unit tests (26 tests)
+src/app/relationships.ts                  — add insertMemoryAt(), add getOrderedContent() (separate endpoint from getMemories)
 src/app/relationships.spec.ts             — compound operation tests
 docs/openapi.yaml                         — POST /relationships/:id/reorder endpoint, ReorderOperation schema, member_order on Relationship response
-docs/openapi-web.yaml                     — position field on /relationships/:id/memories items, updated OrderedContentItem schema
+docs/openapi-web.yaml                     — GET /relationships/:id/ordered-content endpoint, OrderedContentResponse + OrderedContentMemory schemas
+src/services/__tests__/e2e/ordered-relationships.e2e.ts — 21 e2e integration tests
 ```
 
 ---
@@ -297,7 +291,7 @@ docs/openapi-web.yaml                     — position field on /relationships/:
 |---|---|---|
 | Both clients from day one | Yes | Low implementation cost; avoids gap where one client can reorder but the other can't |
 | App: insertMemoryAt | Compound: create memory + add to relationship + reorder | Saves 3 manual round trips for the primary script-building workflow |
-| App: getOrderedContent | Enhanced getMemories with position field + position-sorted pagination | Natural evolution of existing endpoint; no new route needed |
+| App: getOrderedContent | Separate `/ordered-content` endpoint with `_position` calculated field + position-sorted pagination | Keeps `getMemories` clean; `_position` prefix signals derived field |
 
 ---
 
@@ -311,7 +305,7 @@ docs/openapi-web.yaml                     — position field on /relationships/:
 
 ---
 
-**Status**: Proposal
+**Status**: Implemented
 **Recommendation**: Implement as standalone milestone
 **Related Documents**:
 - `agent/clarifications/clarification-24-ordered-relationships.md`

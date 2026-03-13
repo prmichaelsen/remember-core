@@ -1,7 +1,7 @@
 # Task 518: RelationshipService Integration
 
 **Milestone**: M77 — Ordered Relationships
-**Status**: Not Started
+**Status**: Completed
 **Estimated Hours**: 4
 **Dependencies**: [Task 516](task-516-schema-and-types.md), [Task 517](task-517-reorder-logic.md)
 

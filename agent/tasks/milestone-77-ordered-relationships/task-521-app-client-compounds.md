@@ -1,7 +1,7 @@
 # Task 521: App Client Compounds
 
 **Milestone**: M77 — Ordered Relationships
-**Status**: Not Started
+**Status**: Completed
 **Estimated Hours**: 3
 **Dependencies**: [Task 518](task-518-relationship-service-integration.md), [Task 519](task-519-openapi-type-generation.md), [Task 520](task-520-svc-client-reorder.md)
 

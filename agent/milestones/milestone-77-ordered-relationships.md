@@ -3,7 +3,7 @@
 **Goal**: Add positional ordering to relationship members via `member_order_json`, with a dedicated reorder operation and App client compound operations for script composition
 **Duration**: 1-2 weeks
 **Dependencies**: None
-**Status**: Not Started
+**Status**: Completed
 
 ---
 
@@ -37,7 +37,7 @@ Clarification: `agent/clarifications/clarification-24-ordered-relationships.md`
 
 ### 3. OpenAPI & REST
 - `docs/openapi.yaml`: POST `/relationships/:id/reorder`, ReorderOperation schema, member_order on Relationship response
-- `docs/openapi-web.yaml`: position field on relationship memories response, OrderedContentItem schema
+- `docs/openapi-web.yaml`: GET `/relationships/:id/ordered-content` endpoint, `OrderedContentResponse` + `OrderedContentMemory` schemas
 - Regenerated types via `npm run generate:types`
 
 ### 4. Svc Client
@@ -71,8 +71,9 @@ Clarification: `agent/clarifications/clarification-24-ordered-relationships.md`
 ## Key Files to Create
 
 ```
-src/services/relationship-reorder.ts          — reorder logic (operation handlers)
-src/services/relationship-reorder.spec.ts     — reorder unit tests
+src/services/relationship-reorder.ts          — pure reorder logic (operation handlers + helpers)
+src/services/relationship-reorder.spec.ts     — reorder unit tests (26 tests)
+src/services/__tests__/e2e/ordered-relationships.e2e.ts — e2e integration tests (21 tests)
 ```
 
 ## Key Files to Modify

@@ -1,7 +1,7 @@
 # Task 517: Reorder Logic
 
 **Milestone**: M77 — Ordered Relationships
-**Status**: Not Started
+**Status**: Completed
 **Estimated Hours**: 3
 **Dependencies**: [Task 516](task-516-schema-and-types.md)
 

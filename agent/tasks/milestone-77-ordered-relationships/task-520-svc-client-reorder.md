@@ -1,7 +1,7 @@
 # Task 520: Svc Client Reorder
 
 **Milestone**: M77 — Ordered Relationships
-**Status**: Not Started
+**Status**: Completed
 **Estimated Hours**: 1
 **Dependencies**: [Task 519](task-519-openapi-type-generation.md)
 

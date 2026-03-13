@@ -1,7 +1,7 @@
 # Task 519: OpenAPI & Type Generation
 
 **Milestone**: M77 — Ordered Relationships
-**Status**: Not Started
+**Status**: Completed
 **Estimated Hours**: 2
 **Dependencies**: [Task 516](task-516-schema-and-types.md)
 

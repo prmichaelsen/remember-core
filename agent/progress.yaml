@@ -737,10 +737,10 @@ milestones:
 
   - id: M77
     name: Ordered Relationships
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 2
-    tasks_completed: 0
+    tasks_completed: 6
     tasks_total: 6
     dependencies: []
     notes: |

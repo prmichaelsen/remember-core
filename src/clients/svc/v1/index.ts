@@ -65,7 +65,7 @@ export function createSvcClient(config: HttpClientConfig): SvcClient {
 export type { HttpClientConfig } from '../../http.js';
 export type { SdkResponse, RememberError } from '../../response.js';
 export type { MemoriesResource } from './memories.js';
-export type { RelationshipsResource } from './relationships.js';
+export type { RelationshipsResource, ReorderOperation, ReorderInput, ReorderResult } from './relationships.js';
 export type { SpacesResource } from './spaces.js';
 export type { ConfirmationsResource } from './confirmations.js';
 export type { PreferencesResource } from './preferences.js';

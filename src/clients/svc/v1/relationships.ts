@@ -3,12 +3,18 @@
 
 import type { HttpClient } from '../../http.js';
 import type { SdkResponse } from '../../response.js';
+import type { components } from './types.generated.js';
+
+export type ReorderOperation = components['schemas']['ReorderOperation'];
+export type ReorderInput = components['schemas']['ReorderInput'];
+export type ReorderResult = components['schemas']['ReorderResult'];
 
 export interface RelationshipsResource {
   create(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   update(userId: string, id: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
   delete(userId: string, id: string): Promise<SdkResponse<unknown>>;
   search(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
+  reorder(userId: string, id: string, input: ReorderInput): Promise<SdkResponse<ReorderResult>>;
 }
 
 export function createRelationshipsResource(http: HttpClient): RelationshipsResource {
@@ -24,6 +30,9 @@ export function createRelationshipsResource(http: HttpClient): RelationshipsReso
     },
     search(userId, input) {
       return http.request('POST', '/api/svc/v1/relationships/search', { userId, body: input });
+    },
+    reorder(userId, id, input) {
+      return http.request('POST', `/api/svc/v1/relationships/${id}/reorder`, { userId, body: input });
     },
   };
 }

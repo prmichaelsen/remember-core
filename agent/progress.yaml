@@ -3014,7 +3014,7 @@ tasks:
       description: "Update openapi.yaml + openapi-web.yaml with reorder endpoint and ordered content schemas, regenerate types."
     - id: task-520
       name: "Svc Client Reorder"
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-77-ordered-relationships/task-520-svc-client-reorder.md
       estimated_hours: 1
       dependencies: [task-519]

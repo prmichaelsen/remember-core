@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.70.10] - 2026-03-13
+
+### Fixed
+- Weaviate date filters now pass `Date` objects instead of ISO strings, matching real Weaviate client behavior
+- Weaviate mock `toComparable` helper normalizes Date-vs-string comparisons in gt/gte/lt/lte filter operators
+- `rem.clustering.ts` `selectCandidates` passes `Date` to `greaterThan` filter instead of raw string
+
+### Changed
+- `inspect-memory.ts` script initializes Firestore before use and prints follow-up fields (follow_up_at, follow_up_notified_at, follow_up_failure_count, follow_up_targets)
+
 ## [0.70.9] - 2026-03-13
 
 ### Changed

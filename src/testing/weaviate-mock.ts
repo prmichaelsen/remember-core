@@ -345,6 +345,17 @@ interface MockFilter {
   filters?: MockFilter[];
 }
 
+/** Convert a value to a timestamp (ms) if it's a Date or a date-like ISO string,
+ *  so that comparisons between Date objects and ISO strings work like real Weaviate. */
+function toComparable(value: unknown): any {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'string') {
+    const t = Date.parse(value);
+    if (!isNaN(t)) return t;
+  }
+  return value;
+}
+
 function applyFilter(objects: MockWeaviateObject[], filter: MockFilter): MockWeaviateObject[] {
   if (!filter) return objects;
 
@@ -378,13 +389,13 @@ function applyFilter(objects: MockWeaviateObject[], filter: MockFilter): MockWea
     case 'notEqual':
       return objects.filter((obj) => obj.properties[filter.field!] !== filter.value);
     case 'gt':
-      return objects.filter((obj) => obj.properties[filter.field!] > filter.value);
+      return objects.filter((obj) => toComparable(obj.properties[filter.field!]) > toComparable(filter.value));
     case 'gte':
-      return objects.filter((obj) => obj.properties[filter.field!] >= filter.value);
+      return objects.filter((obj) => toComparable(obj.properties[filter.field!]) >= toComparable(filter.value));
     case 'lt':
-      return objects.filter((obj) => obj.properties[filter.field!] < filter.value);
+      return objects.filter((obj) => toComparable(obj.properties[filter.field!]) < toComparable(filter.value));
     case 'lte':
-      return objects.filter((obj) => obj.properties[filter.field!] <= filter.value);
+      return objects.filter((obj) => toComparable(obj.properties[filter.field!]) <= toComparable(filter.value));
     case 'containsAny':
       return objects.filter((obj) => {
         const arr = obj.properties[filter.field!];

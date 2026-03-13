@@ -7,7 +7,7 @@
 
 import { initWeaviateClient } from '../src/database/weaviate/client.js';
 import { fetchMemoryWithAllProperties } from '../src/database/weaviate/client.js';
-import { getDocument } from '../src/database/firestore/init.js';
+import { initFirestore, getDocument } from '../src/database/firestore/init.js';
 import { getMemoryIndexPath } from '../src/database/firestore/paths.js';
 
 const memoryUuid = process.argv[2];
@@ -17,6 +17,12 @@ if (!memoryUuid) {
 }
 
 async function inspect() {
+  // 0. Init Firestore
+  initFirestore({
+    serviceAccount: process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY!,
+    projectId: process.env.FIREBASE_PROJECT_ID!,
+  });
+
   // 1. Look up collection from memory index
   const indexPath = getMemoryIndexPath();
   const indexDoc = await getDocument(indexPath, memoryUuid);
@@ -57,6 +63,10 @@ async function inspect() {
   console.log(`  rating_bayesian:${props.rating_bayesian ?? '(null)'}`);
   console.log(`  created_at:     ${props.created_at}`);
   console.log(`  updated_at:     ${props.updated_at}`);
+  console.log(`  follow_up_at:   ${props.follow_up_at ?? '(null)'}`);
+  console.log(`  follow_up_notified_at: ${props.follow_up_notified_at ?? '(null)'}`);
+  console.log(`  follow_up_failure_count: ${props.follow_up_failure_count ?? '(null)'}`);
+  console.log(`  follow_up_targets: ${JSON.stringify(props.follow_up_targets ?? null)}`);
   console.log(`\nCollection owner (from name): ${collectionName.replace('Memory_users_', '')}`);
   console.log(`Stored user_id:               ${props.user_id}`);
 

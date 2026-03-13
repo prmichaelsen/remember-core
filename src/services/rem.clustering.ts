@@ -122,7 +122,7 @@ export async function selectCandidates(
   if (memoryCursor) {
     const unprocessedFilter = Filters.and(
       collection.filter.byProperty('doc_type').equal('memory'),
-      collection.filter.byProperty('created_at').greaterThan(memoryCursor),
+      collection.filter.byProperty('created_at').greaterThan(new Date(memoryCursor)),
     );
     const unprocessedResult = await collection.query.fetchObjects({
       filters: unprocessedFilter,

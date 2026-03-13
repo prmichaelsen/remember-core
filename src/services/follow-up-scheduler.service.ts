@@ -46,7 +46,7 @@ export class FollowUpSchedulerService {
 
   async scanAndNotify(): Promise<ScanResult> {
     const result: ScanResult = { scanned: 0, notified: 0, failed: 0 };
-    const now = new Date().toISOString();
+    const now = new Date();
 
     for await (const collectionId of this.collectionEnumerator()) {
       try {
@@ -76,7 +76,7 @@ export class FollowUpSchedulerService {
     return result;
   }
 
-  private async scanCollection(collectionId: string, now: string, result: ScanResult): Promise<void> {
+  private async scanCollection(collectionId: string, now: Date, result: ScanResult): Promise<void> {
     const collection = this.weaviateClient.collections.get(collectionId) as any;
 
     // follow_up_at <= now
@@ -140,11 +140,11 @@ export class FollowUpSchedulerService {
 
     for (const obj of response.objects ?? []) {
       const props = obj.properties as Record<string, unknown>;
-      const followUpAt = props.follow_up_at as string | undefined;
-      const notifiedAt = props.follow_up_notified_at as string | undefined;
+      const followUpAt = props.follow_up_at;
+      const notifiedAt = props.follow_up_notified_at;
 
       // Only process if rescheduled: follow_up_at > follow_up_notified_at
-      if (followUpAt && notifiedAt && followUpAt > notifiedAt) {
+      if (followUpAt && notifiedAt && new Date(followUpAt as string).getTime() > new Date(notifiedAt as string).getTime()) {
         result.scanned++;
         await this.processMemory(collection, collectionId, obj, result);
       }

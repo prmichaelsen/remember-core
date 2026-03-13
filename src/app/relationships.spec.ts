@@ -184,13 +184,13 @@ describe('RelationshipsResource', () => {
   // ── getOrderedContent ───────────────────────────────────────
 
   describe('getOrderedContent', () => {
-    it('calls GET /api/app/v1/relationships/:id/memories', async () => {
+    it('calls GET /api/app/v1/relationships/:id/ordered-content', async () => {
       const resource = createRelationshipsResource(http);
       await resource.getOrderedContent('user1', 'rel-123');
 
       expect(http.request).toHaveBeenCalledWith(
         'GET',
-        '/api/app/v1/relationships/rel-123/memories',
+        '/api/app/v1/relationships/rel-123/ordered-content',
         { userId: 'user1', params: {} },
       );
     });
@@ -201,7 +201,7 @@ describe('RelationshipsResource', () => {
 
       expect(http.request).toHaveBeenCalledWith(
         'GET',
-        '/api/app/v1/relationships/rel-123/memories',
+        '/api/app/v1/relationships/rel-123/ordered-content',
         { userId: 'user1', params: { limit: '10', offset: '20' } },
       );
     });
@@ -210,9 +210,9 @@ describe('RelationshipsResource', () => {
       const mockResponse = {
         data: {
           relationship: { id: 'rel-1', relationship_type: 'list' },
-          memories: [
-            { memory_id: 'a', position: 0, content: 'first', tags: [], created_at: '2026-01-01' },
-            { memory_id: 'b', position: 1, content: 'second', tags: [], created_at: '2026-01-02' },
+          items: [
+            { memory_id: 'a', _position: 0, content: 'first', tags: [], created_at: '2026-01-01' },
+            { memory_id: 'b', _position: 1, content: 'second', tags: [], created_at: '2026-01-02' },
           ],
           total: 5,
           has_more: true,
@@ -227,7 +227,7 @@ describe('RelationshipsResource', () => {
 
       expect(result.data!.total).toBe(5);
       expect(result.data!.has_more).toBe(true);
-      expect((result.data as any).memories).toHaveLength(2);
+      expect((result.data as any).items).toHaveLength(2);
     });
 
     it('handles offset for pagination', async () => {

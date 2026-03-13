@@ -51,7 +51,7 @@ export type {
   RelationshipsResource,
   RelationshipMemoriesResponse,
   RelationshipMetadata,
-  OrderedContentItem,
+  OrderedContentMemory,
   OrderedContentResponse,
   InsertMemoryAtInput,
   InsertMemoryAtResult,

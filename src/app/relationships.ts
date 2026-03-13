@@ -26,17 +26,14 @@ export interface RelationshipMemoriesResponse {
   has_more: boolean;
 }
 
-export interface OrderedContentItem {
-  memory_id: string;
-  position: number;
-  content: string;
-  tags: string[];
-  created_at: string;
+/** Full memory object with _position calculated property added. */
+export interface OrderedContentMemory extends Record<string, unknown> {
+  _position: number;
 }
 
 export interface OrderedContentResponse {
   relationship: RelationshipMetadata;
-  items: OrderedContentItem[];
+  items: OrderedContentMemory[];
   total: number;
   has_more: boolean;
 }
@@ -162,7 +159,7 @@ export function createRelationshipsResource(http: HttpClient): RelationshipsReso
       // Fetch final relationship state for metadata
       const getResult = await http.request<RelationshipMetadata>(
         'GET',
-        `/api/app/v1/relationships/${input.relationship_id}/memories`,
+        `/api/app/v1/relationships/${input.relationship_id}/ordered-content`,
         { userId, params: { limit: '0' } },
       );
 
@@ -182,7 +179,7 @@ export function createRelationshipsResource(http: HttpClient): RelationshipsReso
       if (options?.limit != null) params.limit = String(options.limit);
       if (options?.offset != null) params.offset = String(options.offset);
 
-      return http.request('GET', `/api/app/v1/relationships/${relationshipId}/memories`, {
+      return http.request('GET', `/api/app/v1/relationships/${relationshipId}/ordered-content`, {
         userId,
         params,
       });

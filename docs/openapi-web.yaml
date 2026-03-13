@@ -542,6 +542,45 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
 
+  /api/app/v1/relationships/{relationshipId}/ordered-content:
+    get:
+      tags: [relationships]
+      summary: Get relationship content in position order
+      description: |
+        Returns relationship metadata plus paginated memories sorted by their
+        position in the member order. Each item includes a `position` field.
+        Relationships without explicit ordering are backfilled with default
+        positions based on the existing member ID array order.
+      operationId: appGetOrderedContent
+      parameters:
+        - $ref: '#/components/parameters/relationshipId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          description: Number of items to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Offset for pagination
+      responses:
+        '200':
+          description: Ordered relationship content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderedContentResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   # ============================================================
   # Spaces
   # ============================================================
@@ -2538,35 +2577,53 @@ components:
       type: object
       required: [relationship, memories, total, has_more]
       description: |
-        Items are returned in position order when the relationship has member_order.
+        Relationship metadata with paginated resolved memories.
       properties:
         relationship:
           $ref: '#/components/schemas/RelationshipMetadata'
         memories:
           type: array
           items:
-            $ref: '#/components/schemas/OrderedContentItem'
+            type: object
+          description: Resolved memory objects
         total:
           type: integer
         has_more:
           type: boolean
 
-    OrderedContentItem:
+    OrderedContentResponse:
       type: object
-      required: [memory_id, position, content, tags, created_at]
-      description: A memory within a relationship, with its position in the ordering.
+      required: [relationship, items, total, has_more]
+      description: |
+        Relationship content sorted by position order. Items include explicit
+        position fields. Relationships without stored ordering are backfilled
+        with default positions based on member ID array order.
       properties:
-        memory_id:
-          type: string
-        position:
-          type: integer
-          description: Zero-indexed position within the relationship
-        content:
-          type: string
-        tags:
+        relationship:
+          $ref: '#/components/schemas/RelationshipMetadata'
+        items:
           type: array
           items:
-            type: string
-        created_at:
-          type: string
-          format: date-time
+            $ref: '#/components/schemas/OrderedContentMemory'
+        total:
+          type: integer
+        has_more:
+          type: boolean
+
+    OrderedContentMemory:
+      type: object
+      required: [_position]
+      description: |
+        A full memory object with an additional `_position` calculated property
+        indicating its zero-indexed position within the relationship's member order.
+        The underscore prefix signals this is a derived field, not stored on the memory.
+        All standard memory properties are included.
+      allOf:
+        - type: object
+          properties:
+            _position:
+              type: integer
+              description: Zero-indexed position within the relationship (calculated)
+        - type: object
+          description: Full memory document properties
+          additionalProperties: true

@@ -287,6 +287,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/app/v1/relationships/{relationshipId}/ordered-content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get relationship content in position order
+         * @description Returns relationship metadata plus paginated memories sorted by their
+         *     position in the member order. Each item includes a `position` field.
+         *     Relationships without explicit ordering are backfilled with default
+         *     positions based on the existing member ID array order.
+         */
+        get: operations["appGetOrderedContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/app/v1/spaces/publish": {
         parameters: {
             query?: never;
@@ -1175,22 +1198,36 @@ export interface components {
             updated_at: string;
             tags: string[];
         };
-        /** @description Items are returned in position order when the relationship has member_order. */
+        /** @description Relationship metadata with paginated resolved memories. */
         RelationshipMemoriesResponse: {
             relationship: components["schemas"]["RelationshipMetadata"];
-            memories: components["schemas"]["OrderedContentItem"][];
+            /** @description Resolved memory objects */
+            memories: Record<string, never>[];
             total: number;
             has_more: boolean;
         };
-        /** @description A memory within a relationship, with its position in the ordering. */
-        OrderedContentItem: {
-            memory_id: string;
-            /** @description Zero-indexed position within the relationship */
-            position: number;
-            content: string;
-            tags: string[];
-            /** Format: date-time */
-            created_at: string;
+        /**
+         * @description Relationship content sorted by position order. Items include explicit
+         *     position fields. Relationships without stored ordering are backfilled
+         *     with default positions based on member ID array order.
+         */
+        OrderedContentResponse: {
+            relationship: components["schemas"]["RelationshipMetadata"];
+            items: components["schemas"]["OrderedContentMemory"][];
+            total: number;
+            has_more: boolean;
+        };
+        /**
+         * @description A full memory object with an additional `_position` calculated property
+         *     indicating its zero-indexed position within the relationship's member order.
+         *     The underscore prefix signals this is a derived field, not stored on the memory.
+         *     All standard memory properties are included.
+         */
+        OrderedContentMemory: {
+            /** @description Zero-indexed position within the relationship (calculated) */
+            _position: number;
+        } & {
+            [key: string]: unknown;
         };
     };
     responses: {
@@ -1785,6 +1822,36 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RelationshipMemoriesResponse"];
+                };
+            };
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
+        };
+    };
+    appGetOrderedContent: {
+        parameters: {
+            query?: {
+                /** @description Number of items to return */
+                limit?: number;
+                /** @description Offset for pagination */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Relationship UUID */
+                relationshipId: components["parameters"]["relationshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ordered relationship content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderedContentResponse"];
                 };
             };
             401: components["responses"]["UnauthorizedError"];

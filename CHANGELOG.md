@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.70.9] - 2026-03-13
+
+### Changed
+- Separate `getOrderedContent` onto dedicated route `GET /api/app/v1/relationships/:id/ordered-content` (was sharing `/memories` route with `getMemories`)
+- Rename `OrderedContentItem` to `OrderedContentMemory` — full memory object with `_position` calculated property instead of slim shape
+- Add `OrderedContentResponse` schema (distinct from `RelationshipMemoriesResponse`)
+- Revert `RelationshipMemoriesResponse.memories` to generic objects (no longer uses ordered content schema)
+
 ## [0.70.0] - 2026-03-12
 
 ### Changed

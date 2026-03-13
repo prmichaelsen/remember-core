@@ -3021,7 +3021,7 @@ tasks:
       description: "Add relationships.reorder() to svc client, 1:1 REST mirror."
     - id: task-521
       name: "App Client Compounds"
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-77-ordered-relationships/task-521-app-client-compounds.md
       estimated_hours: 3
       dependencies: [task-518, task-519, task-520]

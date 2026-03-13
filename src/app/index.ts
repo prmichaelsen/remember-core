@@ -47,5 +47,13 @@ export type { SdkResponse, RememberError } from '../clients/response.js';
 export type { ProfilesResource } from './profiles.js';
 export type { GhostResource } from './ghost.js';
 export type { MemoriesResource, MemoryWithRelationships, RelationshipWithPreviews, MemoryPreview } from './memories.js';
-export type { RelationshipsResource, RelationshipMemoriesResponse, RelationshipMetadata } from './relationships.js';
+export type {
+  RelationshipsResource,
+  RelationshipMemoriesResponse,
+  RelationshipMetadata,
+  OrderedContentItem,
+  OrderedContentResponse,
+  InsertMemoryAtInput,
+  InsertMemoryAtResult,
+} from './relationships.js';
 export type { CommentsResource, CreateCommentInput, CreateCommentResult } from './comments.js';

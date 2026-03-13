@@ -61,7 +61,7 @@ describe('createAppClient', () => {
     expect(typeof client.relationships.getMemories).toBe('function');
   });
 
-  it('total method count is 7', () => {
+  it('total method count is 10', () => {
     const client = createAppClient({
       baseUrl: 'https://api.example.com',
       getAuthToken: async () => 'token',
@@ -73,6 +73,6 @@ describe('createAppClient', () => {
       Object.keys(client.memories).length +
       Object.keys(client.relationships).length;
 
-    expect(methodCount).toBe(8);
+    expect(methodCount).toBe(10);
   });
 });

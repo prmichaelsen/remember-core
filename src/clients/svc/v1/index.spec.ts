@@ -135,7 +135,7 @@ describe('createSvcClient', () => {
     expect(typeof client.reports.listByMemory).toBe('function');
   });
 
-  it('total method count is 63', () => {
+  it('total method count is 64', () => {
     const client = createSvcClient({
       baseUrl: 'https://api.example.com',
       getAuthToken: async () => 'token',
@@ -151,6 +151,6 @@ describe('createSvcClient', () => {
       Object.keys(client.health).length +
       Object.keys(client.reports).length;
 
-    expect(methodCount).toBe(63);
+    expect(methodCount).toBe(64);
   });
 });

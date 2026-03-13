@@ -397,4 +397,143 @@ describe('Ordered Relationships (integration)', () => {
     expect(order[m3.memory_id]).toBe(0);
     expect(order[m1.memory_id]).toBe(1);
   });
+
+  // ── Edge cases ──────────────────────────────────────────────
+
+  it('reorder on nonexistent relationship throws not found', async () => {
+    await expect(
+      relationshipService.reorder({
+        relationship_id: 'does-not-exist',
+        operation: { type: 'swap', memory_id_a: 'a', memory_id_b: 'b' },
+        version: 1,
+      }),
+    ).rejects.toThrow('not found');
+  });
+
+  it('reorder by unauthorized user throws Unauthorized', async () => {
+    const m1 = await memoryService.create({ content: 'A' });
+    const m2 = await memoryService.create({ content: 'B' });
+
+    const rel = await relationshipService.create({
+      memory_ids: [m1.memory_id, m2.memory_id],
+      relationship_type: 'pair',
+      observation: 'test',
+    });
+
+    // Create a service with a different userId
+    const otherService = new RelationshipService(collection as any, 'other-user', createMockLogger());
+
+    await expect(
+      otherService.reorder({
+        relationship_id: rel.relationship_id,
+        operation: { type: 'swap', memory_id_a: m1.memory_id, memory_id_b: m2.memory_id },
+        version: 1,
+      }),
+    ).rejects.toThrow('Unauthorized');
+  });
+
+  it('add_memory_ids with duplicate is a no-op', async () => {
+    const m1 = await memoryService.create({ content: 'A' });
+    const m2 = await memoryService.create({ content: 'B' });
+
+    const rel = await relationshipService.create({
+      memory_ids: [m1.memory_id, m2.memory_id],
+      relationship_type: 'pair',
+      observation: 'test',
+    });
+
+    // Try adding m1 again — deduplicates to zero new members, throws "No fields"
+    await expect(
+      relationshipService.update({
+        relationship_id: rel.relationship_id,
+        add_memory_ids: [m1.memory_id],
+      }),
+    ).rejects.toThrow('No fields provided for update');
+
+    // Order unchanged
+    const stored = collection._store.get(rel.relationship_id);
+    const order = JSON.parse(stored!.properties.member_order_json);
+    expect(Object.keys(order)).toHaveLength(2);
+    expect(order[m1.memory_id]).toBe(0);
+    expect(order[m2.memory_id]).toBe(1);
+  });
+
+  it('version flows correctly through update → reorder sequence', async () => {
+    const m1 = await memoryService.create({ content: 'A' });
+    const m2 = await memoryService.create({ content: 'B' });
+    const m3 = await memoryService.create({ content: 'C' });
+
+    const rel = await relationshipService.create({
+      memory_ids: [m1.memory_id, m2.memory_id],
+      relationship_type: 'list',
+      observation: 'test',
+    });
+    // version is 1 after create
+
+    // Add m3 — version bumps to 2
+    const updateResult = await relationshipService.update({
+      relationship_id: rel.relationship_id,
+      add_memory_ids: [m3.memory_id],
+    });
+    expect(updateResult.version).toBe(2);
+
+    // Reorder with version 2 — should succeed, bump to 3
+    const reorderResult = await relationshipService.reorder({
+      relationship_id: rel.relationship_id,
+      operation: { type: 'move_to_index', memory_id: m3.memory_id, index: 0 },
+      version: 2,
+    });
+    expect(reorderResult.version).toBe(3);
+
+    // Using stale version 2 should fail
+    await expect(
+      relationshipService.reorder({
+        relationship_id: rel.relationship_id,
+        operation: { type: 'swap', memory_id_a: m1.memory_id, memory_id_b: m2.memory_id },
+        version: 2,
+      }),
+    ).rejects.toThrow('409');
+  });
+
+  it('single-member relationship handles reorder gracefully', async () => {
+    const m1 = await memoryService.create({ content: 'Solo' });
+
+    const rel = await relationshipService.create({
+      memory_ids: [m1.memory_id],
+      relationship_type: 'singleton',
+      observation: 'just one',
+    });
+
+    // move_to_index 0 on single element — should be a no-op
+    const reordered = await relationshipService.reorder({
+      relationship_id: rel.relationship_id,
+      operation: { type: 'move_to_index', memory_id: m1.memory_id, index: 0 },
+      version: 1,
+    });
+
+    expect(reordered.member_order[m1.memory_id]).toBe(0);
+    expect(Object.keys(reordered.member_order)).toHaveLength(1);
+    expect(reordered.version).toBe(2);
+  });
+
+  it('set_order with duplicate IDs deduplicates silently', async () => {
+    const m1 = await memoryService.create({ content: 'A' });
+    const m2 = await memoryService.create({ content: 'B' });
+
+    const rel = await relationshipService.create({
+      memory_ids: [m1.memory_id, m2.memory_id],
+      relationship_type: 'pair',
+      observation: 'test',
+    });
+
+    // Duplicates are tolerated — Set deduplicates, membership matches
+    const result = await relationshipService.reorder({
+      relationship_id: rel.relationship_id,
+      operation: { type: 'set_order', ordered_memory_ids: [m1.memory_id, m1.memory_id, m2.memory_id] },
+      version: 1,
+    });
+
+    // Order is based on deduplicated array
+    expect(Object.keys(result.member_order)).toHaveLength(2);
+  });
 });

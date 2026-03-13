@@ -2993,7 +2993,7 @@ tasks:
       description: "Add member_order_json to Weaviate schema, member_order to Relationship type, ReorderOperation union."
     - id: task-517
       name: "Reorder Logic"
-      status: not_started
+      status: completed
       file: agent/tasks/milestone-77-ordered-relationships/task-517-reorder-logic.md
       estimated_hours: 3
       dependencies: [task-516]

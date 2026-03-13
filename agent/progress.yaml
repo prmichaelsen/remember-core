@@ -735,6 +735,22 @@ milestones:
       Replaced the synthetic core space approach (T511-T513, reverted) with
       a simple upsert using deterministic UUID and content_type: ghost.
 
+  - id: M77
+    name: Ordered Relationships
+    status: not_started
+    progress: 0
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 6
+    dependencies: []
+    notes: |
+      Positional ordering for relationship members via member_order_json.
+      Dedicated reorder operation (discriminated union: move_to_index, swap,
+      set_order, move_before, move_after). App client compounds: insertMemoryAt,
+      getOrderedContent with pagination. Optimistic locking on reorder.
+      Design: agent/design/local.ordered-relationships.md
+      Clarification: agent/clarifications/clarification-24-ordered-relationships.md
+
 tasks:
   milestone_1:
     - id: task-1
@@ -2967,6 +2983,49 @@ tasks:
       actual_hours: 1
       dependencies: []
       description: "Upsert mood as a real Weaviate memory after each REM cycle — simpler alternative to synthetic space interception."
+  milestone_77:
+    - id: task-516
+      name: "Schema & Types"
+      status: not_started
+      file: agent/tasks/milestone-77-ordered-relationships/task-516-schema-and-types.md
+      estimated_hours: 2
+      dependencies: []
+      description: "Add member_order_json to Weaviate schema, member_order to Relationship type, ReorderOperation union."
+    - id: task-517
+      name: "Reorder Logic"
+      status: not_started
+      file: agent/tasks/milestone-77-ordered-relationships/task-517-reorder-logic.md
+      estimated_hours: 3
+      dependencies: [task-516]
+      description: "Pure reorder operation handlers: move_to_index, swap, set_order, move_before, move_after."
+    - id: task-518
+      name: "RelationshipService Integration"
+      status: not_started
+      file: agent/tasks/milestone-77-ordered-relationships/task-518-relationship-service-integration.md
+      estimated_hours: 4
+      dependencies: [task-516, task-517]
+      description: "Wire reorder() into service, auto-order on create/update, sorted reads, lazy backfill."
+    - id: task-519
+      name: "OpenAPI & Type Generation"
+      status: not_started
+      file: agent/tasks/milestone-77-ordered-relationships/task-519-openapi-type-generation.md
+      estimated_hours: 2
+      dependencies: [task-516]
+      description: "Update openapi.yaml + openapi-web.yaml with reorder endpoint and ordered content schemas, regenerate types."
+    - id: task-520
+      name: "Svc Client Reorder"
+      status: not_started
+      file: agent/tasks/milestone-77-ordered-relationships/task-520-svc-client-reorder.md
+      estimated_hours: 1
+      dependencies: [task-519]
+      description: "Add relationships.reorder() to svc client, 1:1 REST mirror."
+    - id: task-521
+      name: "App Client Compounds"
+      status: not_started
+      file: agent/tasks/milestone-77-ordered-relationships/task-521-app-client-compounds.md
+      estimated_hours: 3
+      dependencies: [task-518, task-519, task-520]
+      description: "insertMemoryAt() compound + getOrderedContent() paginated ordered reads on App client."
 
 documentation:
   design_documents: 28

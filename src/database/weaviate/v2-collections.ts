@@ -127,7 +127,8 @@ const COMMON_MEMORY_PROPERTIES = [
   { name: 'moderation_flags', dataType: configure.dataType.TEXT_ARRAY },
 
   // Agent follow-up tracking
-  { name: 'follow_up_at', dataType: configure.dataType.DATE },
+  { name: 'follow_up_at', dataType: configure.dataType.DATE }, // legacy text on existing collections — unused
+  { name: 'follow_up_date', dataType: configure.dataType.DATE },
   { name: 'follow_up_notified_at', dataType: configure.dataType.DATE },
   { name: 'follow_up_targets', dataType: configure.dataType.TEXT_ARRAY },
   { name: 'follow_up_failure_count', dataType: configure.dataType.INT },

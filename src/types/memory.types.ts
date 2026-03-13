@@ -146,7 +146,8 @@ export interface Memory {
   moderation_flags?: string[]; // Per-space moderation flags (format: "{space_id}:{flag_type}")
 
   // Agent Follow-Up Tracking
-  follow_up_at?: string; // ISO 8601 datetime — agent follow-up reminder date
+  follow_up_at?: string; // @deprecated — legacy text-typed property, use follow_up_date
+  follow_up_date?: string; // ISO 8601 datetime — agent follow-up reminder date
   follow_up_notified_at?: string; // ISO 8601 — set after successful webhook delivery
   follow_up_targets?: string[]; // e.g. ["user:abc", "group:xyz"]. Empty = owner only.
   follow_up_failure_count?: number; // Retry counter, skip when >= 3

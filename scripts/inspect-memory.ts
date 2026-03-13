@@ -63,7 +63,8 @@ async function inspect() {
   console.log(`  rating_bayesian:${props.rating_bayesian ?? '(null)'}`);
   console.log(`  created_at:     ${props.created_at}`);
   console.log(`  updated_at:     ${props.updated_at}`);
-  console.log(`  follow_up_at:   ${props.follow_up_at ?? '(null)'}`);
+  console.log(`  follow_up_at:   ${props.follow_up_at ?? '(null)'} (legacy text)`);
+  console.log(`  follow_up_date: ${props.follow_up_date ?? '(null)'}`);
   console.log(`  follow_up_notified_at: ${props.follow_up_notified_at ?? '(null)'}`);
   console.log(`  follow_up_failure_count: ${props.follow_up_failure_count ?? '(null)'}`);
   console.log(`  follow_up_targets: ${JSON.stringify(props.follow_up_targets ?? null)}`);

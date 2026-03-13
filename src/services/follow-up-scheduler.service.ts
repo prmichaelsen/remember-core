@@ -1,5 +1,5 @@
 /**
- * FollowUpSchedulerService — scans Weaviate for memories with due follow_up_at
+ * FollowUpSchedulerService — scans Weaviate for memories with due follow_up_date
  * dates, emits memory.follow_up_due webhook events, and marks memories as notified.
  */
 
@@ -53,7 +53,7 @@ export class FollowUpSchedulerService {
         await this.scanCollection(collectionId, now, result);
       } catch (err) {
         const errStr = String(err);
-        // Collections missing from Weaviate or without follow_up_at in schema — skip silently
+        // Collections missing from Weaviate or without follow_up_date in schema — skip silently
         if (errStr.includes('no such prop') || errStr.includes('could not find class')) {
           this.logger.debug('Skipping collection (missing or no follow-up schema)', {
             collection_id: collectionId,
@@ -79,8 +79,8 @@ export class FollowUpSchedulerService {
   private async scanCollection(collectionId: string, now: Date, result: ScanResult): Promise<void> {
     const collection = this.weaviateClient.collections.get(collectionId) as any;
 
-    // follow_up_at <= now
-    const dueDateFilter = collection.filter.byProperty('follow_up_at').lessOrEqual(now);
+    // follow_up_date <= now
+    const dueDateFilter = collection.filter.byProperty('follow_up_date').lessOrEqual(now);
 
     // follow_up_failure_count < MAX or null (treat null as 0)
     const notExhaustedFilter = Filters.or(
@@ -94,8 +94,8 @@ export class FollowUpSchedulerService {
     // Fetch memories that have never been notified and are due
     await this.fetchAndProcess(collection, collectionId, Filters.and(dueDateFilter, neverNotifiedFilter, notExhaustedFilter), result);
 
-    // Fetch memories that were notified but rescheduled (follow_up_at > follow_up_notified_at)
-    // We query for follow_up_at <= now AND follow_up_notified_at IS NOT NULL, then filter in-memory
+    // Fetch memories that were notified but rescheduled (follow_up_date > follow_up_notified_at)
+    // We query for follow_up_date <= now AND follow_up_notified_at IS NOT NULL, then filter in-memory
     const previouslyNotifiedFilter = collection.filter.byProperty('follow_up_notified_at').isNull(false);
     await this.fetchAndProcessRescheduled(collection, collectionId, Filters.and(dueDateFilter, previouslyNotifiedFilter, notExhaustedFilter), result);
   }
@@ -110,7 +110,7 @@ export class FollowUpSchedulerService {
       filters: filter,
       limit: 100,
       returnProperties: [
-        'title', 'content', 'user_id', 'owner_id', 'follow_up_at',
+        'title', 'content', 'user_id', 'owner_id', 'follow_up_date',
         'follow_up_targets', 'follow_up_notified_at',
         'follow_up_failure_count', 'space_ids', 'group_ids',
       ],
@@ -132,7 +132,7 @@ export class FollowUpSchedulerService {
       filters: filter,
       limit: 100,
       returnProperties: [
-        'title', 'content', 'user_id', 'owner_id', 'follow_up_at',
+        'title', 'content', 'user_id', 'owner_id', 'follow_up_date',
         'follow_up_targets', 'follow_up_notified_at',
         'follow_up_failure_count', 'space_ids', 'group_ids',
       ],
@@ -140,10 +140,10 @@ export class FollowUpSchedulerService {
 
     for (const obj of response.objects ?? []) {
       const props = obj.properties as Record<string, unknown>;
-      const followUpAt = props.follow_up_at;
+      const followUpAt = props.follow_up_date;
       const notifiedAt = props.follow_up_notified_at;
 
-      // Only process if rescheduled: follow_up_at > follow_up_notified_at
+      // Only process if rescheduled: follow_up_date > follow_up_notified_at
       if (followUpAt && notifiedAt && new Date(followUpAt as string).getTime() > new Date(notifiedAt as string).getTime()) {
         result.scanned++;
         await this.processMemory(collection, collectionId, obj, result);
@@ -169,7 +169,7 @@ export class FollowUpSchedulerService {
           memory_id: memoryId,
           title: (props.title as string) || '',
           owner_id: resolvedOwnerId,
-          follow_up_at: (props.follow_up_at as string) || '',
+          follow_up_at: (props.follow_up_date as string) || '',
           content_preview: truncate(props.content as string, CONTENT_PREVIEW_LENGTH),
           follow_up_targets: (props.follow_up_targets as string[]) || [],
           space_ids: (props.space_ids as string[]) || [],

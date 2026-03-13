@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.70.11] - 2026-03-13
+
+### Fixed
+- `follow_up_at` was added as text type on existing Weaviate collections, breaking date filters in the follow-up scheduler
+- Add new `follow_up_date` property (date type) to all Memory_* collections and migrate all code to use it
+- Scheduler, MemoryService create/update, and OpenAPI spec now use `follow_up_date`
+- `follow_up_at` retained as deprecated legacy property (Weaviate does not support property deletion)
+- Migration script adds `follow_up_date` to all 49 prod collections
+
+### Changed
+- `inspect-memory.ts` displays both `follow_up_at` (legacy) and `follow_up_date` fields
+
 ## [0.70.10] - 2026-03-13
 
 ### Fixed

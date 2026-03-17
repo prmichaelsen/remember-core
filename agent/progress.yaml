@@ -3,7 +3,7 @@ project:
   version: 0.49.7
   started: 2026-02-27
   status: in_progress
-  current_milestone: M77
+  current_milestone: M79
   # M14-M19 all completed.
   description: |
     Core SDK for Remember MCP and REST services.
@@ -750,6 +750,38 @@ milestones:
       getOrderedContent with pagination. Optimistic locking on reorder.
       Design: agent/design/local.ordered-relationships.md
       Clarification: agent/clarifications/clarification-24-ordered-relationships.md
+
+  - id: M78
+    name: Search Enhancement Layer
+    status: not_started
+    progress: 0
+    estimated_weeks: 2
+    tasks_completed: 0
+    tasks_total: 0
+    dependencies: []
+    notes: |
+      Request-time search optimization: cross-encoder re-ranking, hybrid search
+      (BM25 + vector), query expansion, HyDE. SearchEnhancementService wraps
+      MemoryService.search() and SpaceService.search() with retrieval optimization.
+      Not a background job — runs synchronously during search requests.
+      Design: Based on agent/reports/audit-1-ingestion-rem-data-massaging.md
+      RAG research: agent/artifacts/rag-best-practices-2025-2026.md
+
+  - id: M79
+    name: Query Augmentation Service
+    status: not_started
+    progress: 0
+    estimated_weeks: 1
+    tasks_completed: 0
+    tasks_total: 7
+    dependencies: []
+    notes: |
+      Synthetic question generation for improved query-content matching.
+      Background job (every 5 minutes) generates 3-5 searchable questions per
+      memory via Haiku, stored in synthetic_queries field. Auto-catches unprocessed
+      memories (WHERE queries_generated_at IS NULL). Optional sync mode for
+      critical imports. Cost: ~$3-5/month. Latency: 5-10 minutes for new imports.
+      Design: agent/milestones/milestone-79-query-augmentation-service.md
 
 tasks:
   milestone_1:
@@ -3026,6 +3058,15 @@ tasks:
       estimated_hours: 3
       dependencies: [task-518, task-519, task-520]
       description: "insertMemoryAt() compound + getOrderedContent() paginated ordered reads on App client."
+
+  unassigned:
+    - id: task-522
+      name: "Filter Deleted Memories from getOrderedContent"
+      status: not_started
+      file: agent/tasks/unassigned/task-522-filter-deleted-from-ordered-content.md
+      estimated_hours: 2-3
+      dependencies: []
+      description: "getOrderedContent returns soft-deleted memories. Add filtering (exclude by default) + include_deleted query param."
 
 documentation:
   design_documents: 28

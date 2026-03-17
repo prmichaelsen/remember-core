@@ -239,6 +239,14 @@ export {
   type ImportResult,
 } from './import.service.js';
 
+// Query Augmentation service
+export {
+  QueryAugmenterService,
+  type QueryAugmenterConfig,
+  type GenerateQueriesInput,
+  type GenerateQueriesResult,
+} from './query-augmenter.service.js';
+
 // REM (Relationship Engine for Memories)
 export {
   type RemConfig,

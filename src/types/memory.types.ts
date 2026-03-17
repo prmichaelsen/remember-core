@@ -176,6 +176,11 @@ export interface Memory {
   moderated_by?: string | null; // User ID of last moderator action
   moderated_at?: string | null; // ISO 8601 timestamp of last moderation action
 
+  // Query Augmentation (M79)
+  synthetic_queries?: string[]; // LLM-generated questions this memory could answer
+  queries_generated_at?: string; // ISO 8601 timestamp of query generation
+  queries_generation_status?: 'pending' | 'generated' | 'failed' | 'skipped'; // Processing status
+
 }
 
 /**

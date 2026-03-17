@@ -7,7 +7,7 @@
 
 // ─── Enums / Unions ─────────────────────────────────────────────────────
 
-export type JobType = 'import' | 'rem_cycle' | 'account_deletion';
+export type JobType = 'import' | 'rem_cycle' | 'account_deletion' | 'query_augmentation';
 
 export type JobStatus =
   | 'pending'
@@ -90,4 +90,5 @@ export const DEFAULT_TTL_HOURS: Record<JobType, number> = {
   import: 1,
   rem_cycle: 24,
   account_deletion: 48,
+  query_augmentation: 1,
 };

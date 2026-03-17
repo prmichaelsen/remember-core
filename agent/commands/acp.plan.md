@@ -274,8 +274,10 @@ For each task in milestone:
 Update progress tracking with new planning items:
 
 **Actions**:
-- Add milestones to milestones array (with complete metadata)
+- Add milestones to milestones array (with complete metadata including `file:` path to milestone document, e.g. `file: agent/milestones/milestone-{N}-{name}.md`)
 - Add tasks to appropriate milestone_N sections
+- Ensure each task entry includes `started: null` and `actual_hours: null` fields per the progress.template.yaml schema
+- Ensure each milestone entry includes `file:` pointing to its milestone document path
 - Update milestone tasks_total counts
 - Calculate estimated_weeks from task hour estimates
 - Update next_steps with new planning items
@@ -331,7 +333,17 @@ Next Steps:
 
 **Expected Outcome**: User understands what was created
 
-### 9. Offer Next Actions
+### 9. Commit Planning Artifacts
+
+Commit all created planning documents and progress.yaml updates.
+
+**Actions**:
+- Invoke `@git.commit` to commit the planning artifacts
+- Include all created milestone documents, task documents, design documents, drafts, and progress.yaml updates
+
+**Expected Outcome**: Planning artifacts committed to version control
+
+### 10. Offer Next Actions
 
 Prompt user for next action:
 

@@ -341,6 +341,10 @@ export interface UpdateMemoryInput {
   follow_up_at?: string | null; // @deprecated — use follow_up_date
   follow_up_date?: string | null;
   follow_up_targets?: string[];
+  // Query Augmentation (M79)
+  synthetic_queries?: string[];
+  queries_generated_at?: string;
+  queries_generation_status?: 'pending' | 'generated' | 'failed' | 'skipped';
 }
 
 export interface UpdateMemoryResult {
@@ -1564,6 +1568,10 @@ export class MemoryService {
     if (input.follow_up_date !== undefined) { updates.follow_up_date = input.follow_up_date; updatedFields.push('follow_up_date'); }
     if (input.follow_up_at !== undefined) { updates.follow_up_date = input.follow_up_at; updatedFields.push('follow_up_date'); } // legacy compat
     if (input.follow_up_targets !== undefined) { updates.follow_up_targets = input.follow_up_targets; updatedFields.push('follow_up_targets'); }
+    // Query Augmentation (M79)
+    if (input.synthetic_queries !== undefined) { updates.synthetic_queries = input.synthetic_queries; updatedFields.push('synthetic_queries'); }
+    if (input.queries_generated_at !== undefined) { updates.queries_generated_at = input.queries_generated_at; updatedFields.push('queries_generated_at'); }
+    if (input.queries_generation_status !== undefined) { updates.queries_generation_status = input.queries_generation_status; updatedFields.push('queries_generation_status'); }
 
     if (updatedFields.length === 0) throw new Error('No fields provided for update');
 

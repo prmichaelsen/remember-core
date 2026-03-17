@@ -197,6 +197,11 @@ const COMMON_MEMORY_PROPERTIES = [
   { name: 'share_count', dataType: configure.dataType.INT },
   { name: 'comment_count', dataType: configure.dataType.INT },
 
+  // Query Augmentation (M79)
+  { name: 'synthetic_queries', dataType: configure.dataType.TEXT_ARRAY },
+  { name: 'queries_generated_at', dataType: configure.dataType.DATE },
+  { name: 'queries_generation_status', dataType: configure.dataType.TEXT },
+
 ];
 
 /**

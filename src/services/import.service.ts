@@ -10,6 +10,7 @@ import type { Logger } from '../utils/logger.js';
 import type { MemoryService, CreateMemoryResult } from './memory.service.js';
 import type { RelationshipService } from './relationship.service.js';
 import type { HaikuClient, HaikuExtraction } from './rem.haiku.js';
+import type { QueryAugmenterService } from './query-augmenter.service.js';
 
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
@@ -31,6 +32,8 @@ export interface ImportInput {
   chunk_size?: number;
   /** Conversation that triggered the import */
   context_conversation_id?: string;
+  /** Query generation mode (default: 'async' — background job processes) */
+  generate_queries?: 'async' | 'sync' | 'skip';
 }
 
 export interface ImportItemResult {
@@ -208,15 +211,17 @@ export class ImportService {
     private relationshipService: RelationshipService,
     private haikuClient: HaikuClient,
     private logger: Logger,
+    private queryAugmenterService?: QueryAugmenterService,
   ) {}
 
   async import(input: ImportInput): Promise<ImportResult> {
     const chunkSize = input.chunk_size ?? DEFAULT_CHUNK_SIZE;
+    const generateQueriesMode = input.generate_queries ?? 'async';
     const results: ImportItemResult[] = [];
     let totalCreated = 0;
 
     for (const item of input.items) {
-      const result = await this.importItem(item, chunkSize, input.context_conversation_id);
+      const result = await this.importItem(item, chunkSize, input.context_conversation_id, generateQueriesMode);
       results.push(result);
       totalCreated += result.chunk_count + 1; // chunks + parent
     }
@@ -224,6 +229,7 @@ export class ImportService {
     this.logger.info('Import complete', {
       items: results.length,
       total_memories_created: totalCreated,
+      generate_queries_mode: generateQueriesMode,
     });
 
     return {
@@ -236,6 +242,7 @@ export class ImportService {
     item: ImportItem,
     chunkSize: number,
     contextConversationId?: string,
+    generateQueriesMode: 'async' | 'sync' | 'skip' = 'async',
   ): Promise<ImportItemResult> {
     const importId = globalThis.crypto.randomUUID();
     const sourceLabel = item.source_filename || 'pasted text';
@@ -245,6 +252,7 @@ export class ImportService {
       import_id: importId,
       source: sourceLabel,
       chunk_count: chunks.length,
+      generate_queries_mode: generateQueriesMode,
     });
 
     // 1. Create chunk memories
@@ -293,6 +301,87 @@ export class ImportService {
         tags: [`import:${importId}`],
       });
     }
+
+    // 5. Handle query generation modes (M79)
+    if (this.queryAugmenterService && generateQueriesMode !== 'async') {
+      const allMemoryIds = [parentResult.memory_id, ...chunkMemoryIds];
+
+      if (generateQueriesMode === 'sync') {
+        // Sync mode: Generate queries immediately before returning
+        this.logger.info('Generating queries in sync mode', {
+          import_id: importId,
+          memory_count: allMemoryIds.length,
+        });
+
+        for (const memoryId of allMemoryIds) {
+          try {
+            const memory = await this.memoryService.getById(memoryId);
+            const memoryData = memory.memory as any;
+
+            if (!this.queryAugmenterService.shouldProcess(memoryData)) {
+              // Mark as skipped
+              await this.memoryService.update({
+                memory_id: memoryId,
+                queries_generation_status: 'skipped',
+              });
+              continue;
+            }
+
+            const result = await this.queryAugmenterService.generateQueries({
+              content: memoryData.content,
+              title: memoryData.title,
+              content_type: memoryData.content_type,
+            });
+
+            if (result.success) {
+              await this.memoryService.update({
+                memory_id: memoryId,
+                synthetic_queries: result.queries,
+                queries_generated_at: new Date().toISOString(),
+                queries_generation_status: 'generated',
+              });
+            } else {
+              await this.memoryService.update({
+                memory_id: memoryId,
+                queries_generation_status: 'failed',
+              });
+            }
+          } catch (error) {
+            this.logger.error('Failed to generate queries for memory', {
+              import_id: importId,
+              memory_id: memoryId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            await this.memoryService.update({
+              memory_id: memoryId,
+              queries_generation_status: 'failed',
+            });
+          }
+        }
+      } else if (generateQueriesMode === 'skip') {
+        // Skip mode: Mark all memories as skipped
+        this.logger.info('Marking queries as skipped', {
+          import_id: importId,
+          memory_count: allMemoryIds.length,
+        });
+
+        for (const memoryId of allMemoryIds) {
+          try {
+            await this.memoryService.update({
+              memory_id: memoryId,
+              queries_generation_status: 'skipped',
+            });
+          } catch (error) {
+            this.logger.error('Failed to mark memory as skipped', {
+              import_id: importId,
+              memory_id: memoryId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+      }
+    }
+    // Async mode (default): Background job will pick up memories with queries_generated_at IS NULL
 
     return {
       import_id: importId,

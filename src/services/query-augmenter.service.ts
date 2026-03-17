@@ -105,7 +105,7 @@ Your response (JSON array only):`;
         queries = JSON.parse(response.trim());
       } catch (parseError) {
         // If parsing fails, try to extract JSON array from response
-        const jsonMatch = response.match(/\\[.*\\]/s);
+        const jsonMatch = response.match(/\[.*\]/s);
         if (jsonMatch) {
           queries = JSON.parse(jsonMatch[0]);
         } else {

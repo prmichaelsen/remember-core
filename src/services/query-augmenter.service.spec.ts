@@ -2,29 +2,34 @@
  * Tests for QueryAugmenterService
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { QueryAugmenterService } from './query-augmenter.service.js';
-import type { HaikuClient } from './rem.haiku.js';
+import type { SubLlmProvider } from './emotional-scoring.service.js';
 import type { Logger } from '../utils/logger.js';
+
+function createMockSubLlm(): SubLlmProvider & { score: jest.Mock } {
+  return {
+    score: jest.fn(),
+  };
+}
+
+function createMockLogger(): Logger {
+  return {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  } as unknown as Logger;
+}
 
 describe('QueryAugmenterService', () => {
   let service: QueryAugmenterService;
-  let mockHaikuClient: HaikuClient;
+  let mockSubLlm: SubLlmProvider & { score: jest.Mock };
   let mockLogger: Logger;
 
   beforeEach(() => {
-    mockHaikuClient = {
-      call: vi.fn(),
-    } as unknown as HaikuClient;
-
-    mockLogger = {
-      debug: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-    } as unknown as Logger;
-
-    service = new QueryAugmenterService(mockHaikuClient, mockLogger);
+    mockSubLlm = createMockSubLlm();
+    mockLogger = createMockLogger();
+    service = new QueryAugmenterService(mockSubLlm, mockLogger);
   });
 
   describe('generateQueries', () => {
@@ -35,7 +40,7 @@ describe('QueryAugmenterService', () => {
         'What was that play set in a lost garden?',
       ]);
 
-      vi.mocked(mockHaikuClient.call).mockResolvedValue(mockResponse);
+      mockSubLlm.score.mockResolvedValue(mockResponse);
 
       const result = await service.generateQueries({
         content: 'The Lost Garden - A screenplay about a forgotten estate...',
@@ -59,7 +64,7 @@ describe('QueryAugmenterService', () => {
     });
 
     it('should handle Haiku call failure', async () => {
-      vi.mocked(mockHaikuClient.call).mockRejectedValue(new Error('Haiku timeout'));
+      mockSubLlm.score.mockRejectedValue(new Error('Haiku timeout'));
 
       const result = await service.generateQueries({
         content: 'This is a long enough piece of content to trigger query generation...',
@@ -71,7 +76,7 @@ describe('QueryAugmenterService', () => {
     });
 
     it('should handle invalid JSON response', async () => {
-      vi.mocked(mockHaikuClient.call).mockResolvedValue('Not valid JSON');
+      mockSubLlm.score.mockResolvedValue('Not valid JSON');
 
       const result = await service.generateQueries({
         content: 'This is a long enough piece of content to trigger query generation...',
@@ -87,7 +92,7 @@ describe('QueryAugmenterService', () => {
 ["What is this about?", "How does this work?"]
 \`\`\``;
 
-      vi.mocked(mockHaikuClient.call).mockResolvedValue(mockResponse);
+      mockSubLlm.score.mockResolvedValue(mockResponse);
 
       const result = await service.generateQueries({
         content: 'This is a long enough piece of content to trigger query generation...',
@@ -108,7 +113,7 @@ describe('QueryAugmenterService', () => {
         'Question 7',
       ]);
 
-      vi.mocked(mockHaikuClient.call).mockResolvedValue(mockResponse);
+      mockSubLlm.score.mockResolvedValue(mockResponse);
 
       const result = await service.generateQueries({
         content: 'This is a long enough piece of content to trigger query generation...',
@@ -127,7 +132,7 @@ describe('QueryAugmenterService', () => {
         '   ',
       ] as any);
 
-      vi.mocked(mockHaikuClient.call).mockResolvedValue(mockResponse);
+      mockSubLlm.score.mockResolvedValue(mockResponse);
 
       const result = await service.generateQueries({
         content: 'This is a long enough piece of content to trigger query generation...',
@@ -141,7 +146,7 @@ describe('QueryAugmenterService', () => {
 
   describe('generateQueriesBatch', () => {
     it('should generate queries for multiple memories', async () => {
-      vi.mocked(mockHaikuClient.call).mockResolvedValue(JSON.stringify(['Question 1']));
+      mockSubLlm.score.mockResolvedValue(JSON.stringify(['Question 1']));
 
       const results = await service.generateQueriesBatch([
         { content: 'Content 1 with enough length to trigger generation...' },

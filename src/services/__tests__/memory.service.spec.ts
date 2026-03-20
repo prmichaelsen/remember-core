@@ -30,7 +30,7 @@ describe('MemoryService', () => {
       expect(stored!.properties.user_id).toBe(userId);
       expect(stored!.properties.doc_type).toBe('memory');
       expect(stored!.properties.weight).toBe(0.5);
-      expect(stored!.properties.trust_score).toBe(2);
+      expect(stored!.properties.trust_score).toBe(TrustLevel.SECRET);
       expect(stored!.properties.version).toBe(1);
       expect(stored!.properties.space_ids).toEqual([]);
       expect(stored!.properties.group_ids).toEqual([]);
@@ -48,11 +48,11 @@ describe('MemoryService', () => {
       expect(stored!.properties.content_type).toBe('note');
     });
 
-    it('applies custom weight and trust', async () => {
-      const result = await service.create({ content: 'test', weight: 0.9, trust: TrustLevel.RESTRICTED });
+    it('applies custom weight and always sets trust to SECRET', async () => {
+      const result = await service.create({ content: 'test', weight: 0.9 });
       const stored = collection._store.get(result.memory_id);
       expect(stored!.properties.weight).toBe(0.9);
-      expect(stored!.properties.trust_score).toBe(TrustLevel.RESTRICTED);
+      expect(stored!.properties.trust_score).toBe(TrustLevel.SECRET);
     });
 
     it('stores tags and references', async () => {
@@ -265,11 +265,7 @@ describe('MemoryService', () => {
       );
     });
 
-    it('validates trust range', async () => {
-      await expect(service.update({ memory_id: memoryId, trust: -0.1 })).rejects.toThrow(
-        'Trust must be an integer between 1 and 5',
-      );
-    });
+    // trust removed from UpdateMemoryInput — use requestSetTrustLevel() instead
   });
 
   describe('delete', () => {

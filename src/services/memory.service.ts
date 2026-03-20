@@ -43,7 +43,7 @@ export interface CreateMemoryInput {
   title?: string;
   type?: ContentType;
   weight?: number;
-  trust?: number;
+  // trust is always SECRET (5) on creation — use requestSetTrustLevel() to change
   tags?: string[];
   references?: string[];
   template_id?: string;
@@ -331,7 +331,7 @@ export interface UpdateMemoryInput {
   title?: string;
   type?: string;
   weight?: number;
-  trust?: number;
+  // trust removed — use requestSetTrustLevel() / confirmSetTrustLevel() instead
   tags?: string[];
   references?: string[];
   parent_id?: string | null;
@@ -546,7 +546,7 @@ export class MemoryService {
       summary: input.title,
       content_type: contentType,
       weight: input.weight ?? 0.5,
-      trust_score: normalizeTrustScore(input.trust ?? TrustLevel.INTERNAL),
+      trust_score: TrustLevel.SECRET,
       confidence: 1.0,
       context_summary: input.context_summary || 'Memory created',
       context_conversation_id: input.context_conversation_id,
@@ -1554,10 +1554,6 @@ export class MemoryService {
       if (input.weight < 0 || input.weight > 1) throw new Error('Weight must be between 0 and 1');
       updates.weight = input.weight; updates.base_weight = input.weight; updates.computed_weight = input.weight;
       updatedFields.push('weight');
-    }
-    if (input.trust !== undefined) {
-      if (!isValidTrustLevel(input.trust)) throw new Error('Trust must be an integer between 1 and 5');
-      updates.trust_score = input.trust; updatedFields.push('trust_score');
     }
     if (input.tags !== undefined) { updates.tags = input.tags; updatedFields.push('tags'); }
     if (input.references !== undefined) { updates.references = input.references; updatedFields.push('references'); }

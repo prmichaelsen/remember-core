@@ -26,7 +26,7 @@ describe('createSvcClient', () => {
     expect(client.reports).toBeDefined();
   });
 
-  it('memories has all 16 methods', () => {
+  it('memories has all 17 methods', () => {
     const client = createSvcClient({
       baseUrl: 'https://api.example.com',
       getAuthToken: async () => 'token',
@@ -48,6 +48,7 @@ describe('createSvcClient', () => {
     expect(typeof client.memories.retractRating).toBe('function');
     expect(typeof client.memories.getMyRating).toBe('function');
     expect(typeof client.memories.byRating).toBe('function');
+    expect(typeof client.memories.requestSetTrustLevel).toBe('function');
   });
 
   it('relationships has all 4 methods', () => {
@@ -151,6 +152,6 @@ describe('createSvcClient', () => {
       Object.keys(client.health).length +
       Object.keys(client.reports).length;
 
-    expect(methodCount).toBe(64);
+    expect(methodCount).toBe(65);
   });
 });

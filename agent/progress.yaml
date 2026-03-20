@@ -786,11 +786,12 @@ milestones:
   - id: M80
     name: Trust Level Protection
     file: agent/milestones/milestone-80-trust-level-protection.md
-    status: not_started
-    progress: 0
+    status: completed
+    progress: 100
     estimated_weeks: 0.5
-    tasks_completed: 0
+    tasks_completed: 4
     tasks_total: 4
+    completed: 2026-03-20
     dependencies: []
     notes: |
       Harden trust level management: all new memories default to SECRET (5),
@@ -3087,46 +3088,49 @@ tasks:
   milestone_80:
     - id: task-530
       name: "Remove trust from create/update + hardcode SECRET"
-      status: not_started
-      started: null
+      status: completed
+      started: 2026-03-20T00:00:00Z
       file: agent/tasks/milestone-80-trust-level-protection/task-530-remove-trust-from-create-update.md
       estimated_hours: 2
-      actual_hours: null
-      completed_date: null
+      actual_hours: 0.2
+      completed_date: 2026-03-20T00:00:00Z
       notes: |
-        Remove trust field from CreateMemoryInput and UpdateMemoryInput.
-        Hardcode trust_score to TrustLevel.SECRET (5) on create.
+        Removed trust from CreateMemoryInput/UpdateMemoryInput.
+        Hardcoded trust_score to TrustLevel.SECRET (5) on create.
+        Updated 3 test assertions.
     - id: task-531
       name: "Add requestSetTrustLevel / confirmSetTrustLevel"
-      status: not_started
-      started: null
+      status: completed
+      started: 2026-03-20T00:00:00Z
       file: agent/tasks/milestone-80-trust-level-protection/task-531-request-confirm-set-trust-level.md
       estimated_hours: 3
-      actual_hours: null
-      completed_date: null
+      actual_hours: 0.3
+      completed_date: 2026-03-20T00:00:00Z
       notes: |
         New confirmation-token-gated methods on MemoryService.
-        Only way to change trust level after creation.
+        ConfirmationTokenService as optional constructor param.
+        3 new types exported from barrel.
     - id: task-532
       name: "Unit tests for trust level protection"
-      status: not_started
-      started: null
+      status: completed
+      started: 2026-03-20T00:00:00Z
       file: agent/tasks/milestone-80-trust-level-protection/task-532-trust-protection-unit-tests.md
       estimated_hours: 2
-      actual_hours: null
-      completed_date: null
+      actual_hours: 0.3
+      completed_date: 2026-03-20T00:00:00Z
       notes: |
-        Colocated .spec.ts tests for new trust protection behavior.
+        14 new tests (9 request, 5 confirm). 134 total passing.
     - id: task-533
       name: "OpenAPI spec + SVC client updates"
-      status: not_started
-      started: null
+      status: completed
+      started: 2026-03-20T00:00:00Z
       file: agent/tasks/milestone-80-trust-level-protection/task-533-openapi-svc-client-updates.md
       estimated_hours: 2
-      actual_hours: null
-      completed_date: null
+      actual_hours: 0.3
+      completed_date: 2026-03-20T00:00:00Z
       notes: |
-        New requestSetTrustLevel endpoint, remove trust from create/update schemas.
+        New POST endpoint, removed trust from create/update schemas.
+        SVC client requestSetTrustLevel method. Types regenerated.
 
   unassigned:
     - id: task-522
@@ -3149,6 +3153,16 @@ progress:
   overall: 95
 
 recent_work:
+  - date: 2026-03-20
+    description: |
+      M80: Trust Level Protection (4/4 tasks completed)
+    items:
+      - "Removed trust from CreateMemoryInput/UpdateMemoryInput — all memories default to SECRET (5)"
+      - "Added requestSetTrustLevel() / confirmSetTrustLevel() confirmation-token-gated flow"
+      - "ConfirmationTokenService as optional MemoryService constructor param"
+      - "14 new unit tests (134 total in memory.service.spec.ts)"
+      - "OpenAPI spec: new POST endpoint, removed trust from create/update schemas"
+      - "SVC client: requestSetTrustLevel method, types regenerated"
   - date: 2026-03-12
     description: |
       M76 T515: Sync Mood State to Weaviate Memory
@@ -3608,7 +3622,6 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
-  - M80: Trust Level Protection — hardcode SECRET default, confirmation-token-gated trust changes (4 tasks)
   - M74: Hierarchical Relationships — umbrella/parent-child relationship grouping (7 tasks, pending)
   - M38: Response Envelope Migration (placeholder, tasks TBD — define tasks now that M37 envelope pattern is proven)
   - Define M38 tasks: migrate byRating, byDiscovery, byBroad, byRandom, byCurated to { memory, metadata } envelope

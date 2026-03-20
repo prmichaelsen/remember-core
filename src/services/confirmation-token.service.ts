@@ -28,6 +28,10 @@ export interface ConfirmationRequest {
   expires_at: string;
   status: 'pending' | 'confirmed' | 'denied' | 'expired' | 'retracted';
   confirmed_at?: string;
+  // Guard fields
+  cooldown_until?: string;    // ISO 8601 — earliest time confirm/deny is accepted
+  failed_attempts?: number;   // count of failed guard validations (default 0)
+  secret_hash?: string;       // stored HMAC for validation (optional, can be recomputed)
 }
 
 export class ConfirmationTokenService {
@@ -46,11 +50,16 @@ export class ConfirmationTokenService {
     action: string,
     payload: any,
     targetCollection?: string,
+    cooldownSeconds?: number,
   ): Promise<{ requestId: string; token: string }> {
     try {
       const token = randomUUID();
       const now = new Date();
       const expiresAt = new Date(now.getTime() + this.EXPIRY_MINUTES * 60 * 1000);
+
+      const cooldownUntil = cooldownSeconds && cooldownSeconds > 0
+        ? new Date(now.getTime() + cooldownSeconds * 1000).toISOString()
+        : undefined;
 
       const request: ConfirmationRequest = {
         user_id: userId,
@@ -61,6 +70,8 @@ export class ConfirmationTokenService {
         created_at: now.toISOString(),
         expires_at: expiresAt.toISOString(),
         status: 'pending',
+        failed_attempts: 0,
+        ...(cooldownUntil ? { cooldown_until: cooldownUntil } : {}),
       };
 
       const collectionPath = `users/${userId}/requests`;
@@ -153,6 +164,19 @@ export class ConfirmationTokenService {
     if (!request) return false;
     await this.updateStatus(userId, request.request_id, 'retracted');
     return true;
+  }
+
+  /**
+   * Update arbitrary fields on a confirmation request.
+   * Used by ConfirmationGuardService for cooldown/backoff updates.
+   */
+  async updateRequestFields(
+    userId: string,
+    requestId: string,
+    fields: Partial<Pick<ConfirmationRequest, 'cooldown_until' | 'failed_attempts' | 'status'>>,
+  ): Promise<void> {
+    const collectionPath = `users/${userId}/requests`;
+    await updateDocument(collectionPath, requestId, fields);
   }
 
   private async updateStatus(

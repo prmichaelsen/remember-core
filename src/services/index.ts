@@ -17,6 +17,13 @@ export {
 } from './confirmation-token.service.js';
 
 export {
+  ConfirmationGuardService,
+  DEFAULT_GUARD_CONFIG,
+  type ConfirmationGuardConfig,
+  type GuardValidationResult,
+} from './confirmation-guard.service.js';
+
+export {
   StubCredentialsProvider,
   createCredentialsProvider,
   credentialsProvider,

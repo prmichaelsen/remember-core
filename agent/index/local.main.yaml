@@ -140,6 +140,19 @@ local:
         or MemoryService create/delete paths.
       applies: acp.proceed, acp.task-create
 
+    - path: agent/design/local.confirmation-guard.md
+      weight: 0.9
+      kind: design
+      description: |
+        Confirmation guard system — two-layer protection (HMAC secret token +
+        cooldown with exponential backoff) preventing agents from auto-confirming
+        protected operations without user involvement.
+      rationale: |
+        Active design for confirmation guard feature. Required context for any
+        work on ConfirmationGuardService, ConfirmationTokenService, or
+        SpaceService confirm/deny flow.
+      applies: acp.proceed, acp.task-create
+
     - path: agent/design/local.hierarchical-relationships.md
       weight: 0.5
       kind: design

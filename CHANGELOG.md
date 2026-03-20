@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.72.0] - 2026-03-20
+
+### Added
+- `ConfirmationGuardService` — two-layer protection preventing agents from auto-confirming protected operations
+  - Layer 1: HMAC-SHA256 secret token challenge (per-request, derived from platform secret)
+  - Layer 2: Configurable cooldown with exponential backoff on failed attempts
+- `ConfirmationRequest` gains `cooldown_until`, `failed_attempts`, `secret_hash` fields
+- `ConfirmationTokenService.updateRequestFields()` for guard-related Firestore updates
+- `ConfirmationTokenService.createRequest()` accepts optional `cooldownSeconds` parameter
+- `ConfirmInput` and `DenyInput` gain optional `secret_token` field
+- `SpaceService` accepts optional `guardService` in constructor options
+- Guard validation gates both `confirm()` and `deny()` when guard is configured
+- 17 unit tests for ConfirmationGuardService
+
 ## [0.70.11] - 2026-03-13
 
 ### Fixed

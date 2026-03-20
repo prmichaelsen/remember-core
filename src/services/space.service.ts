@@ -31,6 +31,7 @@ import { MIN_SIMILARITY } from './recommendation.service.js';
 import { sliceContent, type BroadSearchResult } from './memory.service.js';
 import { ALL_MEMORY_PROPERTIES } from '../database/weaviate/client.js';
 import type { EventBus } from '../webhooks/events.js';
+import type { ConfirmationGuardService } from './confirmation-guard.service.js';
 
 // ─── Shared Types ───────────────────────────────────────────────────────
 
@@ -138,6 +139,7 @@ export interface ReviseResult {
 
 export interface ConfirmInput {
   token: string;
+  secret_token?: string;
 }
 
 export interface ConfirmResult {
@@ -157,6 +159,7 @@ export interface ConfirmResult {
 
 export interface DenyInput {
   token: string;
+  secret_token?: string;
 }
 
 export interface DenyResult {
@@ -426,6 +429,7 @@ export class SpaceService {
   private memoryIndex: MemoryIndexService;
   private recommendationService?: RecommendationService;
   private eventBus?: EventBus;
+  private guardService?: ConfirmationGuardService;
 
   constructor(
     private weaviateClient: any,
@@ -434,11 +438,12 @@ export class SpaceService {
     private confirmationTokenService: ConfirmationTokenService,
     private logger: Logger,
     private memoryIndexService: MemoryIndexService,
-    options?: { moderationClient?: ModerationClient; recommendationService?: RecommendationService; eventBus?: EventBus },
+    options?: { moderationClient?: ModerationClient; recommendationService?: RecommendationService; eventBus?: EventBus; guardService?: ConfirmationGuardService },
   ) {
     this.moderationClient = options?.moderationClient;
     this.recommendationService = options?.recommendationService;
     this.eventBus = options?.eventBus;
+    this.guardService = options?.guardService;
     this.memoryIndex = memoryIndexService;
   }
 
@@ -687,6 +692,21 @@ export class SpaceService {
   // ── Confirm (phase 2: execute pending action) ───────────────────────
 
   async confirm(input: ConfirmInput): Promise<ConfirmResult> {
+    // Guard validation (if guard service is configured)
+    if (this.guardService) {
+      if (!input.secret_token) {
+        throw new ValidationError('secret_token is required when confirmation guard is enabled');
+      }
+      const guardResult = await this.guardService.validateGuard(
+        this.userId,
+        input.token,
+        input.secret_token,
+      );
+      if (!guardResult.valid) {
+        throw new ValidationError(guardResult.error);
+      }
+    }
+
     const request = await this.confirmationTokenService.confirmRequest(this.userId, input.token);
     if (!request) {
       throw new ValidationError('Invalid or expired confirmation token');
@@ -708,6 +728,21 @@ export class SpaceService {
   // ── Deny ────────────────────────────────────────────────────────────
 
   async deny(input: DenyInput): Promise<DenyResult> {
+    // Guard validation (if guard service is configured)
+    if (this.guardService) {
+      if (!input.secret_token) {
+        throw new ValidationError('secret_token is required when confirmation guard is enabled');
+      }
+      const guardResult = await this.guardService.validateGuard(
+        this.userId,
+        input.token,
+        input.secret_token,
+      );
+      if (!guardResult.valid) {
+        throw new ValidationError(guardResult.error);
+      }
+    }
+
     const success = await this.confirmationTokenService.denyRequest(this.userId, input.token);
     if (!success) {
       throw new NotFoundError('Token', input.token);

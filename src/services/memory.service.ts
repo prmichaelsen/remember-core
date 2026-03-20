@@ -35,6 +35,7 @@ import {
 } from '../utils/filters.js';
 import { buildTrustFilter } from './trust-enforcement.service.js';
 import type { MemoryIndexService } from './memory-index.service.js';
+import type { ConfirmationTokenService } from './confirmation-token.service.js';
 
 // ─── Input/Output Types ──────────────────────────────────────────────────
 
@@ -354,6 +355,29 @@ export interface UpdateMemoryResult {
   updated_fields: string[];
 }
 
+// ─── Set Trust Level (confirmation-gated) ───────────────────────────────────
+
+export interface SetTrustLevelInput {
+  memory_id: string;
+  trust_level: number; // 1-5 integer
+}
+
+export interface SetTrustLevelRequestResult {
+  token: string;
+  memory_id: string;
+  requested_trust_level: number;
+  current_trust_level: number;
+  expires_at: string;
+}
+
+export interface SetTrustLevelConfirmResult {
+  memory_id: string;
+  previous_trust_level: number;
+  new_trust_level: number;
+  updated_at: string;
+  version: number;
+}
+
 export interface DeleteMemoryInput {
   memory_id: string;
   reason?: string;
@@ -473,6 +497,7 @@ export class MemoryService {
       memoryIndex: MemoryIndexService;
       weaviateClient?: any;
       recommendationService?: RecommendationService;
+      confirmationTokenService?: ConfirmationTokenService;
     },
   ) {}
 
@@ -1592,6 +1617,98 @@ export class MemoryService {
       updated_at: now,
       version: updates.version as number,
       updated_fields: updatedFields,
+    };
+  }
+
+  // ── Set Trust Level (confirmation-gated) ───────────────────────────
+
+  async requestSetTrustLevel(input: SetTrustLevelInput): Promise<SetTrustLevelRequestResult> {
+    if (!this.options.confirmationTokenService) {
+      throw new Error('ConfirmationTokenService is required for trust level changes');
+    }
+    if (!isValidTrustLevel(input.trust_level)) {
+      throw new Error('Trust level must be an integer between 1 and 5');
+    }
+
+    const existing = await fetchMemoryWithAllProperties(this.collection, input.memory_id);
+    if (!existing?.properties) throw new Error(`Memory not found: ${input.memory_id}`);
+    if (existing.properties.user_id !== this.userId) throw new Error('Unauthorized');
+    if (existing.properties.deleted_at) throw new Error(`Cannot update deleted memory: ${input.memory_id}`);
+
+    const currentTrust = normalizeTrustScore(existing.properties.trust_score as number);
+    if (currentTrust === input.trust_level) {
+      throw new Error(`Trust level is already set to ${input.trust_level}`);
+    }
+
+    const { token } = await this.options.confirmationTokenService.createRequest(
+      this.userId,
+      'set_trust_level',
+      { memory_id: input.memory_id, trust_level: input.trust_level, current_trust_level: currentTrust },
+    );
+
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    this.logger.info('Trust level change requested', {
+      memoryId: input.memory_id,
+      currentTrust,
+      requestedTrust: input.trust_level,
+    });
+
+    return {
+      token,
+      memory_id: input.memory_id,
+      requested_trust_level: input.trust_level,
+      current_trust_level: currentTrust,
+      expires_at: expiresAt,
+    };
+  }
+
+  async confirmSetTrustLevel(token: string): Promise<SetTrustLevelConfirmResult> {
+    if (!this.options.confirmationTokenService) {
+      throw new Error('ConfirmationTokenService is required for trust level changes');
+    }
+
+    const confirmed = await this.options.confirmationTokenService.confirmRequest(this.userId, token);
+    if (!confirmed) {
+      throw new Error('Invalid or expired confirmation token');
+    }
+    if (confirmed.action !== 'set_trust_level') {
+      throw new Error(`Expected action 'set_trust_level', got '${confirmed.action}'`);
+    }
+
+    const { memory_id, trust_level, current_trust_level } = confirmed.payload;
+
+    const existing = await fetchMemoryWithAllProperties(this.collection, memory_id);
+    if (!existing?.properties) throw new Error(`Memory not found: ${memory_id}`);
+    if (existing.properties.user_id !== this.userId) throw new Error('Unauthorized');
+    if (existing.properties.deleted_at) throw new Error(`Cannot update deleted memory: ${memory_id}`);
+
+    const now = new Date().toISOString();
+    const newVersion = (existing.properties.version as number) + 1;
+
+    await this.collection.data.replace({
+      id: memory_id,
+      properties: {
+        ...existing.properties,
+        trust_score: trust_level,
+        updated_at: now,
+        version: newVersion,
+      },
+    });
+
+    this.logger.info('Trust level changed', {
+      memoryId: memory_id,
+      previousTrust: current_trust_level,
+      newTrust: trust_level,
+      version: newVersion,
+    });
+
+    return {
+      memory_id,
+      previous_trust_level: current_trust_level,
+      new_trust_level: trust_level,
+      updated_at: now,
+      version: newVersion,
     };
   }
 

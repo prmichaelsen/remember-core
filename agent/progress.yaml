@@ -785,6 +785,7 @@ milestones:
 
   - id: M80
     name: Trust Level Protection
+    file: agent/milestones/milestone-80-trust-level-protection.md
     status: not_started
     progress: 0
     estimated_weeks: 0.5
@@ -3083,6 +3084,50 @@ tasks:
       dependencies: []
       description: "Add synthetic_queries, queries_generated_at, queries_generation_status properties to all existing Memory_* collections. Unblocks deployed remember-query-augmenter service."
 
+  milestone_80:
+    - id: task-530
+      name: "Remove trust from create/update + hardcode SECRET"
+      status: not_started
+      started: null
+      file: agent/tasks/milestone-80-trust-level-protection/task-530-remove-trust-from-create-update.md
+      estimated_hours: 2
+      actual_hours: null
+      completed_date: null
+      notes: |
+        Remove trust field from CreateMemoryInput and UpdateMemoryInput.
+        Hardcode trust_score to TrustLevel.SECRET (5) on create.
+    - id: task-531
+      name: "Add requestSetTrustLevel / confirmSetTrustLevel"
+      status: not_started
+      started: null
+      file: agent/tasks/milestone-80-trust-level-protection/task-531-request-confirm-set-trust-level.md
+      estimated_hours: 3
+      actual_hours: null
+      completed_date: null
+      notes: |
+        New confirmation-token-gated methods on MemoryService.
+        Only way to change trust level after creation.
+    - id: task-532
+      name: "Unit tests for trust level protection"
+      status: not_started
+      started: null
+      file: agent/tasks/milestone-80-trust-level-protection/task-532-trust-protection-unit-tests.md
+      estimated_hours: 2
+      actual_hours: null
+      completed_date: null
+      notes: |
+        Colocated .spec.ts tests for new trust protection behavior.
+    - id: task-533
+      name: "OpenAPI spec + SVC client updates"
+      status: not_started
+      started: null
+      file: agent/tasks/milestone-80-trust-level-protection/task-533-openapi-svc-client-updates.md
+      estimated_hours: 2
+      actual_hours: null
+      completed_date: null
+      notes: |
+        New requestSetTrustLevel endpoint, remove trust from create/update schemas.
+
   unassigned:
     - id: task-522
       name: "Filter Deleted Memories from getOrderedContent"
@@ -3094,7 +3139,7 @@ tasks:
 
 documentation:
   design_documents: 28
-  milestone_documents: 42
+  milestone_documents: 43
   pattern_documents: 29
   task_documents: 206
 

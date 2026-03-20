@@ -1347,6 +1347,46 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/svc/v1/memories/{id}/request-set-trust-level:
+    post:
+      tags: [trust]
+      summary: Request to set trust level on a memory
+      description: |
+        Returns a confirmation token. Call /confirmations/{token}/confirm to execute
+        the trust level change.
+      operationId: requestSetTrustLevel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [trust_level]
+              properties:
+                trust_level:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+      responses:
+        '200':
+          description: Confirmation token generated for trust level change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetTrustLevelRequestResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   # ============================================================
   # Reports (App Store guideline 1.2 — content flagging)
   # ============================================================
@@ -1790,10 +1830,6 @@ components:
           type: number
           minimum: 0
           maximum: 1
-        trust:
-          type: number
-          minimum: 0
-          maximum: 1
         tags:
           type: array
           items:
@@ -2055,10 +2091,6 @@ components:
         type:
           type: string
         weight:
-          type: number
-          minimum: 0
-          maximum: 1
-        trust:
           type: number
           minimum: 0
           maximum: 1
@@ -3570,6 +3602,40 @@ components:
       properties:
         success:
           type: boolean
+
+    SetTrustLevelRequestResult:
+      type: object
+      required: [token, memory_id, requested_trust_level, current_trust_level, expires_at]
+      properties:
+        token:
+          type: string
+        memory_id:
+          type: string
+        requested_trust_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        current_trust_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        expires_at:
+          type: string
+          format: date-time
+
+    SetTrustLevelConfirmResult:
+      type: object
+      required: [memory_id, trust_level, updated_at]
+      properties:
+        memory_id:
+          type: string
+        trust_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        updated_at:
+          type: string
+          format: date-time
 
     ModerateResult:
       type: object

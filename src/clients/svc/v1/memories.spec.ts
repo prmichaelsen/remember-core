@@ -258,4 +258,14 @@ describe('MemoriesResource', () => {
       userId: 'user1',
     });
   });
+
+  it('requestSetTrustLevel calls POST /api/svc/v1/memories/:id/request-set-trust-level', async () => {
+    const memories = createMemoriesResource(http);
+    await memories.requestSetTrustLevel('user1', 'mem-123', { trust_level: 3 });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/memories/mem-123/request-set-trust-level', {
+      userId: 'user1',
+      body: { trust_level: 3 },
+    });
+  });
 });

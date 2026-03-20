@@ -14,6 +14,14 @@ export interface MemoryGetOptions extends MemorySourceContext {
   include?: string | null;
 }
 
+export interface SetTrustLevelRequestResult {
+  token: string;
+  memory_id: string;
+  requested_trust_level: number;
+  current_trust_level: number;
+  expires_at: string;
+}
+
 export interface MemoriesResource {
   get(userId: string, id: string, options?: MemoryGetOptions): Promise<SdkResponse<unknown>>;
   create(userId: string, input: Record<string, unknown>): Promise<SdkResponse<unknown>>;
@@ -41,6 +49,7 @@ export interface MemoriesResource {
   incrementShare(userId: string, memoryId: string): Promise<SdkResponse<void>>;
   incrementComment(userId: string, memoryId: string): Promise<SdkResponse<void>>;
   getBulkRatingActivity(userId: string, raterUserIds: string[], memoryOwnerId: string): Promise<SdkResponse<Record<string, { last_rated_at: string | null }>>>;
+  requestSetTrustLevel(userId: string, memoryId: string, input: { trust_level: number }): Promise<SdkResponse<SetTrustLevelRequestResult>>;
 }
 
 export function createMemoriesResource(http: HttpClient): MemoriesResource {
@@ -130,6 +139,12 @@ export function createMemoriesResource(http: HttpClient): MemoriesResource {
       return http.request('POST', '/api/svc/v1/memories/bulk-rating-activity', {
         userId,
         body: { rater_user_ids: raterUserIds, memory_owner_id: memoryOwnerId },
+      });
+    },
+    requestSetTrustLevel(userId, memoryId, input) {
+      return http.request('POST', `/api/svc/v1/memories/${memoryId}/request-set-trust-level`, {
+        userId,
+        body: input,
       });
     },
   };

@@ -890,6 +890,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/svc/v1/memories/{id}/request-set-trust-level": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request to set trust level on a memory
+         * @description Returns a confirmation token. Call /confirmations/{token}/confirm to execute
+         *     the trust level change.
+         */
+        post: operations["requestSetTrustLevel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/svc/v1/reports": {
         parameters: {
             query?: never;
@@ -1039,7 +1060,6 @@ export interface components {
             title?: string;
             type?: components["schemas"]["ContentType"];
             weight?: number;
-            trust?: number;
             tags?: string[];
             references?: string[];
             template_id?: string;
@@ -1050,9 +1070,14 @@ export interface components {
             context_conversation_id?: string;
             /**
              * Format: date-time
-             * @description ISO 8601 datetime for agent follow-up reminders
+             * @description DEPRECATED: use follow_up_date instead
              */
             follow_up_at?: string;
+            /**
+             * Format: date-time
+             * @description ISO 8601 datetime for agent follow-up reminders
+             */
+            follow_up_date?: string;
             feel_emotional_significance?: number;
             feel_vulnerability?: number;
             feel_trauma?: number;
@@ -1139,7 +1164,6 @@ export interface components {
             title?: string;
             type?: string;
             weight?: number;
-            trust?: number;
             tags?: string[];
             references?: string[];
             parent_id?: string | null;
@@ -1857,6 +1881,20 @@ export interface components {
         };
         DenyResult: {
             success: boolean;
+        };
+        SetTrustLevelRequestResult: {
+            token: string;
+            memory_id: string;
+            requested_trust_level: number;
+            current_trust_level: number;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        SetTrustLevelConfirmResult: {
+            memory_id: string;
+            trust_level: number;
+            /** Format: date-time */
+            updated_at: string;
         };
         ModerateResult: {
             memory_id: string;
@@ -3630,6 +3668,37 @@ export interface operations {
                 };
             };
             401: components["responses"]["UnauthorizedError"];
+        };
+    };
+    requestSetTrustLevel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    trust_level: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Confirmation token generated for trust level change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetTrustLevelRequestResult"];
+                };
+            };
+            400: components["responses"]["ValidationError"];
+            401: components["responses"]["UnauthorizedError"];
+            404: components["responses"]["NotFoundError"];
         };
     };
     listMyReports: {

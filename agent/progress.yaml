@@ -769,11 +769,11 @@ milestones:
 
   - id: M79
     name: Query Augmentation Service
-    status: not_started
+    status: in_progress
     progress: 0
     estimated_weeks: 1
     tasks_completed: 0
-    tasks_total: 7
+    tasks_total: 8
     dependencies: []
     notes: |
       Synthetic question generation for improved query-content matching.
@@ -782,6 +782,21 @@ milestones:
       memories (WHERE queries_generated_at IS NULL). Optional sync mode for
       critical imports. Cost: ~$3-5/month. Latency: 5-10 minutes for new imports.
       Design: agent/milestones/milestone-79-query-augmentation-service.md
+
+  - id: M80
+    name: Trust Level Protection
+    status: not_started
+    progress: 0
+    estimated_weeks: 0.5
+    tasks_completed: 0
+    tasks_total: 4
+    dependencies: []
+    notes: |
+      Harden trust level management: all new memories default to SECRET (5),
+      trust removed from create/update paths, new confirmation-token-gated
+      requestSetTrustLevel/confirmSetTrustLevel flow as the only way to change
+      trust levels. Prevents accidental trust misassignment by agents.
+      Design: agent/milestones/milestone-80-trust-level-protection.md
 
 tasks:
   milestone_1:
@@ -3059,6 +3074,15 @@ tasks:
       dependencies: [task-518, task-519, task-520]
       description: "insertMemoryAt() compound + getOrderedContent() paginated ordered reads on App client."
 
+  milestone_79:
+    - id: task-523
+      name: "Migrate Weaviate Schema for Query Augmentation"
+      status: not_started
+      file: agent/tasks/milestone-79-query-augmentation-service/task-1-migrate-weaviate-schema-for-query-augmentation.md
+      estimated_hours: 2-4
+      dependencies: []
+      description: "Add synthetic_queries, queries_generated_at, queries_generation_status properties to all existing Memory_* collections. Unblocks deployed remember-query-augmenter service."
+
   unassigned:
     - id: task-522
       name: "Filter Deleted Memories from getOrderedContent"
@@ -3539,6 +3563,7 @@ recent_work:
       - "Researched remember-mcp codebase for extraction planning"
 
 next_steps:
+  - M80: Trust Level Protection — hardcode SECRET default, confirmation-token-gated trust changes (4 tasks)
   - M74: Hierarchical Relationships — umbrella/parent-child relationship grouping (7 tasks, pending)
   - M38: Response Envelope Migration (placeholder, tasks TBD — define tasks now that M37 envelope pattern is proven)
   - Define M38 tasks: migrate byRating, byDiscovery, byBroad, byRandom, byCurated to { memory, metadata } envelope

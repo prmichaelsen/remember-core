@@ -48,10 +48,15 @@ describe('MemoryService', () => {
       expect(stored!.properties.content_type).toBe('note');
     });
 
-    it('applies custom weight and always sets trust to SECRET', async () => {
+    it('applies custom weight', async () => {
       const result = await service.create({ content: 'test', weight: 0.9 });
       const stored = collection._store.get(result.memory_id);
       expect(stored!.properties.weight).toBe(0.9);
+    });
+
+    it('always sets trust_score to SECRET (5) on create', async () => {
+      const result = await service.create({ content: 'test' });
+      const stored = collection._store.get(result.memory_id);
       expect(stored!.properties.trust_score).toBe(TrustLevel.SECRET);
     });
 
@@ -265,7 +270,13 @@ describe('MemoryService', () => {
       );
     });
 
-    // trust removed from UpdateMemoryInput — use requestSetTrustLevel() instead
+    it('does not accept trust field (trust changes require confirmation)', async () => {
+      // trust field was removed from UpdateMemoryInput; passing it should be ignored
+      // or cause a "No fields provided" error if it's the only field
+      await expect(service.update({ memory_id: memoryId, trust: -0.1 } as any)).rejects.toThrow(
+        'No fields provided',
+      );
+    });
   });
 
   describe('delete', () => {
@@ -1424,6 +1435,186 @@ describe('MemoryService', () => {
       // Without tag filter, pool should include both
       const result = await service.byRandom({});
       expect(result.total_pool_size).toBe(2);
+    });
+  });
+
+  // ── Trust Level Protection (setTrustLevel) ────────────────────────────
+
+  describe('setTrustLevel', () => {
+    let mockConfirmationTokenService: {
+      createRequest: jest.Mock;
+      confirmRequest: jest.Mock;
+    };
+    let trustService: MemoryService;
+    let memoryId: string;
+
+    beforeEach(async () => {
+      mockConfirmationTokenService = {
+        createRequest: jest.fn().mockResolvedValue({ requestId: 'req-1', token: 'tok-123' }),
+        confirmRequest: jest.fn(),
+      };
+      trustService = new MemoryService(collection as any, userId, logger, {
+        memoryIndex: mockMemoryIndex as any,
+        confirmationTokenService: mockConfirmationTokenService as any,
+      });
+
+      // Create a memory to test with (trust defaults to SECRET = 5)
+      const result = await trustService.create({ content: 'trust test memory' });
+      memoryId = result.memory_id;
+    });
+
+    // ── requestSetTrustLevel ──────────────────────────────────────────
+
+    describe('requestSetTrustLevel', () => {
+      it('returns token with correct payload', async () => {
+        const result = await trustService.requestSetTrustLevel({
+          memory_id: memoryId,
+          trust_level: TrustLevel.PUBLIC,
+        });
+
+        expect(result.token).toBe('tok-123');
+        expect(result.memory_id).toBe(memoryId);
+        expect(result.requested_trust_level).toBe(TrustLevel.PUBLIC);
+        expect(result.current_trust_level).toBe(TrustLevel.SECRET);
+
+        expect(mockConfirmationTokenService.createRequest).toHaveBeenCalledWith(
+          userId,
+          'set_trust_level',
+          { memory_id: memoryId, trust_level: TrustLevel.PUBLIC, current_trust_level: TrustLevel.SECRET },
+        );
+      });
+
+      it('throws on invalid trust level 0', async () => {
+        await expect(
+          trustService.requestSetTrustLevel({ memory_id: memoryId, trust_level: 0 }),
+        ).rejects.toThrow('Trust level must be an integer between 1 and 5');
+      });
+
+      it('throws on invalid trust level 6', async () => {
+        await expect(
+          trustService.requestSetTrustLevel({ memory_id: memoryId, trust_level: 6 }),
+        ).rejects.toThrow('Trust level must be an integer between 1 and 5');
+      });
+
+      it('throws on non-integer trust level 2.5', async () => {
+        await expect(
+          trustService.requestSetTrustLevel({ memory_id: memoryId, trust_level: 2.5 }),
+        ).rejects.toThrow('Trust level must be an integer between 1 and 5');
+      });
+
+      it('throws on memory not found', async () => {
+        await expect(
+          trustService.requestSetTrustLevel({ memory_id: 'nonexistent', trust_level: TrustLevel.PUBLIC }),
+        ).rejects.toThrow('Memory not found');
+      });
+
+      it('throws on unauthorized (different user_id)', async () => {
+        const otherId = await collection.data.insert({
+          properties: { user_id: 'other-user', doc_type: 'memory', content: 'other', trust_score: 5, deleted_at: null },
+        });
+        await expect(
+          trustService.requestSetTrustLevel({ memory_id: otherId, trust_level: TrustLevel.PUBLIC }),
+        ).rejects.toThrow('Unauthorized');
+      });
+
+      it('throws on deleted memory', async () => {
+        const deletedId = await collection.data.insert({
+          properties: { user_id: userId, doc_type: 'memory', content: 'deleted', trust_score: 5, deleted_at: '2026-01-01' },
+        });
+        await expect(
+          trustService.requestSetTrustLevel({ memory_id: deletedId, trust_level: TrustLevel.PUBLIC }),
+        ).rejects.toThrow('Cannot update deleted memory');
+      });
+
+      it('throws if already at requested level', async () => {
+        // Memory was created with SECRET (5), requesting 5 again should fail
+        await expect(
+          trustService.requestSetTrustLevel({ memory_id: memoryId, trust_level: TrustLevel.SECRET }),
+        ).rejects.toThrow('Trust level is already set to 5');
+      });
+
+      it('throws if confirmationTokenService not configured', async () => {
+        // Use the default service (no confirmationTokenService)
+        await expect(
+          service.requestSetTrustLevel({ memory_id: memoryId, trust_level: TrustLevel.PUBLIC }),
+        ).rejects.toThrow('ConfirmationTokenService is required');
+      });
+    });
+
+    // ── confirmSetTrustLevel ──────────────────────────────────────────
+
+    describe('confirmSetTrustLevel', () => {
+      it('applies trust change and bumps version', async () => {
+        mockConfirmationTokenService.confirmRequest.mockResolvedValue({
+          action: 'set_trust_level',
+          payload: { memory_id: memoryId, trust_level: TrustLevel.PUBLIC, current_trust_level: TrustLevel.SECRET },
+          status: 'confirmed',
+          user_id: userId,
+          token: 'tok-123',
+          request_id: 'req-1',
+        });
+
+        const result = await trustService.confirmSetTrustLevel('tok-123');
+
+        expect(result.memory_id).toBe(memoryId);
+        expect(result.new_trust_level).toBe(TrustLevel.PUBLIC);
+        expect(result.previous_trust_level).toBe(TrustLevel.SECRET);
+        expect(result.version).toBe(2); // bumped from 1
+
+        // Verify in store
+        const stored = collection._store.get(memoryId);
+        expect(stored!.properties.trust_score).toBe(TrustLevel.PUBLIC);
+        expect(stored!.properties.version).toBe(2);
+      });
+
+      it('throws on invalid/null token (confirmRequest returns null)', async () => {
+        mockConfirmationTokenService.confirmRequest.mockResolvedValue(null);
+
+        await expect(
+          trustService.confirmSetTrustLevel('bad-token'),
+        ).rejects.toThrow('Invalid or expired confirmation token');
+      });
+
+      it('throws on wrong action type', async () => {
+        mockConfirmationTokenService.confirmRequest.mockResolvedValue({
+          action: 'deleteMemory',
+          payload: { memory_id: memoryId },
+          status: 'confirmed',
+          user_id: userId,
+          token: 'tok-123',
+          request_id: 'req-1',
+        });
+
+        await expect(
+          trustService.confirmSetTrustLevel('tok-123'),
+        ).rejects.toThrow("Expected action 'set_trust_level', got 'deleteMemory'");
+      });
+
+      it('verifies ownership before applying', async () => {
+        // Create a memory owned by someone else
+        const otherId = await collection.data.insert({
+          properties: { user_id: 'other-user', doc_type: 'memory', content: 'other', trust_score: 5, version: 1, deleted_at: null },
+        });
+
+        mockConfirmationTokenService.confirmRequest.mockResolvedValue({
+          action: 'set_trust_level',
+          payload: { memory_id: otherId, trust_level: TrustLevel.PUBLIC, current_trust_level: TrustLevel.SECRET },
+          status: 'confirmed',
+          user_id: userId,
+          token: 'tok-123',
+          request_id: 'req-1',
+        });
+
+        await expect(
+          trustService.confirmSetTrustLevel('tok-123'),
+        ).rejects.toThrow('Unauthorized');
+      });
+
+      it('throws if confirmationTokenService not configured', async () => {
+        await expect(
+          service.confirmSetTrustLevel('tok-123'),
+        ).rejects.toThrow('ConfirmationTokenService is required');
+      });
     });
   });
 });

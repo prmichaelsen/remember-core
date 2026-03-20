@@ -115,6 +115,8 @@ export interface PublishInput {
 
 export interface PublishResult {
   token: string;
+  request_id: string;
+  created_at: string;
 }
 
 export interface RetractInput {
@@ -126,6 +128,8 @@ export interface RetractInput {
 
 export interface RetractResult {
   token: string;
+  request_id: string;
+  created_at: string;
 }
 
 export interface ReviseInput {
@@ -135,6 +139,8 @@ export interface ReviseInput {
 
 export interface ReviseResult {
   token: string;
+  request_id: string;
+  created_at: string;
 }
 
 export interface ConfirmInput {
@@ -556,7 +562,7 @@ export class SpaceService {
     await this.checkModeration(memory.properties.content as string);
 
     // Generate confirmation token
-    const { token } = await this.confirmationTokenService.createRequest(
+    const { token, requestId, created_at } = await this.confirmationTokenService.createRequest(
       this.userId,
       'publish_memory',
       {
@@ -576,7 +582,7 @@ export class SpaceService {
       friends,
     });
 
-    return { token };
+    return { token, request_id: requestId, created_at };
   }
 
   // ── Retract (phase 1: generate confirmation token) ──────────────────
@@ -621,7 +627,7 @@ export class SpaceService {
     }
 
     // Generate confirmation token
-    const { token } = await this.confirmationTokenService.createRequest(
+    const { token, requestId, created_at } = await this.confirmationTokenService.createRequest(
       this.userId,
       'retract_memory',
       {
@@ -643,7 +649,7 @@ export class SpaceService {
       friends,
     });
 
-    return { token };
+    return { token, request_id: requestId, created_at };
   }
 
   // ── Revise (phase 1: generate confirmation token) ───────────────────
@@ -668,7 +674,7 @@ export class SpaceService {
     // Content moderation check (blocks hateful/extremist content)
     await this.checkModeration(memory.properties.content as string);
 
-    const { token } = await this.confirmationTokenService.createRequest(
+    const { token, requestId, created_at } = await this.confirmationTokenService.createRequest(
       this.userId,
       'revise_memory',
       {
@@ -686,7 +692,7 @@ export class SpaceService {
       groupIds,
     });
 
-    return { token };
+    return { token, request_id: requestId, created_at };
   }
 
   // ── Confirm (phase 2: execute pending action) ───────────────────────

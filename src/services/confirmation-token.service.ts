@@ -51,7 +51,7 @@ export class ConfirmationTokenService {
     payload: any,
     targetCollection?: string,
     cooldownSeconds?: number,
-  ): Promise<{ requestId: string; token: string }> {
+  ): Promise<{ requestId: string; token: string; created_at: string }> {
     try {
       const token = randomUUID();
       const now = new Date();
@@ -87,7 +87,7 @@ export class ConfirmationTokenService {
         expiresAt: request.expires_at,
       });
 
-      return { requestId: docRef.id, token };
+      return { requestId: docRef.id, token, created_at: request.created_at };
     } catch (error) {
       this.logger.error('Failed to create confirmation request', {
         service: 'ConfirmationTokenService',

@@ -173,12 +173,32 @@ describe('ConfirmationsResource', () => {
     });
   });
 
+  it('confirm passes secret_token in body when provided', async () => {
+    const confirmations = createConfirmationsResource(http);
+    await confirmations.confirm('user1', 'tok-abc', { secret_token: 'hmac-secret' });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/confirmations/tok-abc/confirm', {
+      userId: 'user1',
+      body: { secret_token: 'hmac-secret' },
+    });
+  });
+
   it('deny calls POST /api/svc/v1/confirmations/:token/deny', async () => {
     const confirmations = createConfirmationsResource(http);
     await confirmations.deny('user1', 'tok-abc');
 
     expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/confirmations/tok-abc/deny', {
       userId: 'user1',
+    });
+  });
+
+  it('deny passes secret_token in body when provided', async () => {
+    const confirmations = createConfirmationsResource(http);
+    await confirmations.deny('user1', 'tok-abc', { secret_token: 'hmac-secret' });
+
+    expect(http.request).toHaveBeenCalledWith('POST', '/api/svc/v1/confirmations/tok-abc/deny', {
+      userId: 'user1',
+      body: { secret_token: 'hmac-secret' },
     });
   });
 });

@@ -364,6 +364,8 @@ export interface SetTrustLevelInput {
 
 export interface SetTrustLevelRequestResult {
   token: string;
+  request_id: string;
+  created_at: string;
   memory_id: string;
   requested_trust_level: number;
   current_trust_level: number;
@@ -1640,7 +1642,7 @@ export class MemoryService {
       throw new Error(`Trust level is already set to ${input.trust_level}`);
     }
 
-    const { token } = await this.options.confirmationTokenService.createRequest(
+    const { token, requestId, created_at } = await this.options.confirmationTokenService.createRequest(
       this.userId,
       'set_trust_level',
       { memory_id: input.memory_id, trust_level: input.trust_level, current_trust_level: currentTrust },
@@ -1656,6 +1658,8 @@ export class MemoryService {
 
     return {
       token,
+      request_id: requestId,
+      created_at,
       memory_id: input.memory_id,
       requested_trust_level: input.trust_level,
       current_trust_level: currentTrust,

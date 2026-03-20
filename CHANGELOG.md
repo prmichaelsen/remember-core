@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.0] - 2026-03-20
+
+### BREAKING CHANGES
+- `PublishResult`, `RetractResult`, `ReviseResult` now return `request_id` and `created_at` (required fields)
+- `SetTrustLevelRequestResult` now returns `request_id` and `created_at` (required fields)
+- OpenAPI `TokenResult` schema adds `request_id` and `created_at` as required properties
+- OpenAPI confirm/deny endpoints now accept optional `secret_token` request body
+- SVC client `confirmations.confirm()` and `confirmations.deny()` signature changed: new optional `options` parameter with `secret_token`
+- Consumers using `ConfirmationGuardService` must pass `secret_token` to confirm/deny or receive `ValidationError`
+
+### Changed
+- `ConfirmationTokenService.createRequest()` returns `{ requestId, token, created_at }` (was `{ requestId, token }`)
+- `SpaceService.publish/retract/revise()` propagate `request_id` and `created_at` from token service
+- `MemoryService.requestSetTrustLevel()` propagates `request_id` and `created_at` from token service
+
 ## [0.72.0] - 2026-03-20
 
 ### Added

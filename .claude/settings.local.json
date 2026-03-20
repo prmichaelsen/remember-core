@@ -100,7 +100,11 @@
       "Bash(set -a && source .env.prod.local && set +a && ENVIRONMENT=production node --import tsx/esm -e \"\nimport { initFirestore, setDocument } from './src/database/firestore/init.js';\nimport { getMemoryIndexPath } from './src/database/firestore/paths.js';\n\ninitFirestore\\({\n  serviceAccount: process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY,\n  projectId: process.env.FIREBASE_PROJECT_ID,\n}\\);\n\nconst indexPath = getMemoryIndexPath\\(\\);\nconst collectionName = 'Memory_users_geTmbcAMyhYUyeIfQj0ZRFmorhA2';\n\nconst ids = [\n  'e9dc4c19-2d0d-4e10-bed8-5770874e9764',\n  '31eaccf9-5da0-4fa0-8649-e17228016e8a',\n  '350f45be-dc57-4cfd-b4f1-f951f4438841',\n  '8b279cfd-46ad-40e9-bb78-f41c1ae2c217',\n  'a2283435-e728-4a35-9141-ee26aa0e6e0d',\n  '2e908d19-6741-440b-af5f-afaf59ff9973',\n  '4a43e8d7-e148-4010-a5af-1d7e57440efb',\n  '39fcd074-41aa-4e5e-96aa-44726787861e',\n  '49d52928-2b64-45b0-b197-44112df0510e',\n];\n\nfor \\(const id of ids\\) {\n  await setDocument\\(indexPath, id, {\n    collection_name: collectionName,\n    created_at: new Date\\(\\).toISOString\\(\\),\n  }\\);\n  console.log\\('Indexed', id\\);\n}\nconsole.log\\('\\\\nDone. Indexed', ids.length, 'memories.'\\);\n\" 2>&1)",
       "mcp__gcloud-mcp__gcloud_get_service_logs",
       "mcp__remember-mcp__remember_search_memory",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(/home/prmichaelsen/.acp/projects/remember-core/agent/scripts/acp.install.sh)",
+      "Bash(npm list:*)",
+      "Bash(npm uninstall:*)",
+      "WebFetch(domain:www.truefoundry.com)"
     ]
   }
 }

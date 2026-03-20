@@ -1091,9 +1091,22 @@ paths:
     post:
       tags: [confirmations]
       summary: Confirm a pending action
+      description: |
+        When confirmation guard is enabled, secret_token is required.
+        Compute it as HMAC-SHA256(platform_secret, token + created_at).
       operationId: confirmAction
       parameters:
         - $ref: '#/components/parameters/confirmationToken'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                secret_token:
+                  type: string
+                  description: HMAC-SHA256 derived secret token (required when confirmation guard is enabled)
       responses:
         '200':
           description: Action confirmed and executed
@@ -1110,9 +1123,22 @@ paths:
     post:
       tags: [confirmations]
       summary: Deny a pending action
+      description: |
+        When confirmation guard is enabled, secret_token is required.
+        Compute it as HMAC-SHA256(platform_secret, token + created_at).
       operationId: denyAction
       parameters:
         - $ref: '#/components/parameters/confirmationToken'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                secret_token:
+                  type: string
+                  description: HMAC-SHA256 derived secret token (required when confirmation guard is enabled)
       responses:
         '200':
           description: Action denied
@@ -3542,10 +3568,17 @@ components:
     # ----------------------------------------------------------
     TokenResult:
       type: object
-      required: [token]
+      required: [token, request_id, created_at]
       properties:
         token:
           type: string
+        request_id:
+          type: string
+          description: Firestore document ID of the confirmation request
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the confirmation request was created
 
     ConfirmResult:
       type: object
@@ -3605,10 +3638,17 @@ components:
 
     SetTrustLevelRequestResult:
       type: object
-      required: [token, memory_id, requested_trust_level, current_trust_level, expires_at]
+      required: [token, request_id, created_at, memory_id, requested_trust_level, current_trust_level, expires_at]
       properties:
         token:
           type: string
+        request_id:
+          type: string
+          description: Firestore document ID of the confirmation request
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the confirmation request was created
         memory_id:
           type: string
         requested_trust_level:

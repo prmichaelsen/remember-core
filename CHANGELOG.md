@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.1] - 2026-03-22
+
+### Fixed
+- Remove dead `target_collection` field from `ConfirmationRequest` — Firestore rejects `undefined` values, causing `remember_publish` to fail silently with an empty error message
+- Remove unused `targetCollection` parameter from `createRequest()`
+
+### Added
+- Detailed logging in `ConfirmationTokenService.createRequest()` for debugging Firestore write failures
+
 ## [1.0.0] - 2026-03-20
 
 ### BREAKING CHANGES

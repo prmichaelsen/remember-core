@@ -22,7 +22,6 @@ export interface ConfirmationRequest {
   user_id: string;
   token: string;
   action: string;
-  target_collection?: string;
   payload: any;
   created_at: string;
   expires_at: string;
@@ -49,10 +48,17 @@ export class ConfirmationTokenService {
     userId: string,
     action: string,
     payload: any,
-    targetCollection?: string,
     cooldownSeconds?: number,
   ): Promise<{ requestId: string; token: string; created_at: string }> {
     try {
+      this.logger.info('Creating confirmation request', {
+        service: 'ConfirmationTokenService',
+        userId,
+        action,
+        hasCooldown: cooldownSeconds != null && cooldownSeconds > 0,
+        payloadKeys: payload ? Object.keys(payload) : [],
+      });
+
       const token = randomUUID();
       const now = new Date();
       const expiresAt = new Date(now.getTime() + this.EXPIRY_MINUTES * 60 * 1000);
@@ -65,7 +71,6 @@ export class ConfirmationTokenService {
         user_id: userId,
         token,
         action,
-        target_collection: targetCollection,
         payload,
         created_at: now.toISOString(),
         expires_at: expiresAt.toISOString(),
@@ -75,7 +80,20 @@ export class ConfirmationTokenService {
       };
 
       const collectionPath = `users/${userId}/requests`;
+      this.logger.info('Writing confirmation request to Firestore', {
+        service: 'ConfirmationTokenService',
+        collectionPath,
+        action,
+        expiresAt: request.expires_at,
+      });
+
       const docRef = await addDocument(collectionPath, request);
+
+      this.logger.info('Firestore addDocument returned', {
+        service: 'ConfirmationTokenService',
+        docRefExists: !!docRef,
+        docRefId: docRef?.id,
+      });
 
       if (!docRef?.id) {
         throw new Error('Firestore addDocument returned invalid reference');
@@ -92,6 +110,9 @@ export class ConfirmationTokenService {
       this.logger.error('Failed to create confirmation request', {
         service: 'ConfirmationTokenService',
         error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        userId,
+        action,
       });
       throw error;
     }
